@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>點名冊</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#173B31">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="點名冊">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --board:#173B31;
+    --board-2:#1F4A3C;
+    --board-3:#255A48;
+    --chalk:#F3EFE1;
+    --chalk-dim:#C9CDBE;
+    --chalk-yellow:#E7C468;
+    --ink-red:#C1443C;
+    --ink-red-soft:#E7938A;
+    --line:rgba(243,239,225,0.14);
+    --line-strong:rgba(243,239,225,0.28);
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      repeating-linear-gradient(var(--board), var(--board) 100%),
+      var(--board);
+    background-color:var(--board);
+    color:var(--chalk);
+    font-family:'Noto Sans TC','Klee One',sans-serif;
+    min-height:100vh;
+    padding-bottom:48px;
+  }
+  /* chalk grain texture */
+  body::before{
+    content:"";
+    position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 3px 3px;
+    opacity:0.6;
+  }
+  .wrap{ position:relative; z-index:1; max-width:560px; margin:0 auto; padding:20px 16px 8px; }
+
+  header.top{
+    display:flex; align-items:baseline; justify-content:space-between;
+    border-bottom:2px dashed var(--line-strong);
+    padding-bottom:14px; margin-bottom:18px;
+  }
+  header.top .brand{
+    font-family:'Klee One', sans-serif;
+    font-size:26px; font-weight:600; letter-spacing:2px; color:var(--chalk);
+  }
+  header.top .brand small{
+    display:block; font-family:'Noto Sans TC'; font-size:11px; letter-spacing:3px;
+    color:var(--chalk-yellow); font-weight:500; margin-top:2px;
+  }
+  .icon-btn{
+    background:none; border:1.5px solid var(--line-strong); color:var(--chalk-dim);
+    border-radius:10px; padding:8px 12px; font-size:13px; font-family:inherit;
+    cursor:pointer;
+  }
+  .icon-btn:active{ background:var(--line); }
+
+  .screen{ display:none; animation:fade .25s ease; }
+  .screen.active{ display:block; }
+  @keyframes fade{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+
+  /* ---- home: course list ---- */
+  .course-card{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    background:var(--board-2); border:1px solid var(--line);
+    border-radius:var(--radius); padding:16px 16px; margin-bottom:12px;
+    cursor:pointer;
+  }
+  .course-card:active{ background:var(--board-3); }
+  .course-card .name{ font-size:17px; font-weight:700; }
+  .course-card .meta{ font-size:12px; color:var(--chalk-dim); margin-top:4px; }
+  .course-card .go{ color:var(--chalk-yellow); font-size:20px; }
+  .course-card .del{
+    background:none;border:none;color:var(--ink-red-soft);font-size:12px;
+    padding:6px 8px; margin-left:4px;
+  }
+
+  .empty-note{
+    border:1.5px dashed var(--line-strong); border-radius:var(--radius);
+    padding:28px 18px; text-align:center; color:var(--chalk-dim); font-size:14px;
+    line-height:1.8;
+  }
+
+  .primary-btn{
+    width:100%; padding:15px; border-radius:12px; border:none;
+    background:var(--chalk-yellow); color:#1b2e22; font-weight:700; font-size:15px;
+    font-family:inherit; cursor:pointer; letter-spacing:1px;
+  }
+  .primary-btn:active{ transform:scale(0.98); }
+  .primary-btn.ghost{
+    background:transparent; color:var(--chalk); border:1.5px solid var(--line-strong);
+  }
+  .primary-btn.danger{ background:var(--ink-red); color:var(--chalk); }
+  .primary-btn:disabled{ opacity:0.4; }
+
+  .stack{ display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+  .row2{ display:flex; gap:10px; }
+  .row2 > *{ flex:1; }
+
+  /* ---- upload screen ---- */
+  label.field-label{ display:block; font-size:12px; letter-spacing:2px; color:var(--chalk-yellow); margin:18px 0 8px; }
+  input[type=text]{
+    width:100%; padding:13px 14px; border-radius:10px; border:1.5px solid var(--line-strong);
+    background:var(--board-2); color:var(--chalk); font-size:15px; font-family:inherit;
+  }
+  input[type=text]:focus{ outline:none; border-color:var(--chalk-yellow); }
+  .file-drop{
+    border:1.5px dashed var(--line-strong); border-radius:var(--radius);
+    padding:26px 14px; text-align:center; color:var(--chalk-dim); font-size:13px;
+    position:relative; line-height:1.7;
+  }
+  .file-drop input[type=file]{
+    position:absolute; inset:0; opacity:0; cursor:pointer;
+  }
+  .file-drop.has-file{ border-style:solid; color:var(--chalk); border-color:var(--chalk-yellow); }
+  .hint{ font-size:12px; color:var(--chalk-dim); line-height:1.8; margin-top:8px;}
+  .hint b{ color:var(--chalk); }
+
+  .preview-table{ margin-top:14px; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  .preview-row{
+    display:flex; justify-content:space-between; padding:10px 14px;
+    border-bottom:1px solid var(--line); font-size:13px;
+  }
+  .preview-row:last-child{ border-bottom:none; }
+  .preview-row .cls{ color:var(--chalk-yellow); font-weight:700; }
+  .preview-row .cnt{ color:var(--chalk-dim); }
+
+  .error-box{
+    background:rgba(193,68,60,0.15); border:1px solid var(--ink-red);
+    color:var(--ink-red-soft); padding:12px 14px; border-radius:10px; font-size:13px;
+    margin-top:12px; line-height:1.7;
+  }
+
+  /* ---- attendance screen ---- */
+  .course-header{ margin-bottom:6px; }
+  .course-header .title{ font-size:20px; font-weight:700; }
+  .course-header .sub{ font-size:12px; color:var(--chalk-dim); margin-top:3px; }
+
+  .summary-bar{
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--board-2); border-radius:10px; padding:10px 14px; margin:14px 0;
+    font-size:13px; color:var(--chalk-dim);
+  }
+  .summary-bar b{ color:var(--chalk-yellow); font-size:15px; }
+
+  .class-block{ margin-bottom:20px; }
+  .class-title{
+    display:flex; align-items:center; gap:8px; margin-bottom:8px;
+    font-family:'Klee One'; font-size:16px; color:var(--chalk-yellow); font-weight:600;
+  }
+  .class-title .dash{ flex:1; border-top:1.5px dashed var(--line-strong); }
+
+  .student-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .student-chip{
+    display:flex; align-items:center; gap:10px;
+    border:1.5px solid var(--line-strong); border-radius:11px; padding:11px 10px;
+    background:var(--board-2); cursor:pointer; user-select:none;
+    min-height:48px;
+  }
+  .student-chip .seat{
+    width:30px; height:30px; border-radius:50%; flex:none;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; border:1.5px solid var(--chalk-dim); color:var(--chalk);
+  }
+  .student-chip .nm{ font-size:13px; line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .student-chip.absent{
+    border-color:var(--ink-red); background:rgba(193,68,60,0.16);
+  }
+  .student-chip.absent .seat{
+    border-color:var(--ink-red); color:var(--ink-red-soft); background:rgba(193,68,60,0.25);
+  }
+  .student-chip.absent .seat::after{ content:"✕"; }
+  .student-chip:not(.absent) .seat::after{ content:"✓"; color:#8fbf9f; }
+  .student-chip.absent .nm{ color:var(--ink-red-soft); text-decoration:line-through; }
+
+  .sticky-actions{
+    position:sticky; bottom:0; padding:14px 0 4px; margin-top:8px;
+    background:linear-gradient(to top, var(--board) 65%, transparent);
+  }
+
+  /* ---- result screen ---- */
+  .stamp{
+    position:relative; margin:6px auto 18px; width:fit-content;
+  }
+  .stamp .seal{
+    display:inline-block; border:3px solid var(--ink-red); color:var(--ink-red);
+    padding:6px 18px; border-radius:8px; font-family:'Klee One'; font-size:15px;
+    font-weight:600; transform:rotate(-6deg); letter-spacing:2px;
+  }
+  .message-box{
+    background:var(--chalk); color:#20321f; border-radius:var(--radius);
+    padding:18px 16px; font-size:14px; line-height:2; white-space:pre-wrap;
+    font-family:'Klee One','Noto Sans TC',sans-serif;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.18);
+  }
+  .toast{
+    position:fixed; left:50%; bottom:28px; transform:translateX(-50%);
+    background:var(--chalk-yellow); color:#1b2e22; padding:10px 18px;
+    border-radius:30px; font-size:13px; font-weight:700; z-index:50;
+    opacity:0; pointer-events:none; transition:opacity .2s;
+  }
+  .toast.show{ opacity:1; }
+  a.line-link{ text-decoration:none; }
+</style>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(console.error);
+  });
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">點名冊<small>ROLL CALL LEDGER</small></div>
+    <button class="icon-btn" id="homeBtn">課程列表</button>
+  </header>
+
+  <!-- HOME -->
+  <section class="screen" id="screen-home">
+    <div id="courseList"></div>
+    <div class="stack">
+      <button class="primary-btn" id="newCourseBtn">＋ 新增課程（上傳名單）</button>
+    </div>
+  </section>
+
+  <!-- UPLOAD -->
+  <section class="screen" id="screen-upload">
+    <div class="course-header">
+      <div class="title">建立課程名單</div>
+      <div class="sub">上傳試算表，設定課程與班級座號名單</div>
+    </div>
+
+    <label class="field-label">課程名稱</label>
+    <input type="text" id="courseNameInput" placeholder="例如：多媒體概論（三年級）" />
+
+    <label class="field-label">試算表檔案（.xlsx / .csv）</label>
+    <div class="file-drop" id="fileDrop">
+      <div id="fileDropText">點擊或拖曳檔案到這裡上傳</div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+    </div>
+    <div class="hint">
+      表格需包含欄位：<b>班級</b>、<b>座號</b>（可選填 <b>姓名</b>）。<br>
+      不同班級可各自有不重複的座號，系統會依班級自動分組。
+    </div>
+
+    <div id="uploadError"></div>
+    <div id="uploadPreview"></div>
+
+    <div class="stack">
+      <button class="primary-btn" id="saveCourseBtn" disabled>儲存課程並開始點名</button>
+      <button class="primary-btn ghost" id="cancelUploadBtn">取消</button>
+    </div>
+  </section>
+
+  <!-- ATTENDANCE -->
+  <section class="screen" id="screen-attend">
+    <div class="course-header">
+      <div class="title" id="attendCourseName">—</div>
+      <div class="sub" id="attendSub">點擊學生標記為未出席，預設為全員出席</div>
+    </div>
+    <div class="summary-bar">
+      <span>共 <b id="totalCount">0</b> 人</span>
+      <span>未出席 <b id="absentCount" style="color:var(--ink-red-soft)">0</b> 人</span>
+    </div>
+    <div id="classContainer"></div>
+
+    <div class="sticky-actions stack">
+      <button class="primary-btn" id="genMsgBtn">產生訊息</button>
+      <div class="row2">
+        <button class="primary-btn ghost" id="reuploadBtn">重新上傳名單</button>
+        <button class="primary-btn ghost danger" id="deleteCourseBtn">刪除課程</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section class="screen" id="screen-result">
+    <div class="stamp"><span class="seal">已產生 · 待送出</span></div>
+    <div class="message-box" id="messageBox"></div>
+    <div class="stack">
+      <a class="line-link" id="lineShareLink" target="_blank" rel="noopener">
+        <button class="primary-btn">傳送到 LINE（選擇 CISH-程程）</button>
+      </a>
+      <button class="primary-btn ghost" id="copyBtn">複製訊息文字</button>
+      <button class="primary-btn ghost" id="backToAttendBtn">← 返回修改點名</button>
+    </div>
+    <div class="hint" style="margin-top:14px;">
+      「傳送到 LINE」會開啟 LINE 並帶入訊息內容，需要你手動選擇聯絡人「CISH-程程」送出——網頁本身無法未經你操作就自動送出訊息給指定對象。
+    </div>
+  </section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const screens = ['home','upload','attend','result'];
+  function showScreen(name){
+    screens.forEach(s => $('screen-'+s).classList.toggle('active', s===name));
+    window.scrollTo(0,0);
+  }
+  function toast(msg){
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 1800);
+  }
+
+  let currentCourseId = null;
+  let currentRoster = null; // { name, classes: { className: [{seat,name}] } }
+  let parsedUpload = null;  // classes object staged from file, before save
+
+  // ---------- storage helpers ----------
+  // Browser persistence: IndexedDB. This works on HTTPS/PWA and keeps
+  // each teacher's courses on their own device.
+  const DB_NAME = 'attendance-ledger-db';
+  const DB_VERSION = 1;
+  const STORE = 'kv';
+
+  function openDB(){
+    return new Promise((resolve,reject)=>{
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = () => {
+        if(!req.result.objectStoreNames.contains(STORE)){
+          req.result.createObjectStore(STORE);
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function storageGet(key){
+    try{
+      const db = await openDB();
+      return await new Promise((resolve,reject)=>{
+        const tx = db.transaction(STORE,'readonly');
+        const req = tx.objectStore(STORE).get(key);
+        req.onsuccess = () => resolve(req.result ?? null);
+        req.onerror = () => reject(req.error);
+      });
+    }catch(e){
+      console.error(e);
+      return null;
+    }
+  }
+
+  async function storageSet(key, value){
+    try{
+      const db = await openDB();
+      return await new Promise((resolve,reject)=>{
+        const tx = db.transaction(STORE,'readwrite');
+        tx.objectStore(STORE).put(value,key);
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => reject(tx.error);
+      });
+    }catch(e){
+      console.error(e);
+      toast('儲存失敗，請再試一次');
+      return false;
+    }
+  }
+
+  async function storageDelete(key){
+    try{
+      const db = await openDB();
+      return await new Promise((resolve,reject)=>{
+        const tx = db.transaction(STORE,'readwrite');
+        tx.objectStore(STORE).delete(key);
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => reject(tx.error);
+      });
+    }catch(e){
+      console.error(e);
+      return false;
+    }
+  }
+
+  async function getIndex(){
+    try{
+      const v = await storageGet('course-index');
+      return v ? JSON.parse(v) : [];
+    }catch(e){ return []; }
+  }
+
+  async function setIndex(list){
+    await storageSet('course-index', JSON.stringify(list));
+  }
+
+  async function getRoster(id){
+    try{
+      const v = await storageGet('roster:'+id);
+      return v ? JSON.parse(v) : null;
+    }catch(e){ return null; }
+  }
+
+  async function setRoster(id, data){
+    return await storageSet('roster:'+id, JSON.stringify(data));
+  }
+
+  async function deleteRoster(id){
+    await storageDelete('roster:'+id);
+  }
+
+  // ---------- home screen ----------
+  async function renderHome(){
+    const list = await getIndex();
+    const container = $('courseList');
+    if(!list.length){
+      container.innerHTML = '<div class="empty-note">還沒有任何課程。<br>點擊下方按鈕上傳第一份名單試算表。</div>';
+      return;
+    }
+    container.innerHTML = '';
+    list.slice().reverse().forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'course-card';
+      card.innerHTML = `
+        <div style="flex:1; min-width:0;">
+          <div class="name">${escapeHtml(item.name)}</div>
+          <div class="meta">${item.classCount} 個班級・共 ${item.studentCount} 人</div>
+        </div>
+        <button class="del" data-id="${item.id}">刪除</button>
+        <div class="go">›</div>
+      `;
+      card.addEventListener('click', (e) => {
+        if(e.target.closest('.del')) return;
+        openCourse(item.id);
+      });
+      card.querySelector('.del').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if(!confirm(`確定要刪除課程「${item.name}」的名單嗎？`)) return;
+        await deleteRoster(item.id);
+        const idx = await getIndex();
+        await setIndex(idx.filter(c => c.id !== item.id));
+        renderHome();
+      });
+      container.appendChild(card);
+    });
+  }
+
+  async function openCourse(id){
+    const roster = await getRoster(id);
+    if(!roster){ toast('讀取名單失敗'); return; }
+    currentCourseId = id;
+    currentRoster = roster;
+    // reset attendance state: everyone present by default
+    Object.values(currentRoster.classes).forEach(students => {
+      students.forEach(s => { s.absent = false; });
+    });
+    renderAttendance();
+    showScreen('attend');
+  }
+
+  $('homeBtn').addEventListener('click', () => { renderHome(); showScreen('home'); });
+  $('newCourseBtn').addEventListener('click', () => { resetUploadScreen(); showScreen('upload'); });
+
+  // ---------- upload screen ----------
+  function resetUploadScreen(){
+    $('courseNameInput').value = '';
+    $('fileInput').value = '';
+    $('fileDropText').textContent = '點擊或拖曳檔案到這裡上傳';
+    $('fileDrop').classList.remove('has-file');
+    $('uploadError').innerHTML = '';
+    $('uploadPreview').innerHTML = '';
+    $('saveCourseBtn').disabled = true;
+    parsedUpload = null;
+  }
+
+  $('cancelUploadBtn').addEventListener('click', () => { renderHome(); showScreen('home'); });
+
+  function seatSortKey(seat){
+    const m = String(seat).match(/\d+/);
+    return m ? parseInt(m[0],10) : 999999;
+  }
+
+  function findCol(headerRow, keywords){
+    for(let i=0;i<headerRow.length;i++){
+      const cell = String(headerRow[i] ?? '').trim();
+      if(keywords.some(k => cell.includes(k))) return i;
+    }
+    return -1;
+  }
+
+  function parseRows(rows){
+    if(!rows.length) throw new Error('檔案內容是空的。');
+    const header = rows[0];
+    const clsCol = findCol(header, ['班級','班別','class']);
+    const seatCol = findCol(header, ['座號','學號','seat','no']);
+    const nameCol = findCol(header, ['姓名','名字','name']);
+    if(clsCol === -1 || seatCol === -1){
+      throw new Error('找不到「班級」或「座號」欄位，請確認試算表第一列是否為標題列。');
+    }
+    const classes = {};
+    for(let r=1; r<rows.length; r++){
+      const row = rows[r];
+      if(!row || row.every(c => c===undefined || c==='')) continue;
+      const cls = String(row[clsCol] ?? '').trim();
+      const seat = String(row[seatCol] ?? '').trim();
+      if(!cls || !seat) continue;
+      const name = nameCol !== -1 ? String(row[nameCol] ?? '').trim() : '';
+      if(!classes[cls]) classes[cls] = [];
+      classes[cls].push({ seat, name, absent:false });
+    }
+    Object.values(classes).forEach(list => list.sort((a,b)=> seatSortKey(a.seat)-seatSortKey(b.seat)));
+    if(!Object.keys(classes).length) throw new Error('沒有解析到任何學生資料，請確認內容是否正確。');
+    return classes;
+  }
+
+  function handleFile(file){
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try{
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, {type:'array'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
+        const classes = parseRows(rows);
+        parsedUpload = classes;
+        $('uploadError').innerHTML = '';
+        renderPreview(classes);
+        $('fileDropText').textContent = '✓ ' + file.name;
+        $('fileDrop').classList.add('has-file');
+        updateSaveEnabled();
+      }catch(err){
+        parsedUpload = null;
+        $('uploadPreview').innerHTML = '';
+        $('uploadError').innerHTML = `<div class="error-box">解析失敗：${escapeHtml(err.message)}</div>`;
+        updateSaveEnabled();
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function renderPreview(classes){
+    const box = $('uploadPreview');
+    let total = 0;
+    let html = '<div class="preview-table">';
+    Object.keys(classes).forEach(cls => {
+      total += classes[cls].length;
+      html += `<div class="preview-row"><span class="cls">${escapeHtml(cls)}</span><span class="cnt">${classes[cls].length} 人</span></div>`;
+    });
+    html += '</div>';
+    html += `<div class="hint">共 ${Object.keys(classes).length} 個班級、${total} 位學生</div>`;
+    box.innerHTML = html;
+  }
+
+  $('fileInput').addEventListener('change', (e) => {
+    if(e.target.files[0]) handleFile(e.target.files[0]);
+  });
+  $('courseNameInput').addEventListener('input', updateSaveEnabled);
+  function updateSaveEnabled(){
+    $('saveCourseBtn').disabled = !(parsedUpload && $('courseNameInput').value.trim());
+  }
+
+  $('saveCourseBtn').addEventListener('click', async () => {
+    const name = $('courseNameInput').value.trim();
+    if(!name || !parsedUpload) return;
+    const id = currentCourseId && currentRosterMatchesReupload ? currentCourseId : ('c' + Date.now());
+    const rosterData = { name, classes: parsedUpload };
+    const ok = await setRoster(id, rosterData);
+    if(!ok){ toast('儲存失敗，請再試一次'); return; }
+    const idx = await getIndex();
+    const studentCount = Object.values(parsedUpload).reduce((n,l)=>n+l.length,0);
+    const classCount = Object.keys(parsedUpload).length;
+    const existingPos = idx.findIndex(c => c.id === id);
+    const entry = { id, name, studentCount, classCount };
+    if(existingPos >= 0) idx[existingPos] = entry; else idx.push(entry);
+    await setIndex(idx);
+    currentRosterMatchesReupload = false;
+    openCourse(id);
+  });
+
+  let currentRosterMatchesReupload = false;
+  $('reuploadBtn').addEventListener('click', () => {
+    resetUploadScreen();
+    $('courseNameInput').value = currentRoster ? currentRoster.name : '';
+    currentRosterMatchesReupload = true;
+    showScreen('upload');
+  });
+
+  $('deleteCourseBtn').addEventListener('click', async () => {
+    if(!currentCourseId) return;
+    if(!confirm(`確定要刪除課程「${currentRoster.name}」的名單嗎？`)) return;
+    await deleteRoster(currentCourseId);
+    const idx = await getIndex();
+    await setIndex(idx.filter(c => c.id !== currentCourseId));
+    currentCourseId = null; currentRoster = null;
+    renderHome(); showScreen('home');
+  });
+
+  // ---------- attendance screen ----------
+  function renderAttendance(){
+    $('attendCourseName').textContent = currentRoster.name;
+    const container = $('classContainer');
+    container.innerHTML = '';
+    Object.keys(currentRoster.classes).forEach(cls => {
+      const block = document.createElement('div');
+      block.className = 'class-block';
+      block.innerHTML = `<div class="class-title">${escapeHtml(cls)}<div class="dash"></div></div>
+        <div class="student-grid"></div>`;
+      const grid = block.querySelector('.student-grid');
+      currentRoster.classes[cls].forEach(stu => {
+        const chip = document.createElement('div');
+        chip.className = 'student-chip' + (stu.absent ? ' absent' : '');
+        chip.innerHTML = `<span class="seat">${escapeHtml(stu.seat)}</span><span class="nm">${escapeHtml(stu.name || '座號'+stu.seat)}</span>`;
+        chip.addEventListener('click', () => {
+          stu.absent = !stu.absent;
+          chip.classList.toggle('absent', stu.absent);
+          updateSummary();
+          // Save the current attendance state locally.
+          if(currentCourseId && currentRoster){
+            setRoster(currentCourseId, currentRoster);
+          }
+        });
+        grid.appendChild(chip);
+      });
+      container.appendChild(block);
+    });
+    updateSummary();
+  }
+
+  function updateSummary(){
+    let total=0, absent=0;
+    Object.values(currentRoster.classes).forEach(list => {
+      total += list.length;
+      absent += list.filter(s=>s.absent).length;
+    });
+    $('totalCount').textContent = total;
+    $('absentCount').textContent = absent;
+  }
+
+  // ---------- result / message generation ----------
+  function timestampNow(){
+    const d = new Date();
+    const fmt = new Intl.DateTimeFormat('zh-TW', {
+      timeZone:'Asia/Taipei', year:'numeric', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', hour12:false
+    });
+    return fmt.format(d).replace(/\//g,'/');
+  }
+
+  function buildMessage(){
+    const ts = timestampNow();
+    let body = `課程名稱：${currentRoster.name}　${ts}，未出席：`;
+    const lines = [];
+    Object.keys(currentRoster.classes).forEach(cls => {
+      const absentSeats = currentRoster.classes[cls].filter(s=>s.absent).map(s=>s.seat);
+      if(absentSeats.length){
+        lines.push(`${cls}：${absentSeats.join('、')}`);
+      }
+    });
+    if(!lines.length){
+      body += '無（全員出席）';
+    } else {
+      body += '\n' + lines.join('\n');
+    }
+    return body;
+  }
+
+  $('genMsgBtn').addEventListener('click', () => {
+    const msg = buildMessage();
+    $('messageBox').textContent = msg;
+    $('lineShareLink').href = 'https://line.me/R/msg/text/?' + encodeURIComponent(msg);
+    showScreen('result');
+  });
+
+  $('backToAttendBtn').addEventListener('click', () => showScreen('attend'));
+
+  $('copyBtn').addEventListener('click', async () => {
+    const msg = $('messageBox').textContent;
+    try{
+      await navigator.clipboard.writeText(msg);
+      toast('已複製訊息文字');
+    }catch(e){
+      const ta = document.createElement('textarea');
+      ta.value = msg; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      toast('已複製訊息文字');
+    }
+  });
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- init ----------
+  renderHome();
+  showScreen('home');
+})();
+</script>
+</body>
+</html>
