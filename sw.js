@@ -1,4 +1,4 @@
-const CACHE='attendance-ledger-v1';
+const CACHE='attendance-ledger-v3';
 const APP=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(APP)).then(()=>self.skipWaiting()));
