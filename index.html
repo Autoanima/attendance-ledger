@@ -15,207 +15,338 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
-    --board:#173B31;
-    --board-2:#1F4A3C;
-    --board-3:#255A48;
-    --chalk:#F3EFE1;
-    --chalk-dim:#C9CDBE;
-    --chalk-yellow:#E7C468;
-    --ink-red:#C1443C;
-    --ink-red-soft:#E7938A;
-    --line:rgba(243,239,225,0.14);
-    --line-strong:rgba(243,239,225,0.28);
-    --radius:14px;
+    --navy:#123A5A;
+    --navy-2:#194A6D;
+    --navy-3:#245B7D;
+    --blue-bg:#DCEBF4;
+    --blue-panel:#EAF4F8;
+    --turq:#63C8C3;
+    --turq-soft:#DDF3F1;
+    --yellow:#F4CF55;
+    --yellow-soft:#FFF2B8;
+    --white:#F9FCFD;
+    --ink:#183A50;
+    --muted:#678191;
+    --red:#D7655D;
+    --red-soft:#FBECE9;
+    --line:#C9DDE6;
+    --radius:18px;
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
-  html,body{margin:0;padding:0;}
+
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
   body{
-    background:
-      repeating-linear-gradient(var(--board), var(--board) 100%),
-      var(--board);
-    background-color:var(--board);
-    color:var(--chalk);
-    font-family:'Noto Sans TC','Klee One',sans-serif;
     min-height:100vh;
-    padding-bottom:48px;
+    color:var(--ink);
+    font-family:'Noto Sans TC','Klee One',sans-serif;
+    background:var(--blue-bg);
+    padding-bottom:30px;
   }
-  /* chalk grain texture */
-  body::before{
-    content:"";
-    position:fixed; inset:0; pointer-events:none; z-index:0;
-    background-image:
-      radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px);
-    background-size: 3px 3px;
-    opacity:0.6;
+
+  /* No decorative circles / background ornaments */
+  body::before{display:none}
+
+  .wrap{
+    position:relative;z-index:1;
+    max-width:720px;margin:0 auto;padding:14px 14px 8px;
   }
-  .wrap{ position:relative; z-index:1; max-width:560px; margin:0 auto; padding:20px 16px 8px; }
 
   header.top{
-    display:flex; align-items:baseline; justify-content:space-between;
-    border-bottom:2px dashed var(--line-strong);
-    padding-bottom:14px; margin-bottom:18px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    min-height:70px;
+    padding:12px 15px;
+    margin-bottom:16px;
+    border:2px solid var(--navy);
+    border-radius:19px;
+    background:var(--turq);
+    box-shadow:0 4px 0 rgba(18,58,90,.16);
   }
+
   header.top .brand{
-    font-family:'Klee One', sans-serif;
-    font-size:26px; font-weight:600; letter-spacing:2px; color:var(--chalk);
+    font-size:25px;font-weight:900;letter-spacing:1px;color:var(--navy);
+    line-height:1.1;
   }
-  header.top .brand small{
-    display:block; font-family:'Noto Sans TC'; font-size:11px; letter-spacing:3px;
-    color:var(--chalk-yellow); font-weight:500; margin-top:2px;
-  }
+
+  /* Remove English subtitle entirely */
+  header.top .brand small{display:none}
+
   .icon-btn{
-    background:none; border:1.5px solid var(--line-strong); color:var(--chalk-dim);
-    border-radius:10px; padding:8px 12px; font-size:13px; font-family:inherit;
-    cursor:pointer;
+    background:var(--white);color:var(--navy);
+    border:2px solid var(--navy);border-radius:11px;
+    padding:8px 11px;font-size:12px;font-weight:800;font-family:inherit;
+    cursor:pointer;box-shadow:0 3px 0 rgba(18,58,90,.18);
   }
-  .icon-btn:active{ background:var(--line); }
+  .icon-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(18,58,90,.18)}
 
-  .screen{ display:none; animation:fade .25s ease; }
-  .screen.active{ display:block; }
-  @keyframes fade{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+  .screen{display:none;animation:fade .2s ease}
+  .screen.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
-  /* ---- home: course list ---- */
   .course-card{
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
-    background:var(--board-2); border:1px solid var(--line);
-    border-radius:var(--radius); padding:16px 16px; margin-bottom:12px;
-    cursor:pointer;
+    display:flex;align-items:center;gap:10px;
+    background:var(--blue-panel);
+    border:2px solid var(--navy);
+    border-radius:16px;
+    padding:12px 14px;margin-bottom:10px;
+    cursor:pointer;box-shadow:0 3px 0 rgba(18,58,90,.10);
   }
-  .course-card:active{ background:var(--board-3); }
-  .course-card .name{ font-size:17px; font-weight:700; }
-  .course-card .meta{ font-size:12px; color:var(--chalk-dim); margin-top:4px; }
-  .course-card .go{ color:var(--chalk-yellow); font-size:20px; }
+  .course-card .name{font-size:16px;font-weight:900;color:var(--navy)}
+  .course-card .meta{font-size:11px;color:var(--muted);margin-top:3px}
+  .course-card .go{color:var(--navy);font-size:22px;font-weight:900}
   .course-card .del{
-    background:none;border:none;color:var(--ink-red-soft);font-size:12px;
-    padding:6px 8px; margin-left:4px;
+    background:var(--red-soft);border:1px solid #E5A19B;color:var(--red);
+    border-radius:8px;font-size:11px;font-weight:800;padding:5px 7px;
   }
 
   .empty-note{
-    border:1.5px dashed var(--line-strong); border-radius:var(--radius);
-    padding:28px 18px; text-align:center; color:var(--chalk-dim); font-size:14px;
-    line-height:1.8;
+    border:2px dashed #82B9CB;border-radius:17px;
+    padding:25px 16px;text-align:center;color:var(--muted);
+    font-size:13px;line-height:1.8;background:var(--blue-panel);
   }
 
   .primary-btn{
-    width:100%; padding:15px; border-radius:12px; border:none;
-    background:var(--chalk-yellow); color:#1b2e22; font-weight:700; font-size:15px;
-    font-family:inherit; cursor:pointer; letter-spacing:1px;
+    width:100%;padding:12px 14px;border-radius:13px;
+    border:2px solid var(--navy);
+    background:var(--yellow);color:var(--navy);
+    font-weight:900;font-size:14px;font-family:inherit;cursor:pointer;
+    letter-spacing:.4px;box-shadow:0 3px 0 rgba(18,58,90,.18);
   }
-  .primary-btn:active{ transform:scale(0.98); }
-  .primary-btn.ghost{
-    background:transparent; color:var(--chalk); border:1.5px solid var(--line-strong);
+  .primary-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(18,58,90,.18)}
+  .primary-btn.ghost{background:var(--blue-panel);color:var(--navy)}
+  .primary-btn.danger{background:var(--red);color:var(--white)}
+  .primary-btn:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
+
+  .stack{display:flex;flex-direction:column;gap:8px;margin-top:13px}
+  .row2{display:flex;gap:8px}
+  .row2>*{flex:1}
+
+  label.field-label{
+    display:block;font-size:11px;letter-spacing:1.5px;color:var(--navy);
+    font-weight:900;margin:15px 0 7px;
   }
-  .primary-btn.danger{ background:var(--ink-red); color:var(--chalk); }
-  .primary-btn:disabled{ opacity:0.4; }
-
-  .stack{ display:flex; flex-direction:column; gap:10px; margin-top:16px; }
-  .row2{ display:flex; gap:10px; }
-  .row2 > *{ flex:1; }
-
-  /* ---- upload screen ---- */
-  label.field-label{ display:block; font-size:12px; letter-spacing:2px; color:var(--chalk-yellow); margin:18px 0 8px; }
   input[type=text]{
-    width:100%; padding:13px 14px; border-radius:10px; border:1.5px solid var(--line-strong);
-    background:var(--board-2); color:var(--chalk); font-size:15px; font-family:inherit;
+    width:100%;padding:11px 12px;border-radius:11px;
+    border:2px solid var(--line);background:var(--blue-panel);color:var(--ink);
+    font-size:14px;font-family:inherit;
   }
-  input[type=text]:focus{ outline:none; border-color:var(--chalk-yellow); }
+  input[type=text]:focus{outline:none;border-color:var(--turq)}
+
   .file-drop{
-    border:1.5px dashed var(--line-strong); border-radius:var(--radius);
-    padding:26px 14px; text-align:center; color:var(--chalk-dim); font-size:13px;
-    position:relative; line-height:1.7;
+    border:2px dashed #78B7C6;border-radius:16px;
+    padding:22px 13px;text-align:center;color:var(--muted);font-size:12px;
+    background:var(--blue-panel);position:relative;line-height:1.7;
   }
-  .file-drop input[type=file]{
-    position:absolute; inset:0; opacity:0; cursor:pointer;
-  }
-  .file-drop.has-file{ border-style:solid; color:var(--chalk); border-color:var(--chalk-yellow); }
-  .hint{ font-size:12px; color:var(--chalk-dim); line-height:1.8; margin-top:8px;}
-  .hint b{ color:var(--chalk); }
+  .file-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .file-drop.has-file{border-style:solid;color:var(--navy);border-color:var(--turq);background:var(--turq-soft)}
+  .hint{font-size:11px;color:var(--muted);line-height:1.75;margin-top:7px}
+  .hint b{color:var(--navy)}
 
-  .preview-table{ margin-top:14px; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  .preview-table{
+    margin-top:12px;border:2px solid var(--navy);border-radius:14px;
+    overflow:hidden;background:var(--blue-panel)
+  }
   .preview-row{
-    display:flex; justify-content:space-between; padding:10px 14px;
-    border-bottom:1px solid var(--line); font-size:13px;
+    display:flex;justify-content:space-between;padding:8px 12px;
+    border-bottom:1px solid var(--line);font-size:12px
   }
-  .preview-row:last-child{ border-bottom:none; }
-  .preview-row .cls{ color:var(--chalk-yellow); font-weight:700; }
-  .preview-row .cnt{ color:var(--chalk-dim); }
-
+  .preview-row:last-child{border-bottom:none}
+  .preview-row .cls{color:var(--navy);font-weight:900}
+  .preview-row .cnt{color:var(--muted)}
   .error-box{
-    background:rgba(193,68,60,0.15); border:1px solid var(--ink-red);
-    color:var(--ink-red-soft); padding:12px 14px; border-radius:10px; font-size:13px;
-    margin-top:12px; line-height:1.7;
+    background:var(--red-soft);border:1px solid var(--red);color:#98453E;
+    padding:10px 12px;border-radius:11px;font-size:12px;margin-top:10px;line-height:1.7
   }
 
-  /* ---- attendance screen ---- */
-  .course-header{ margin-bottom:6px; }
-  .course-header .title{ font-size:20px; font-weight:700; }
-  .course-header .sub{ font-size:12px; color:var(--chalk-dim); margin-top:3px; }
+  .course-header{
+    background:var(--navy);color:var(--white);
+    border-radius:16px;padding:13px 15px;margin-bottom:10px;
+    border:2px solid var(--navy);box-shadow:0 4px 0 rgba(18,58,90,.13);
+  }
+  .course-header .title{font-size:19px;font-weight:900}
+  .course-header .sub{font-size:11px;color:#D7E8EF;margin-top:3px}
 
   .summary-bar{
-    display:flex; justify-content:space-between; align-items:center;
-    background:var(--board-2); border-radius:10px; padding:10px 14px; margin:14px 0;
-    font-size:13px; color:var(--chalk-dim);
+    display:flex;justify-content:space-between;align-items:center;
+    background:var(--blue-panel);border:2px solid var(--navy);
+    border-radius:12px;padding:8px 12px;margin:10px 0;
+    font-size:12px;color:var(--muted);box-shadow:0 2px 0 rgba(18,58,90,.07)
   }
-  .summary-bar b{ color:var(--chalk-yellow); font-size:15px; }
+  .summary-bar b{color:var(--navy);font-size:15px}
+  .summary-bar span:last-child b{color:var(--red)}
 
-  .class-block{ margin-bottom:20px; }
+  /* Keep the current class visible while scrolling, without adding a complex sidebar. */
+  /* One student per row: large enough for teachers with presbyopia. */
+  .student-grid{grid-template-columns:1fr;gap:7px}
+  .student-chip{gap:11px;padding:9px 10px;min-height:52px}
+  .student-chip .seat{width:42px;height:42px;border-radius:9px;font-size:17px}
+  .student-chip .seat::after{font-size:15px}
+  .student-chip .nm{font-size:19px;font-weight:800;line-height:1.25;overflow:visible;text-overflow:clip;white-space:normal}
+  .student-chip.absent .seat::after{font-size:21px}
+
+  /* One class = one compact horizontal card; students flow in a tight grid. */
+  #classContainer{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    padding-top:4px;
+  }
+
+  .class-block{
+    margin:0;
+    background:var(--blue-panel);
+    border:2px solid var(--navy);
+    border-radius:16px;
+    padding:10px;
+    box-shadow:0 3px 0 rgba(18,58,90,.09);
+    min-width:0;
+  }
+
   .class-title{
-    display:flex; align-items:center; gap:8px; margin-bottom:8px;
-    font-family:'Klee One'; font-size:16px; color:var(--chalk-yellow); font-weight:600;
+    display:flex;align-items:center;gap:7px;margin-bottom:8px;
+    padding:6px 9px;border-radius:10px;
+    background:var(--turq);color:var(--navy);
+    font-size:14px;font-weight:900;
   }
-  .class-title .dash{ flex:1; border-top:1.5px dashed var(--line-strong); }
+  .class-title .dash{display:none}
 
-  .student-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .student-grid{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
   .student-chip{
-    display:flex; align-items:center; gap:10px;
-    border:1.5px solid var(--line-strong); border-radius:11px; padding:11px 10px;
-    background:var(--board-2); cursor:pointer; user-select:none;
-    min-height:48px;
+    display:flex;align-items:center;gap:12px;
+    border:2px solid var(--line);border-radius:12px;padding:10px 12px;
+    background:var(--white);cursor:pointer;user-select:none;min-height:56px;
+    transition:.1s ease;
   }
+  .student-chip:active{transform:scale(.98)}
+
   .student-chip .seat{
-    width:30px; height:30px; border-radius:50%; flex:none;
-    display:flex; align-items:center; justify-content:center;
-    font-size:12px; font-weight:700; border:1.5px solid var(--chalk-dim); color:var(--chalk);
+    width:44px;height:44px;border-radius:9px;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;font-weight:900;border:2px solid var(--navy);
+    color:var(--navy);background:var(--yellow)
   }
-  .student-chip .nm{ font-size:13px; line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .student-chip.absent{
-    border-color:var(--ink-red); background:rgba(193,68,60,0.16);
+  .student-chip .seat::after{content:"✓";font-size:15px}
+  .student-chip .nm{
+    font-size:19px;line-height:1.3;font-weight:700;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)
   }
+  .student-chip.absent{border-color:#E0A09A;background:var(--red-soft)}
   .student-chip.absent .seat{
-    border-color:var(--ink-red); color:var(--ink-red-soft); background:rgba(193,68,60,0.25);
+    border-color:var(--red);color:var(--white);background:var(--red)
   }
-  .student-chip.absent .seat::after{ content:"✕"; }
-  .student-chip:not(.absent) .seat::after{ content:"✓"; color:#8fbf9f; }
-  .student-chip.absent .nm{ color:var(--ink-red-soft); text-decoration:line-through; }
+  .student-chip.absent .seat::after{content:"×";font-size:22px}
+  .student-chip.absent .nm{color:#98453E;text-decoration:line-through}
 
   .sticky-actions{
-    position:sticky; bottom:0; padding:14px 0 4px; margin-top:8px;
-    background:linear-gradient(to top, var(--board) 65%, transparent);
+    position:sticky;bottom:0;padding:11px 0 4px;margin-top:11px;
+    background:linear-gradient(to top,var(--blue-bg) 72%,transparent)
   }
 
-  /* ---- result screen ---- */
-  .stamp{
-    position:relative; margin:6px auto 18px; width:fit-content;
-  }
+  .stamp{position:relative;margin:5px auto 14px;width:fit-content}
   .stamp .seal{
-    display:inline-block; border:3px solid var(--ink-red); color:var(--ink-red);
-    padding:6px 18px; border-radius:8px; font-family:'Klee One'; font-size:15px;
-    font-weight:600; transform:rotate(-6deg); letter-spacing:2px;
+    display:inline-block;border:2px solid var(--red);color:var(--red);
+    background:var(--blue-panel);padding:5px 15px;border-radius:9px;
+    font-size:13px;font-weight:900;transform:rotate(-3deg);letter-spacing:1px
   }
   .message-box{
-    background:var(--chalk); color:#20321f; border-radius:var(--radius);
-    padding:18px 16px; font-size:14px; line-height:2; white-space:pre-wrap;
-    font-family:'Klee One','Noto Sans TC',sans-serif;
-    box-shadow: 0 6px 0 rgba(0,0,0,0.18);
+    background:var(--blue-panel);color:var(--ink);
+    border:2px solid var(--navy);border-radius:16px;
+    padding:15px 14px;font-size:13px;line-height:1.9;white-space:pre-wrap;
+    font-family:'Noto Sans TC','Klee One',sans-serif;
+    box-shadow:0 4px 0 rgba(18,58,90,.10)
   }
+
   .toast{
-    position:fixed; left:50%; bottom:28px; transform:translateX(-50%);
-    background:var(--chalk-yellow); color:#1b2e22; padding:10px 18px;
-    border-radius:30px; font-size:13px; font-weight:700; z-index:50;
-    opacity:0; pointer-events:none; transition:opacity .2s;
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+    background:var(--navy);color:var(--yellow);padding:9px 16px;
+    border:1px solid var(--yellow);border-radius:25px;font-size:12px;font-weight:900;
+    z-index:50;opacity:0;pointer-events:none;transition:opacity .2s
   }
-  .toast.show{ opacity:1; }
-  a.line-link{ text-decoration:none; }
+  .toast.show{opacity:1}
+  a.line-link{text-decoration:none}
+
+
+  .current-class-bar{
+    position:sticky;top:0;z-index:25;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    width:100%;
+    background:var(--red);color:var(--white);
+    border:2px solid var(--navy);border-radius:12px;
+    padding:8px 12px;margin:10px 0 10px;
+    font-size:14px;font-weight:900;
+    box-shadow:0 3px 0 rgba(18,58,90,.16);
+  }
+  .current-class-main{display:flex;align-items:baseline;gap:8px;min-width:0}
+  .current-class-bar .label{font-size:11px;color:#FBECE9;font-weight:900;white-space:nowrap}
+  .current-class-bar .value{font-size:20px;letter-spacing:.5px;white-space:nowrap}
+  .current-class-meta{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:13px;font-weight:900}
+  .current-class-meta .time{font-variant-numeric:tabular-nums}
+  .current-class-meta .period{font-size:12px}
+  .class-title{background:var(--turq);}
+  .auto-course-name{
+    width:100%;padding:12px 13px;border-radius:12px;border:2px solid var(--navy);
+    background:var(--yellow-soft);color:var(--navy);font-size:16px;font-weight:900;
+  }
+  .google-settings-card .big-sub{font-size:12px;line-height:1.8}
+  .google-settings-card .big-sub b{color:var(--navy)}
+  .guide-step{display:grid;grid-template-columns:30px 1fr;gap:9px;align-items:start;margin-top:13px}
+  .guide-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:var(--navy);color:var(--white);font-weight:900;font-size:14px}
+  .guide-step b{font-size:13px;color:var(--navy)}
+  .guide-text{font-size:11px;color:var(--muted);line-height:1.75;margin-top:2px}
+  .setup-details{margin-top:14px;border-top:2px solid var(--line);padding-top:10px}
+  .setup-details summary{cursor:pointer;color:var(--navy);font-weight:900;font-size:13px}
+  .setup-body{padding-top:2px}
+  .guide-step.compact{margin-top:11px}
+  .small-btn{margin-top:12px;padding:9px 11px;font-size:12px}
+  .guide-code-note{font-size:11px;color:var(--muted);margin-top:5px}
+  .apps-script-code{display:none;white-space:pre-wrap;max-height:180px;overflow:auto;margin:9px 0 0;padding:10px;
+    border-radius:10px;background:#16384E;color:#F9FCFD;font:10px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
+  .setup-details.show-code .apps-script-code{display:block}
+  .auto-google-note{font-size:11px;color:var(--muted);text-align:center;line-height:1.6}
+  .auto-google-note.ready{color:var(--navy);font-weight:800}
+  .auto-google-note.off{color:var(--muted)}
+
+  .settings-card{
+    background:var(--blue-panel);border:2px solid var(--navy);border-radius:16px;
+    padding:13px 14px;margin-bottom:12px;
+  }
+  .settings-title{font-size:18px;font-weight:900;color:var(--navy);margin-bottom:4px}
+  .settings-sub{font-size:11px;color:var(--muted);line-height:1.7}
+  .period-row{
+    display:grid;grid-template-columns:48px 1fr 12px 1fr;align-items:center;gap:7px;
+    margin-top:8px;
+  }
+  .period-row .pname{font-size:14px;font-weight:900;color:var(--navy)}
+  .period-row input[type=time]{
+    width:100%;padding:8px 7px;border-radius:9px;border:2px solid var(--line);
+    background:var(--white);color:var(--ink);font:700 14px inherit;
+  }
+  .period-row input[type=time]:focus{outline:none;border-color:var(--turq)}
+  .settings-divider{height:1px;background:var(--line);margin:14px 0}
+  .google-note{font-size:11px;line-height:1.7;color:var(--muted);margin-top:6px}
+  .google-note b{color:var(--navy)}
+  .account-warning{margin-top:10px;padding:11px 12px;border-radius:11px;background:var(--red-soft);border:2px solid var(--red);color:#7F3833;font-size:12px;line-height:1.75}
+  .google-test-result{margin-top:8px;font-size:12px;line-height:1.7;font-weight:800}
+  .google-test-result.ok{color:#237A55}
+  .google-test-result.err{color:#A33F38}
+  .save-google-btn.saving{opacity:.65}
+
+  @media(max-width:560px){
+    .wrap{padding:10px 10px 6px}
+    header.top{min-height:64px;border-radius:16px;padding:10px 12px}
+    header.top .brand{font-size:22px}
+    .row2{flex-direction:row}
+    .student-chip .nm{font-size:18px}
+    .current-class-bar{padding:8px 10px;margin:8px 0}
+    .current-class-bar .value{font-size:18px}
+    .current-class-meta{gap:5px;font-size:12px}
+    .current-class-meta .period{font-size:11px}
+  }
 </style>
 
 <script>
@@ -230,8 +361,8 @@ if ('serviceWorker' in navigator) {
 <div class="wrap">
 
   <header class="top">
-    <div class="brand">點名冊<small>ROLL CALL LEDGER</small></div>
-    <button class="icon-btn" id="homeBtn">課程列表</button>
+    <div class="brand">跨群選修點名</div>
+    <div style="display:flex;gap:7px;align-items:center"><button class="icon-btn" id="settingsBtn">設定</button><button class="icon-btn" id="homeBtn">課程列表</button></div>
   </header>
 
   <!-- HOME -->
@@ -250,7 +381,8 @@ if ('serviceWorker' in navigator) {
     </div>
 
     <label class="field-label">課程名稱</label>
-    <input type="text" id="courseNameInput" placeholder="例如：多媒體概論（三年級）" />
+    <div class="auto-course-name" id="courseNameAuto">選擇 .xlsx 檔案後，會自動使用檔名作為課程名稱</div>
+    <div class="hint">例如：<b>多媒體概論.xlsx</b> → 課程名稱會自動變成「多媒體概論」</div>
 
     <label class="field-label">試算表檔案（.xlsx / .csv）</label>
     <div class="file-drop" id="fileDrop">
@@ -271,6 +403,57 @@ if ('serviceWorker' in navigator) {
     </div>
   </section>
 
+  <!-- SETTINGS -->
+  <section class="screen" id="screen-settings">
+    <div class="course-header">
+      <div class="title">設定</div>
+      <div class="sub">設定上課節次與 Google 試算表，資料會保存在這台裝置。</div>
+    </div>
+
+    <div class="settings-card">
+      <div class="settings-title">上課節次時間</div>
+      <div class="settings-sub">程式會依現在時間，自動判斷目前是第 1～8 節。若目前時間不在任何區間，會顯示「非上課時段」。</div>
+      <div id="periodSettings"></div>
+    </div>
+
+    <div class="settings-card google-settings-card">
+      <div class="settings-title">Google 試算表（選填）</div>
+      <div class="settings-sub big-sub">如果你希望按「產生訊息」時，也自動把本次點名寫進 Google 試算表，請完成下面設定。<br><b>不設定也可以正常點名與產生 LINE 訊息。</b></div>
+
+      <div class="guide-step">
+        <div class="guide-num">1</div>
+        <div><b>先建立一份 Google 試算表</b><div class="guide-text">建議使用一份空白試算表，之後每次點名會在右邊新增一欄，不會覆蓋以前的紀錄。</div></div>
+      </div>
+
+      <label class="field-label">① Google 試算表網址</label>
+      <input type="text" id="googleSheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/..." />
+      <div class="account-warning"><b>⚠️ 重要：請使用你自己的 Google 帳號建立這份試算表。</b><br>不要使用學校帳號建立的試算表。請用你自己的 Google 帳號建立試算表與 Apps Script，避免學校網域的權限限制。</div>
+
+      <details class="setup-details">
+        <summary>第一次使用？按這裡看完整設定方法</summary>
+        <div class="setup-body">
+          <div class="guide-step compact"><div class="guide-num">2</div><div><b>打開試算表 → 擴充功能 → Apps Script</b><div class="guide-text">會開啟一個新的 Apps Script 頁面。</div></div></div>
+          <div class="guide-step compact"><div class="guide-num">3</div><div><b>把 Apps Script 裡原本的程式全部刪掉</b><div class="guide-text">再貼上本程式提供的 Google 寫入程式。</div></div></div>
+          <button type="button" class="primary-btn ghost small-btn" id="copyAppsScriptBtn">複製 Google 寫入程式</button>
+          <div class="guide-code-note">複製後，貼到 Apps Script，按「儲存」。</div>
+          <pre id="appsScriptCode" class="apps-script-code"></pre>
+          <div class="guide-step compact"><div class="guide-num">4</div><div><b>按「部署」→「新增部署作業」→「網頁應用程式」</b><div class="guide-text">執行身分選「我」；誰可以存取請選擇可以讓你的點名網頁使用的選項（通常是「任何人」）。</div></div></div>
+          <div class="guide-step compact"><div class="guide-num">5</div><div><b>複製部署後的網址</b><div class="guide-text">網址通常會長得像：<code>https://script.google.com/macros/s/.../exec</code></div></div></div>
+          <label class="field-label">② Google 寫入服務網址（只需設定一次）</label>
+          <input type="text" id="googleLogUrlInput" placeholder="https://script.google.com/macros/s/.../exec" />
+          <button type="button" class="primary-btn ghost small-btn" id="testGoogleBtn">🟢 測試 Google 連線</button>
+          <div class="google-test-result" id="googleTestResult"></div>
+          <div class="google-note"><b>設定完成後：</b>平常點名時不需要再按「記錄到 Google 試算表」，只要按「產生訊息」，系統就會一併送出 Google 紀錄。</div>
+        </div>
+      </details>
+    </div>
+
+    <div class="stack">
+      <button class="primary-btn" id="saveSettingsBtn">儲存設定</button>
+      <button class="primary-btn ghost" id="backFromSettingsBtn">← 返回</button>
+    </div>
+  </section>
+
   <!-- ATTENDANCE -->
   <section class="screen" id="screen-attend">
     <div class="course-header">
@@ -281,14 +464,21 @@ if ('serviceWorker' in navigator) {
       <span>共 <b id="totalCount">0</b> 人</span>
       <span>未出席 <b id="absentCount" style="color:var(--ink-red-soft)">0</b> 人</span>
     </div>
-    <div id="classContainer"></div>
+    <div class="current-class-bar" id="currentClassBar" aria-live="polite">
+      <div class="current-class-main">
+        <span class="label">目前班級</span>
+        <span class="value" id="currentClassName">—</span>
+      </div>
+      <div class="current-class-meta">
+        <span class="time" id="liveClock">--:--</span>
+        <span class="period" id="livePeriod">第?節</span>
+      </div>
+    </div>
+    <div id="classContainer" aria-label="依班級整合的學生名單"></div>
 
     <div class="sticky-actions stack">
       <button class="primary-btn" id="genMsgBtn">產生訊息</button>
-      <div class="row2">
-        <button class="primary-btn ghost" id="reuploadBtn">重新上傳名單</button>
-        <button class="primary-btn ghost danger" id="deleteCourseBtn">刪除課程</button>
-      </div>
+      <div class="auto-google-note" id="autoGoogleNote">已設定 Google 時，「產生訊息」會自動記錄點名。</div>
     </div>
   </section>
 
@@ -314,7 +504,7 @@ if ('serviceWorker' in navigator) {
 <script>
 (function(){
   const $ = (id) => document.getElementById(id);
-  const screens = ['home','upload','attend','result'];
+  const screens = ['home','upload','attend','result','settings'];
   function showScreen(name){
     screens.forEach(s => $('screen-'+s).classList.toggle('active', s===name));
     window.scrollTo(0,0);
@@ -327,6 +517,7 @@ if ('serviceWorker' in navigator) {
   let currentCourseId = null;
   let currentRoster = null; // { name, classes: { className: [{seat,name}] } }
   let parsedUpload = null;  // classes object staged from file, before save
+  let pendingCourseName = '';
 
   // ---------- storage helpers ----------
   // Browser persistence: IndexedDB. This works on HTTPS/PWA and keeps
@@ -437,7 +628,7 @@ if ('serviceWorker' in navigator) {
           <div class="name">${escapeHtml(item.name)}</div>
           <div class="meta">${item.classCount} 個班級・共 ${item.studentCount} 人</div>
         </div>
-        <button class="del" data-id="${item.id}">刪除</button>
+        <button type="button" class="del" data-id="${item.id}">刪除</button>
         <div class="go">›</div>
       `;
       card.addEventListener('click', (e) => {
@@ -445,12 +636,16 @@ if ('serviceWorker' in navigator) {
         openCourse(item.id);
       });
       card.querySelector('.del').addEventListener('click', async (e) => {
+        e.preventDefault();
         e.stopPropagation();
-        if(!confirm(`確定要刪除課程「${item.name}」的名單嗎？`)) return;
-        await deleteRoster(item.id);
+        const ok = window.confirm(`確定要刪除課程「${item.name}」的名單嗎？\n\n刪除後將無法在此裝置上復原。`);
+        if(!ok) return;
+        const deleted = await deleteRoster(item.id);
+        if(deleted === false){ toast('刪除失敗，請再試一次'); return; }
         const idx = await getIndex();
         await setIndex(idx.filter(c => c.id !== item.id));
-        renderHome();
+        await renderHome();
+        toast('課程已刪除');
       });
       container.appendChild(card);
     });
@@ -474,7 +669,8 @@ if ('serviceWorker' in navigator) {
 
   // ---------- upload screen ----------
   function resetUploadScreen(){
-    $('courseNameInput').value = '';
+    pendingCourseName = '';
+    $('courseNameAuto').textContent = '選擇 .xlsx 檔案後，會自動使用檔名作為課程名稱';
     $('fileInput').value = '';
     $('fileDropText').textContent = '點擊或拖曳檔案到這裡上傳';
     $('fileDrop').classList.remove('has-file');
@@ -534,6 +730,8 @@ if ('serviceWorker' in navigator) {
         const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
         const classes = parseRows(rows);
         parsedUpload = classes;
+        pendingCourseName = String(file.name || '').replace(/\.[^.]+$/, '').trim() || '未命名課程';
+        $('courseNameAuto').textContent = pendingCourseName;
         $('uploadError').innerHTML = '';
         renderPreview(classes);
         $('fileDropText').textContent = '✓ ' + file.name;
@@ -565,15 +763,14 @@ if ('serviceWorker' in navigator) {
   $('fileInput').addEventListener('change', (e) => {
     if(e.target.files[0]) handleFile(e.target.files[0]);
   });
-  $('courseNameInput').addEventListener('input', updateSaveEnabled);
   function updateSaveEnabled(){
-    $('saveCourseBtn').disabled = !(parsedUpload && $('courseNameInput').value.trim());
+    $('saveCourseBtn').disabled = !(parsedUpload && pendingCourseName);
   }
 
   $('saveCourseBtn').addEventListener('click', async () => {
-    const name = $('courseNameInput').value.trim();
+    const name = pendingCourseName.trim();
     if(!name || !parsedUpload) return;
-    const id = currentCourseId && currentRosterMatchesReupload ? currentCourseId : ('c' + Date.now());
+    const id = 'c' + Date.now();
     const rosterData = { name, classes: parsedUpload };
     const ok = await setRoster(id, rosterData);
     if(!ok){ toast('儲存失敗，請再試一次'); return; }
@@ -584,56 +781,71 @@ if ('serviceWorker' in navigator) {
     const entry = { id, name, studentCount, classCount };
     if(existingPos >= 0) idx[existingPos] = entry; else idx.push(entry);
     await setIndex(idx);
-    currentRosterMatchesReupload = false;
     openCourse(id);
   });
 
-  let currentRosterMatchesReupload = false;
-  $('reuploadBtn').addEventListener('click', () => {
-    resetUploadScreen();
-    $('courseNameInput').value = currentRoster ? currentRoster.name : '';
-    currentRosterMatchesReupload = true;
-    showScreen('upload');
-  });
-
-  $('deleteCourseBtn').addEventListener('click', async () => {
-    if(!currentCourseId) return;
-    if(!confirm(`確定要刪除課程「${currentRoster.name}」的名單嗎？`)) return;
-    await deleteRoster(currentCourseId);
-    const idx = await getIndex();
-    await setIndex(idx.filter(c => c.id !== currentCourseId));
-    currentCourseId = null; currentRoster = null;
-    renderHome(); showScreen('home');
-  });
-
   // ---------- attendance screen ----------
+  let classScrollHandler = null;
+  let classResizeHandler = null;
+
   function renderAttendance(){
+    if(classScrollHandler) window.removeEventListener('scroll', classScrollHandler);
+    if(classResizeHandler) window.removeEventListener('resize', classResizeHandler);
     $('attendCourseName').textContent = currentRoster.name;
+    updateLiveClock();
+
     const container = $('classContainer');
     container.innerHTML = '';
-    Object.keys(currentRoster.classes).forEach(cls => {
-      const block = document.createElement('div');
-      block.className = 'class-block';
-      block.innerHTML = `<div class="class-title">${escapeHtml(cls)}<div class="dash"></div></div>
-        <div class="student-grid"></div>`;
-      const grid = block.querySelector('.student-grid');
-      currentRoster.classes[cls].forEach(stu => {
-        const chip = document.createElement('div');
-        chip.className = 'student-chip' + (stu.absent ? ' absent' : '');
-        chip.innerHTML = `<span class="seat">${escapeHtml(stu.seat)}</span><span class="nm">${escapeHtml(stu.name || '座號'+stu.seat)}</span>`;
-        chip.addEventListener('click', () => {
-          stu.absent = !stu.absent;
-          chip.classList.toggle('absent', stu.absent);
-          updateSummary();
-          // Save the current attendance state locally.
-          if(currentCourseId && currentRoster){
-            setRoster(currentCourseId, currentRoster);
-          }
+    Object.keys(currentRoster.classes)
+      .sort((a,b) => String(a).localeCompare(String(b),'zh-Hant',{numeric:true}))
+      .forEach(cls => {
+        const block = document.createElement('div');
+        block.className = 'class-block';
+        block.dataset.className = cls;
+        block.innerHTML = `<div class="class-title">${escapeHtml(cls)}<div class="dash"></div></div>
+          <div class="student-grid"></div>`;
+        const grid = block.querySelector('.student-grid');
+
+        currentRoster.classes[cls].forEach(stu => {
+          const chip = document.createElement('div');
+          chip.className = 'student-chip' + (stu.absent ? ' absent' : '');
+          chip.innerHTML = `<span class="seat">${escapeHtml(stu.seat)}</span><span class="nm">${escapeHtml(stu.name || '座號'+stu.seat)}</span>`;
+          chip.addEventListener('click', () => {
+            stu.absent = !stu.absent;
+            chip.classList.toggle('absent', stu.absent);
+            updateSummary();
+            if(currentCourseId && currentRoster) setRoster(currentCourseId, currentRoster);
+          });
+          grid.appendChild(chip);
         });
-        grid.appendChild(chip);
+        container.appendChild(block);
       });
-      container.appendChild(block);
-    });
+
+    const blocks = [...container.querySelectorAll('.class-block')];
+    const setCurrentClass = (name) => { $('currentClassName').textContent = name || '—'; };
+
+    function refreshCurrentClass(){
+      if(!blocks.length) return;
+      const bar = $('currentClassBar');
+      const barBottom = bar.getBoundingClientRect().bottom + 8;
+      let current = blocks[0];
+
+      for(const block of blocks){
+        if(block.getBoundingClientRect().top <= barBottom) current = block;
+        else break;
+      }
+      setCurrentClass(current.dataset.className);
+    }
+
+    if(blocks.length){
+      setCurrentClass(blocks[0].dataset.className);
+      classScrollHandler = refreshCurrentClass;
+      window.addEventListener('scroll', classScrollHandler, {passive:true});
+      classResizeHandler = refreshCurrentClass;
+      window.addEventListener('resize', classResizeHandler);
+      refreshCurrentClass();
+    }
+
     updateSummary();
   }
 
@@ -647,6 +859,218 @@ if ('serviceWorker' in navigator) {
     $('absentCount').textContent = absent;
   }
 
+
+  // ---------- Settings / period / Google logging ----------
+  const GOOGLE_SHEET_KEY = 'google-sheet-url';
+  const GOOGLE_LOG_KEY = 'google-log-url';
+  const PERIODS_KEY = 'attendance-periods';
+  const DEFAULT_PERIODS = [
+    ['08:05','08:55'],
+    ['09:10','10:00'],
+    ['10:10','11:00'],
+    ['11:10','12:00'],
+    ['13:00','13:50'],
+    ['14:00','14:50'],
+    ['15:05','15:55'],
+    ['16:05','16:55']
+  ];
+
+  const GOOGLE_APPS_SCRIPT_CODE = "/**\n * 跨群選修點名｜Google Apps Script\n *\n * 用途：讓 index.html 把點名結果寫進指定的 Google 試算表。\n * Web App 以「執行身分：我」部署後，網頁把試算表網址與點名資料 POST 過來。\n *\n * 試算表格式：\n * A 欄：班級\n * B 欄：座號\n * C 欄：姓名\n * D 欄開始：每次點名一個新欄，第一列寫「日期｜第X節」\n * 例如：D1 = 2026/09/06｜第3節\n *       D2:Dn = 出席／未出席\n */\n\nfunction doGet() {\n  return ContentService\n    .createTextOutput('跨群選修點名 Google 紀錄服務正常運作')\n    .setMimeType(ContentService.MimeType.TEXT);\n}\n\nfunction doPost(e) {\n  const lock = LockService.getScriptLock();\n  lock.waitLock(30000);\n  try {\n    if (!e || !e.postData || !e.postData.contents) {\n      return jsonOutput({ok:false, message:'沒有收到資料'});\n    }\n\n    const data = JSON.parse(e.postData.contents);\n    const sheetUrl = String(data.sheetUrl || '').trim();\n    if (!sheetUrl) return jsonOutput({ok:false, message:'缺少 Google 試算表網址'});\n\n    const ss = SpreadsheetApp.openByUrl(sheetUrl);\n    const sheet = ss.getSheets()[0];\n\n    const rows = Array.isArray(data.rows) ? data.rows : [];\n    if (!rows.length) return jsonOutput({ok:false, message:'沒有學生資料'});\n\n    const date = String(data.date || '').trim() || Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy/MM/dd');\n    const period = String(data.period || '').trim() || '非上課時段';\n    const periodLabel = period === '非上課時段' ? period : '第' + period + '節';\n    const header = date + '｜' + periodLabel;\n\n    // 確保前三欄標題存在。\n    if (sheet.getLastRow() === 0) {\n      sheet.getRange(1, 1, 1, 3).setValues([['班級', '座號', '姓名']]);\n    } else {\n      const first = sheet.getRange(1, 1, 1, 3).getValues()[0];\n      if (!first[0] && !first[1] && !first[2]) {\n        sheet.getRange(1, 1, 1, 3).setValues([['班級', '座號', '姓名']]);\n      }\n    }\n\n    // 每次點名都新增一欄，不覆蓋既有紀錄。\n    const newCol = Math.max(sheet.getLastColumn() + 1, 4);\n    sheet.getRange(1, newCol).setValue(header);\n\n    // 讀取既有學生資料，依「班級 + 座號」找學生所在列。\n    const lastRow = Math.max(sheet.getLastRow(), 2);\n    const existing = lastRow >= 2 ? sheet.getRange(2, 1, lastRow - 1, 3).getValues() : [];\n    const rowMap = new Map();\n    existing.forEach((r, i) => {\n      const key = makeKey(r[0], r[1]);\n      if (key) rowMap.set(key, i + 2);\n    });\n\n    // 若新名單出現原本沒有的學生，就加到最下面。\n    const newStudents = [];\n    rows.forEach(item => {\n      const key = makeKey(item.className, item.seat);\n      if (key && !rowMap.has(key)) {\n        newStudents.push([\n          String(item.className || ''),\n          String(item.seat || ''),\n          String(item.name || '')\n        ]);\n      }\n    });\n\n    if (newStudents.length) {\n      const startRow = Math.max(sheet.getLastRow() + 1, 2);\n      sheet.getRange(startRow, 1, newStudents.length, 3).setValues(newStudents);\n      newStudents.forEach((r, i) => {\n        const key = makeKey(r[0], r[1]);\n        rowMap.set(key, startRow + i);\n      });\n    }\n\n    // 寫入本次點名狀態。\n    rows.forEach(item => {\n      const key = makeKey(item.className, item.seat);\n      if (!key) return;\n      const row = rowMap.get(key);\n      if (!row) return;\n      sheet.getRange(row, newCol).setValue(String(item.status || ''));\n    });\n\n    // 簡單格式化，讓期末查看比較清楚。\n    sheet.getRange(1, 1, 1, newCol).setFontWeight('bold');\n    sheet.getRange(1, newCol).setWrap(true);\n    sheet.setFrozenRows(1);\n    sheet.setFrozenColumns(3);\n    sheet.autoResizeColumns(1, 3);\n\n    return jsonOutput({ok:true, message:'已新增一欄點名紀錄', column:newCol, header:header});\n  } catch (err) {\n    return jsonOutput({ok:false, message:String(err && err.message ? err.message : err)});\n  } finally {\n    lock.releaseLock();\n  }\n}\n\nfunction makeKey(cls, seat) {\n  const c = String(cls || '').trim();\n  const s = String(seat || '').trim();\n  return c && s ? c + '|' + s : '';\n}\n\nfunction jsonOutput(obj) {\n  return ContentService\n    .createTextOutput(JSON.stringify(obj))\n    .setMimeType(ContentService.MimeType.JSON);\n}\n";
+
+  async function getSetting(key, fallback=''){ return (await storageGet(key)) ?? fallback; }
+
+  function buildPeriodSettings(){
+    const box = $('periodSettings');
+    box.innerHTML = '';
+    for(let i=0;i<8;i++){
+      const row=document.createElement('div'); row.className='period-row';
+      row.innerHTML=`<div class="pname">第 ${i+1} 節</div>
+        <input type="time" id="periodStart${i}" aria-label="第 ${i+1} 節開始時間">
+        <div>～</div>
+        <input type="time" id="periodEnd${i}" aria-label="第 ${i+1} 節結束時間">`;
+      box.appendChild(row);
+    }
+  }
+
+  function buildGoogleGuideCode(){
+    const box=$('appsScriptCode');
+    if(box) box.textContent=GOOGLE_APPS_SCRIPT_CODE;
+  }
+
+  async function loadSettings(){
+    const savedPeriods = await getSetting(PERIODS_KEY, null);
+    const periods = savedPeriods ? JSON.parse(savedPeriods) : DEFAULT_PERIODS;
+    periods.forEach((p,i)=>{
+      if($('periodStart'+i)) $('periodStart'+i).value=p[0]||'';
+      if($('periodEnd'+i)) $('periodEnd'+i).value=p[1]||'';
+    });
+    $('googleSheetUrlInput').value = await getSetting(GOOGLE_SHEET_KEY,'');
+    $('googleLogUrlInput').value = await getSetting(GOOGLE_LOG_KEY,'');
+    updateGoogleNote();
+  }
+
+  async function saveSettings(){
+    const periods=[];
+    for(let i=0;i<8;i++){
+      periods.push([$('periodStart'+i).value,$('periodEnd'+i).value]);
+    }
+    await storageSet(PERIODS_KEY, JSON.stringify(periods));
+    await storageSet(GOOGLE_SHEET_KEY, $('googleSheetUrlInput').value.trim());
+    await storageSet(GOOGLE_LOG_KEY, $('googleLogUrlInput').value.trim());
+    updateCurrentPeriod();
+    updateGoogleNote();
+    toast('設定已儲存');
+  }
+
+  async function getPeriods(){
+    const saved = await getSetting(PERIODS_KEY, null);
+    return saved ? JSON.parse(saved) : DEFAULT_PERIODS;
+  }
+
+  function hmToMinutes(hm){
+    if(!/^\d{2}:\d{2}$/.test(hm||'')) return null;
+    const [h,m]=hm.split(':').map(Number); return h*60+m;
+  }
+
+  function taipeiMinutesNow(){
+    const parts=new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
+    const h=Number(parts.find(x=>x.type==='hour')?.value||0);
+    const m=Number(parts.find(x=>x.type==='minute')?.value||0);
+    return h*60+m;
+  }
+
+  async function getCurrentPeriod(){
+    const periods=await getPeriods();
+    const minutes=taipeiMinutesNow();
+    for(let i=0;i<periods.length;i++){
+      const start=hmToMinutes(periods[i][0]), end=hmToMinutes(periods[i][1]);
+      if(start!==null && end!==null && start<=minutes && minutes<=end) return i+1;
+    }
+    return null;
+  }
+
+  function formatTaipeiTime(){
+    return new Intl.DateTimeFormat('zh-TW',{
+      timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false
+    }).format(new Date());
+  }
+
+  async function updateLiveClock(){
+    const clock = $('liveClock');
+    const periodEl = $('livePeriod');
+    if(!clock || !periodEl) return;
+    clock.textContent = formatTaipeiTime();
+    const p = await getCurrentPeriod();
+    periodEl.textContent = p ? `第${p}節` : '非上課時段';
+  }
+
+  async function updateCurrentPeriod(){
+    await updateLiveClock();
+  }
+
+  $('settingsBtn').addEventListener('click', async ()=>{
+    buildPeriodSettings();
+    buildGoogleGuideCode();
+    await loadSettings();
+    showScreen('settings');
+  });
+  $('backFromSettingsBtn').addEventListener('click', ()=>{ updateCurrentPeriod(); showScreen(currentRoster ? 'attend' : 'home'); });
+  $('saveSettingsBtn').addEventListener('click', saveSettings);
+
+  async function buildGooglePayload(){
+    const sheetUrl = (await getSetting(GOOGLE_SHEET_KEY,'')).trim();
+    const period = await getCurrentPeriod();
+    const now = new Date();
+    const dateStr = new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(now).replace(/\//g,'/');
+    const rows=[];
+    Object.keys(currentRoster.classes).forEach(cls=>currentRoster.classes[cls].forEach(stu=>rows.push({
+      className:cls, seat:stu.seat, name:stu.name||'', status:stu.absent?'未出席':'出席'
+    })));
+    return {sheetUrl, course:currentRoster.name, date:dateStr, period:period?String(period):'非上課時段', timestamp:now.toISOString(), rows};
+  }
+
+  async function recordToGoogle(){
+    const sheetUrl = (await getSetting(GOOGLE_SHEET_KEY,'')).trim();
+    const webAppUrl = (await getSetting(GOOGLE_LOG_KEY,'')).trim();
+    if(!sheetUrl || !webAppUrl) return {configured:false};
+    try{
+      const payload=await buildGooglePayload();
+      await fetch(webAppUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+      return {configured:true, sent:true};
+    }catch(e){
+      console.error(e);
+      return {configured:true, sent:false};
+    }
+  }
+
+  async function updateGoogleNote(){
+    const note=$('autoGoogleNote');
+    if(!note) return;
+    const sheetUrl=(await getSetting(GOOGLE_SHEET_KEY,'')).trim();
+    const webAppUrl=(await getSetting(GOOGLE_LOG_KEY,'')).trim();
+    const ready=!!(sheetUrl && webAppUrl);
+    note.textContent=ready ? '✓ 已設定 Google：按「產生訊息」時會自動記錄點名。' : 'Google 試算表未設定；仍可正常點名與產生訊息。';
+    note.classList.toggle('ready',ready);
+    note.classList.toggle('off',!ready);
+  }
+
+  function testGoogleConnection(){
+    return new Promise(async (resolve)=>{
+      const sheetUrl=(await getSetting(GOOGLE_SHEET_KEY,'')).trim() || $('googleSheetUrlInput').value.trim();
+      const webAppUrl=(await getSetting(GOOGLE_LOG_KEY,'')).trim() || $('googleLogUrlInput').value.trim();
+      const result=$('googleTestResult');
+      if(!sheetUrl || !webAppUrl){
+        result.className='google-test-result err';
+        result.textContent='❌ 請先填好「① Google 試算表網址」及「② Google 寫入服務網址」。';
+        return resolve(false);
+      }
+      result.className='google-test-result';
+      result.textContent='測試中…';
+      const cb='googleTestCallback_'+Date.now();
+      const script=document.createElement('script');
+      const timer=setTimeout(()=>{
+        cleanup(); result.className='google-test-result err';
+        result.textContent='❌ 測試逾時。請確認 Apps Script 已部署為「網頁應用程式」，且執行身分為「我」。';
+        resolve(false);
+      },10000);
+      function cleanup(){ clearTimeout(timer); delete window[cb]; script.remove(); }
+      window[cb]=(data)=>{
+        cleanup();
+        if(data && data.ok){
+          result.className='google-test-result ok';
+          result.textContent=`✅ 連線成功！已找到試算表：「${data.sheetName || ''}」。現在按「產生訊息」就會自動記錄。`;
+          resolve(true);
+        }else{
+          result.className='google-test-result err';
+          result.textContent='❌ 連線失敗：'+(data && data.message ? data.message : '無法確認 Google 權限。');
+          resolve(false);
+        }
+      };
+      script.onerror=()=>{ cleanup(); result.className='google-test-result err'; result.textContent='❌ 無法連到 Google 寫入服務。請檢查網址與部署權限。'; resolve(false); };
+      script.src=webAppUrl+(webAppUrl.includes('?')?'&':'?')+'action=test&sheetUrl='+encodeURIComponent(sheetUrl)+'&callback='+cb;
+      document.body.appendChild(script);
+    });
+  }
+
+  $('testGoogleBtn').addEventListener('click', async ()=>{
+    await storageSet(GOOGLE_SHEET_KEY, $('googleSheetUrlInput').value.trim());
+    await storageSet(GOOGLE_LOG_KEY, $('googleLogUrlInput').value.trim());
+    await testGoogleConnection();
+    updateGoogleNote();
+  });
+
+  $('copyAppsScriptBtn').addEventListener('click', async () => {
+    const code=$('appsScriptCode').textContent;
+    try{
+      await navigator.clipboard.writeText(code);
+      $('screen-settings').querySelector('.setup-details').classList.add('show-code');
+      toast('已複製 Google 寫入程式');
+    }catch(e){
+      toast('複製失敗，請直接選取下方程式');
+      $('screen-settings').querySelector('.setup-details').classList.add('show-code');
+    }
+  });
+
   // ---------- result / message generation ----------
   function timestampNow(){
     const d = new Date();
@@ -657,29 +1081,38 @@ if ('serviceWorker' in navigator) {
     return fmt.format(d).replace(/\//g,'/');
   }
 
-  function buildMessage(){
+  async function buildMessage(){
     const ts = timestampNow();
-    let body = `課程名稱：${currentRoster.name}　${ts}，未出席：`;
+    const period = await getCurrentPeriod();
     const lines = [];
     Object.keys(currentRoster.classes).forEach(cls => {
       const absentSeats = currentRoster.classes[cls].filter(s=>s.absent).map(s=>s.seat);
-      if(absentSeats.length){
-        lines.push(`${cls}：${absentSeats.join('、')}`);
-      }
+      if(absentSeats.length) lines.push(`${cls}：${absentSeats.join('、')}`);
     });
-    if(!lines.length){
-      body += '無（全員出席）';
-    } else {
-      body += '\n' + lines.join('\n');
-    }
-    return body;
+    return `課程名稱：${currentRoster.name}　${ts}，${period ? `第${period}節` : '非上課時段'}，未出席： ${lines.length ? lines.join(' ') : '無'}`;
   }
 
-  $('genMsgBtn').addEventListener('click', () => {
-    const msg = buildMessage();
-    $('messageBox').textContent = msg;
-    $('lineShareLink').href = 'https://line.me/R/msg/text/?' + encodeURIComponent(msg);
-    showScreen('result');
+  $('genMsgBtn').addEventListener('click', async () => {
+    const btn=$('genMsgBtn');
+    btn.disabled=true;
+    btn.textContent='產生中…';
+    try{
+      const msg = await buildMessage();
+      const googleResult = await recordToGoogle();
+      $('messageBox').textContent = msg;
+      $('lineShareLink').href = 'https://line.me/R/msg/text/?' + encodeURIComponent(msg);
+      showScreen('result');
+      if(googleResult.configured && googleResult.sent){
+        toast('訊息已產生，Google 點名紀錄已送出');
+      }else if(googleResult.configured && !googleResult.sent){
+        toast('訊息已產生，但 Google 紀錄送出失敗');
+      }else{
+        toast('訊息已產生');
+      }
+    }finally{
+      btn.disabled=false;
+      btn.textContent='產生訊息';
+    }
   });
 
   $('backToAttendBtn').addEventListener('click', () => showScreen('attend'));
@@ -702,6 +1135,11 @@ if ('serviceWorker' in navigator) {
   }
 
   // ---------- init ----------
+  buildPeriodSettings();
+  buildGoogleGuideCode();
+  loadSettings();
+  updateGoogleNote();
+  setInterval(updateCurrentPeriod, 30000);
   renderHome();
   showScreen('home');
 })();
