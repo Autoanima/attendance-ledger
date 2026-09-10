@@ -361,7 +361,7 @@ if ('serviceWorker' in navigator) {
 <div class="wrap">
 
   <header class="top">
-    <div class="brand">跨群選修點名</div>
+    <div class="brand">跨群選修(含本土語)點名</div>
     <div style="display:flex;gap:7px;align-items:center"><button class="icon-btn" id="settingsBtn">設定</button><button class="icon-btn" id="homeBtn">課程列表</button></div>
   </header>
 
@@ -420,30 +420,35 @@ if ('serviceWorker' in navigator) {
       <div class="settings-title">Google 試算表（選填）</div>
       <div class="settings-sub big-sub">如果你希望按「產生訊息」時，也自動把本次點名寫進 Google 試算表，請完成下面設定。<br><b>不設定也可以正常點名與產生 LINE 訊息。</b></div>
 
+      <div class="account-warning"><b>⚠️ 請務必用你「私人的 Google 帳號」（自己的 Gmail，不是學校配發的帳號）來開這份試算表、部署 Apps Script。</b><br>學校帳號通常是 Google Workspace 網域帳號，校方管理員多半會限制或直接關閉「部署為任何人都能存取的網頁應用程式」這個功能，就算整個步驟都照著做，最後同步還是會沒有反應、抓不出原因。用自己的私人帳號做這件事才會成功。</div>
+      <div class="account-warning"><b>💻 以下設定步驟請用電腦操作，手機無法完成部署。</b><br>第一次設定大約只要 5 分鐘，且只需要做一次；設定好以後，平常用手機點名、產生訊息完全不受影響，一樣正常同步。</div>
+
       <div class="guide-step">
         <div class="guide-num">1</div>
-        <div><b>先建立一份 Google 試算表</b><div class="guide-text">建議使用一份空白試算表，之後每次點名會在右邊新增一欄，不會覆蓋以前的紀錄。</div></div>
+        <div><b>用「私人 Google 帳號」在電腦上開一份新的空白試算表</b><div class="guide-text">到 <a href="https://sheets.google.com" target="_blank" rel="noopener">sheets.google.com</a> 開一份空白試算表，當作點名紀錄本。之後每次點名會在右邊新增一欄，不會覆蓋以前的紀錄。一定要從這份試算表裡面開 Apps Script（下一步），不要另外跑去 script.google.com 開一個獨立專案——獨立專案抓不到「目前是哪一份試算表」，程式會直接執行失敗。</div></div>
       </div>
 
       <label class="field-label">① Google 試算表網址</label>
       <input type="text" id="googleSheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/..." />
-      <div class="account-warning"><b>⚠️ 重要：請使用你自己的 Google 帳號建立這份試算表。</b><br>不要使用學校帳號建立的試算表。請用你自己的 Google 帳號建立試算表與 Apps Script，避免學校網域的權限限制。</div>
 
       <details class="setup-details">
-        <summary>第一次使用？按這裡看完整設定方法</summary>
+        <summary>第一次使用？按這裡看完整設定方法（電腦操作，約 5 分鐘）</summary>
         <div class="setup-body">
-          <div class="guide-step compact"><div class="guide-num">2</div><div><b>打開試算表 → 擴充功能 → Apps Script</b><div class="guide-text">會開啟一個新的 Apps Script 頁面。</div></div></div>
-          <div class="guide-step compact"><div class="guide-num">3</div><div><b>把 Apps Script 裡原本的程式全部刪掉</b><div class="guide-text">再貼上本程式提供的 Google 寫入程式。</div></div></div>
+          <div class="guide-step compact"><div class="guide-num">2</div><div><b>在剛剛那份試算表裡，上方選單點「擴充功能」→「Apps Script」</b><div class="guide-text">會開啟一個程式碼編輯畫面。</div></div></div>
+          <div class="guide-step compact"><div class="guide-num">3</div><div><b>把畫面裡原本的內容全部刪掉</b><div class="guide-text">改貼上下面這一段程式碼（可以按「複製程式碼」按鈕）。</div></div></div>
           <button type="button" class="primary-btn ghost small-btn" id="copyAppsScriptBtn">複製 Google 寫入程式</button>
-          <div class="guide-code-note">複製後，貼到 Apps Script，按「儲存」。</div>
+          <div class="guide-code-note">複製後，貼到 Apps Script，按上面工具列的「儲存」（磁片圖示），隨便取個名字。</div>
           <pre id="appsScriptCode" class="apps-script-code"></pre>
-          <div class="guide-step compact"><div class="guide-num">4</div><div><b>按「部署」→「新增部署作業」→「網頁應用程式」</b><div class="guide-text">執行身分選「我」；誰可以存取請選擇可以讓你的點名網頁使用的選項（通常是「任何人」）。</div></div></div>
-          <div class="guide-step compact"><div class="guide-num">5</div><div><b>複製部署後的網址</b><div class="guide-text">網址通常會長得像：<code>https://script.google.com/macros/s/.../exec</code></div></div></div>
+          <div class="guide-step compact"><div class="guide-num">4</div><div><b>按「部署」→「新增部署作業」</b><div class="guide-text">「選取類型」點齒輪圖示，選「網頁應用程式」。</div></div></div>
+          <div class="guide-step compact"><div class="guide-num">5</div><div><b>「具有存取權的使用者」選「所有人」（Anyone），按「部署」</b><div class="guide-text">執行身分維持預設的「我」即可，不用更改。</div></div></div>
+          <div class="guide-step compact"><div class="guide-num">6</div><div><b>如果跳出「需要授權」的畫面</b><div class="guide-text">選你自己的 Google 帳號 → 如果看到「Google 尚未驗證這個應用程式」的警告，點「進階」→「前往（專案名稱）（不安全）」→「允許」。這個警告是因為程式是你自己貼的、還沒有申請 Google 官方認證，不是真的有問題，自己貼的程式可以放心允許。</div></div></div>
+          <div class="guide-step compact"><div class="guide-num">7</div><div><b>複製部署後顯示的「網頁應用程式」網址</b><div class="guide-text">網址通常會長得像：<code>https://script.google.com/macros/s/.../exec</code></div></div></div>
           <label class="field-label">② Google 寫入服務網址（只需設定一次）</label>
           <input type="text" id="googleLogUrlInput" placeholder="https://script.google.com/macros/s/.../exec" />
           <button type="button" class="primary-btn ghost small-btn" id="testGoogleBtn">🟢 測試 Google 連線</button>
           <div class="google-test-result" id="googleTestResult"></div>
-          <div class="google-note"><b>設定完成後：</b>平常點名時不需要再按「記錄到 Google 試算表」，只要按「產生訊息」，系統就會一併送出 Google 紀錄。</div>
+          <div class="guide-text" style="margin-top:6px">按「測試連線」——如果看到一段確認文字，代表部署成功；如果看到錯誤畫面，回到第 4～6 步檢查部署設定（尤其是「具有存取權的使用者」是不是選「所有人」）。</div>
+          <div class="google-note"><b>設定完成後：</b>平常點名時不需要再手動處理，只要按「產生訊息」，系統就會一併把本次點名同步進 Google 試算表，不用再手動觸發。</div>
         </div>
       </details>
     </div>
@@ -1089,7 +1094,7 @@ if ('serviceWorker' in navigator) {
       const absentSeats = currentRoster.classes[cls].filter(s=>s.absent).map(s=>s.seat);
       if(absentSeats.length) lines.push(`${cls}：${absentSeats.join('、')}`);
     });
-    return `課程名稱：${currentRoster.name}　${ts}，${period ? `第${period}節` : '非上課時段'}，未出席： ${lines.length ? lines.join(' ') : '無'}`;
+    return `程程 ，\n課程名稱：${currentRoster.name}，\n${ts}，${period ? `第${period}節` : '非上課時段'}，\n未出席： ${lines.length ? lines.join(' ') : '無'}`;
   }
 
   $('genMsgBtn').addEventListener('click', async () => {
