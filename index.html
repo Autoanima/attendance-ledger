@@ -114,6 +114,7 @@
   .primary-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(18,58,90,.18)}
   .primary-btn.ghost{background:var(--blue-panel);color:var(--navy)}
   .primary-btn.danger{background:var(--red);color:var(--white)}
+  .primary-btn.line-send-btn{font-size:17px;padding:15px 14px;letter-spacing:1px}
   .primary-btn:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
 
   .stack{display:flex;flex-direction:column;gap:8px;margin-top:13px}
@@ -361,7 +362,7 @@ if ('serviceWorker' in navigator) {
 <div class="wrap">
 
   <header class="top">
-    <div class="brand">跨群選修(含本土語)點名</div>
+    <div class="brand">跨群選修/本土語 點名</div>
     <div style="display:flex;gap:7px;align-items:center"><button class="icon-btn" id="settingsBtn">設定</button><button class="icon-btn" id="homeBtn">課程列表</button></div>
   </header>
 
@@ -408,6 +409,12 @@ if ('serviceWorker' in navigator) {
     <div class="course-header">
       <div class="title">設定</div>
       <div class="sub">設定上課節次與 Google 試算表，資料會保存在這台裝置。</div>
+    </div>
+
+    <div class="settings-card">
+      <div class="settings-title">訊息開頭文字</div>
+      <div class="settings-sub">按「產生訊息」時，會自動加在整段訊息最前面，可依需要自行修改或清空。</div>
+      <input type="text" id="messagePrefixInput" placeholder="例如：程程 ，" />
     </div>
 
     <div class="settings-card">
@@ -493,13 +500,13 @@ if ('serviceWorker' in navigator) {
     <div class="message-box" id="messageBox"></div>
     <div class="stack">
       <a class="line-link" id="lineShareLink" target="_blank" rel="noopener">
-        <button class="primary-btn">傳送到 LINE（選擇 CISH-程程）</button>
+        <button class="primary-btn line-send-btn">傳送到 LINE 群組</button>
       </a>
       <button class="primary-btn ghost" id="copyBtn">複製訊息文字</button>
       <button class="primary-btn ghost" id="backToAttendBtn">← 返回修改點名</button>
     </div>
     <div class="hint" style="margin-top:14px;">
-      「傳送到 LINE」會開啟 LINE 並帶入訊息內容，需要你手動選擇聯絡人「CISH-程程」送出——網頁本身無法未經你操作就自動送出訊息給指定對象。
+      「傳送到 LINE 群組」會開啟 LINE 並帶入訊息內容，需要你手動選擇要傳送的群組或聯絡人送出——網頁本身無法未經你操作就自動送出訊息給指定對象。
     </div>
   </section>
 
@@ -869,6 +876,8 @@ if ('serviceWorker' in navigator) {
   const GOOGLE_SHEET_KEY = 'google-sheet-url';
   const GOOGLE_LOG_KEY = 'google-log-url';
   const PERIODS_KEY = 'attendance-periods';
+  const MESSAGE_PREFIX_KEY = 'message-prefix';
+  const DEFAULT_MESSAGE_PREFIX = '程程 ，';
   const DEFAULT_PERIODS = [
     ['08:05','08:55'],
     ['09:10','10:00'],
@@ -911,6 +920,7 @@ if ('serviceWorker' in navigator) {
     });
     $('googleSheetUrlInput').value = await getSetting(GOOGLE_SHEET_KEY,'');
     $('googleLogUrlInput').value = await getSetting(GOOGLE_LOG_KEY,'');
+    $('messagePrefixInput').value = await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
     updateGoogleNote();
   }
 
@@ -922,6 +932,7 @@ if ('serviceWorker' in navigator) {
     await storageSet(PERIODS_KEY, JSON.stringify(periods));
     await storageSet(GOOGLE_SHEET_KEY, $('googleSheetUrlInput').value.trim());
     await storageSet(GOOGLE_LOG_KEY, $('googleLogUrlInput').value.trim());
+    await storageSet(MESSAGE_PREFIX_KEY, $('messagePrefixInput').value);
     updateCurrentPeriod();
     updateGoogleNote();
     toast('設定已儲存');
@@ -1089,12 +1100,14 @@ if ('serviceWorker' in navigator) {
   async function buildMessage(){
     const ts = timestampNow();
     const period = await getCurrentPeriod();
+    const prefix = await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
     const lines = [];
     Object.keys(currentRoster.classes).forEach(cls => {
       const absentSeats = currentRoster.classes[cls].filter(s=>s.absent).map(s=>s.seat);
       if(absentSeats.length) lines.push(`${cls}：${absentSeats.join('、')}`);
     });
-    return `程程 ，\n課程名稱：${currentRoster.name}，\n${ts}，${period ? `第${period}節` : '非上課時段'}，\n未出席： ${lines.length ? lines.join(' ') : '無'}`;
+    const body = `課程名稱：${currentRoster.name}，\n${ts}，${period ? `第${period}節` : '非上課時段'}，\n未出席： ${lines.length ? lines.join(' ') : '無'}`;
+    return prefix ? `${prefix}\n${body}` : body;
   }
 
   $('genMsgBtn').addEventListener('click', async () => {
