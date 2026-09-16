@@ -414,7 +414,7 @@ if ('serviceWorker' in navigator) {
     <div class="settings-card">
       <div class="settings-title">訊息開頭文字</div>
       <div class="settings-sub">按「產生訊息」時，會自動加在整段訊息最前面，可依需要自行修改或清空。</div>
-      <input type="text" id="messagePrefixInput" placeholder="例如：程程 ，" />
+      <input type="text" id="messagePrefixInput" placeholder="例如：@程程" />
     </div>
 
     <div class="settings-card">
@@ -877,7 +877,7 @@ if ('serviceWorker' in navigator) {
   const GOOGLE_LOG_KEY = 'google-log-url';
   const PERIODS_KEY = 'attendance-periods';
   const MESSAGE_PREFIX_KEY = 'message-prefix';
-  const DEFAULT_MESSAGE_PREFIX = '程程 ，';
+  const DEFAULT_MESSAGE_PREFIX = '@程程';
   const DEFAULT_PERIODS = [
     ['08:05','08:55'],
     ['09:10','10:00'],
@@ -1101,12 +1101,13 @@ if ('serviceWorker' in navigator) {
     const ts = timestampNow();
     const period = await getCurrentPeriod();
     const prefix = await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
-    const lines = [];
-    Object.keys(currentRoster.classes).forEach(cls => {
-      const absentSeats = currentRoster.classes[cls].filter(s=>s.absent).map(s=>s.seat);
-      if(absentSeats.length) lines.push(`${cls}：${absentSeats.join('、')}`);
-    });
-    const body = `課程名稱：${currentRoster.name}，\n${ts}，${period ? `第${period}節` : '非上課時段'}，\n未出席： ${lines.length ? lines.join(' ') : '無'}`;
+    const classLines = Object.keys(currentRoster.classes)
+      .sort((a,b) => String(a).localeCompare(String(b),'zh-Hant',{numeric:true}))
+      .map(cls => {
+        const absentSeats = currentRoster.classes[cls].filter(s=>s.absent).map(s=>s.seat);
+        return absentSeats.length ? `${cls} 缺席${absentSeats.join('、')}號` : `${cls} 全員到齊`;
+      });
+    const body = `${currentRoster.name}\n${ts}，${period ? `第${period}節` : '非上課時段'}\n${classLines.join('\n')}`;
     return prefix ? `${prefix}\n${body}` : body;
   }
 
