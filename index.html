@@ -319,6 +319,7 @@
     display:flex;align-items:center;justify-content:center;
     background:rgba(18,58,90,.55);padding:20px;
   }
+  .loading-overlay[hidden]{display:none}
   .loading-overlay .loading-box{
     background:var(--white);border:3px solid var(--navy);border-radius:18px;
     padding:26px 24px;text-align:center;max-width:320px;
@@ -878,8 +879,7 @@ if ('serviceWorker' in navigator) {
     box.hidden = false;
     select.innerHTML = '<option value="">讀取中…</option>';
     select.disabled = true;
-    hint.textContent = '⏳ 請等待雲端硬碟載入資料…';
-    showLoading('請稍等，雲端硬碟資料載入中…');
+    hint.textContent = '⏳ 正在讀取雲端硬碟資料夾內容…';
     try{
       const data = await jsonpRequest(webAppUrl, {action:'listFolder', folderUrl});
       if(data && data.ok){
@@ -898,8 +898,6 @@ if ('serviceWorker' in navigator) {
     }catch(e){
       select.innerHTML = '<option value="">讀取失敗</option>';
       hint.textContent = '❌ 無法連到雲端硬碟讀取服務，請到設定頁檢查設定或稍後再試。';
-    } finally {
-      hideLoading();
     }
   }
 
