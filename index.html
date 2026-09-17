@@ -515,7 +515,7 @@ if ('serviceWorker' in navigator) {
 
     <div class="settings-card google-settings-card">
       <div class="settings-title">課程名單雲端硬碟（選填）</div>
-      <div class="settings-sub big-sub">把各課程的名單檔案放在同一個雲端硬碟資料夾裡，設定好之後，「新增課程」畫面就能直接用下拉選單選課程，不用每次手動上傳檔案。這組設定跟上面的 Google 試算表同步是分開的，也可以把同一組網址分享給其他老師一起使用同一個資料夾。<br><b>不設定也可以正常用檔案上傳的方式建立課程。</b></div>
+      <div class="settings-sub big-sub">把各課程的名單檔案放在同一個雲端硬碟資料夾裡，設定好之後，「新增課程」畫面就能直接用下拉選單選課程，不用每次手動上傳檔案。這組設定跟上面的 Google 試算表同步是分開的，也可以把同一組網址分享給其他老師一起使用同一個資料夾。<br><b>已經預設填好一組共用的資料夾與讀取服務網址，可以直接使用，也可以換成自己的一組。不設定也可以正常用檔案上傳的方式建立課程。</b></div>
 
       <div class="account-warning"><b>⚠️ 一樣請用你「私人的 Google 帳號」</b>來建立資料夾、部署這支 Apps Script，理由跟前面的 Google 試算表同步相同——學校帳號常會被管理員限制，導致部署後沒有反應。</div>
       <div class="account-warning"><b>💻 以下設定步驟請用電腦操作，手機無法完成部署。</b>設定好以後，平常用手機選課程完全不受影響。</div>
@@ -802,8 +802,8 @@ if ('serviceWorker' in navigator) {
     const box = $('drivePickerBox');
     const select = $('driveFileSelect');
     const hint = $('drivePickerHint');
-    const folderUrl = (await getSetting(DRIVE_FOLDER_KEY,'')).trim();
-    const webAppUrl = (await getSetting(DRIVE_LOG_KEY,'')).trim();
+    const folderUrl = (await getSetting(DRIVE_FOLDER_KEY, DEFAULT_DRIVE_FOLDER_URL)).trim();
+    const webAppUrl = (await getSetting(DRIVE_LOG_KEY, DEFAULT_DRIVE_LOG_URL)).trim();
     if(!folderUrl || !webAppUrl){
       box.hidden = true;
       return;
@@ -909,7 +909,7 @@ if ('serviceWorker' in navigator) {
     const opt = select.options[select.selectedIndex];
     const mimeType = opt.dataset.mime;
     const fileName = opt.dataset.name || opt.textContent;
-    const webAppUrl = (await getSetting(DRIVE_LOG_KEY,'')).trim();
+    const webAppUrl = (await getSetting(DRIVE_LOG_KEY, DEFAULT_DRIVE_LOG_URL)).trim();
     hint.textContent = '讀取檔案中…';
     $('uploadError').innerHTML = '';
     try{
@@ -1089,6 +1089,8 @@ if ('serviceWorker' in navigator) {
   const GOOGLE_LOG_KEY = 'google-log-url';
   const DRIVE_FOLDER_KEY = 'drive-folder-url';
   const DRIVE_LOG_KEY = 'drive-log-url';
+  const DEFAULT_DRIVE_FOLDER_URL = 'https://drive.google.com/drive/folders/1hCLx-IBTBdEbXhGz4NiXZmIcyr89WR53';
+  const DEFAULT_DRIVE_LOG_URL = 'https://script.google.com/macros/s/AKfycbxNZpJtEQam_3LI2DQlIMm5bIE6YuLqpFiGu25cRZqRWU-CrUvI_6wJ_dxccAP6LUpisQ/exec';
   const PERIODS_KEY = 'attendance-periods';
   const MESSAGE_PREFIX_KEY = 'message-prefix';
   const DEFAULT_MESSAGE_PREFIX = '@程程';
@@ -1158,8 +1160,8 @@ if ('serviceWorker' in navigator) {
     });
     $('googleSheetUrlInput').value = await getSetting(GOOGLE_SHEET_KEY,'');
     $('googleLogUrlInput').value = await getSetting(GOOGLE_LOG_KEY,'');
-    $('driveFolderUrlInput').value = await getSetting(DRIVE_FOLDER_KEY,'');
-    $('driveLogUrlInput').value = await getSetting(DRIVE_LOG_KEY,'');
+    $('driveFolderUrlInput').value = await getSetting(DRIVE_FOLDER_KEY, DEFAULT_DRIVE_FOLDER_URL);
+    $('driveLogUrlInput').value = await getSetting(DRIVE_LOG_KEY, DEFAULT_DRIVE_LOG_URL);
     $('messagePrefixInput').value = await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
     updateGoogleNote();
   }
@@ -1336,8 +1338,8 @@ if ('serviceWorker' in navigator) {
   });
 
   async function testDriveConnection(){
-    const folderUrl=(await getSetting(DRIVE_FOLDER_KEY,'')).trim() || $('driveFolderUrlInput').value.trim();
-    const webAppUrl=(await getSetting(DRIVE_LOG_KEY,'')).trim() || $('driveLogUrlInput').value.trim();
+    const folderUrl=(await getSetting(DRIVE_FOLDER_KEY, DEFAULT_DRIVE_FOLDER_URL)).trim() || $('driveFolderUrlInput').value.trim();
+    const webAppUrl=(await getSetting(DRIVE_LOG_KEY, DEFAULT_DRIVE_LOG_URL)).trim() || $('driveLogUrlInput').value.trim();
     const result=$('driveTestResult');
     if(!folderUrl || !webAppUrl){
       result.className='google-test-result err';
