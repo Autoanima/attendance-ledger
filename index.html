@@ -132,6 +132,17 @@
   }
   input[type=text]:focus{outline:none;border-color:var(--turq)}
 
+  select{
+    width:100%;padding:11px 12px;border-radius:11px;
+    border:2px solid var(--line);background:var(--blue-panel);color:var(--ink);
+    font-size:14px;font-family:inherit;
+  }
+  select:focus{outline:none;border-color:var(--turq)}
+  .drive-picker{
+    border:2px solid var(--navy);border-radius:14px;padding:12px 13px;
+    background:var(--turq-soft);margin-bottom:14px;
+  }
+
   .file-drop{
     border:2px dashed #78B7C6;border-radius:16px;
     padding:22px 13px;text-align:center;color:var(--muted);font-size:12px;
@@ -259,6 +270,20 @@
   }
   .session-status.waiting{background:var(--blue-panel);color:var(--muted)}
   .session-status.ready{background:var(--yellow-soft);color:var(--navy);border-color:var(--red)}
+
+  .period-picker{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    background:var(--blue-panel);border:2px solid var(--navy);border-radius:12px;
+    padding:8px 12px;margin-bottom:9px;
+  }
+  .period-picker .ppk-label{font-size:11px;font-weight:900;color:var(--muted)}
+  .period-picker .ppk-value{font-size:16px;font-weight:900;color:var(--navy);min-width:64px;text-align:center}
+  .period-picker .ppk-btn{
+    width:32px;height:32px;border-radius:8px;border:2px solid var(--navy);
+    background:var(--white);color:var(--navy);font-size:16px;font-weight:900;
+    font-family:inherit;cursor:pointer;
+  }
+  .period-picker .ppk-btn:active{transform:scale(.94)}
 
   .sticky-actions{
     position:sticky;bottom:0;padding:11px 0 4px;margin-top:11px;
@@ -405,6 +430,14 @@ if ('serviceWorker' in navigator) {
     <input type="text" class="auto-course-name" id="courseNameInput" placeholder="選擇 .xlsx 檔案後，會自動帶入檔名" />
     <div class="hint">例如：<b>多媒體概論.xlsx</b> → 課程名稱會自動變成「多媒體概論」，也可以自行修改成其他名稱。</div>
 
+    <div class="drive-picker" id="drivePickerBox" hidden>
+      <label class="field-label">從雲端硬碟選擇課程名單</label>
+      <select id="driveFileSelect">
+        <option value="">請選擇檔案…</option>
+      </select>
+      <div class="hint" id="drivePickerHint">讀取中…</div>
+    </div>
+
     <label class="field-label">試算表檔案（.xlsx / .csv）</label>
     <div class="file-drop" id="fileDrop">
       <div id="fileDropText">點擊或拖曳檔案到這裡上傳</div>
@@ -480,6 +513,42 @@ if ('serviceWorker' in navigator) {
       </details>
     </div>
 
+    <div class="settings-card google-settings-card">
+      <div class="settings-title">課程名單雲端硬碟（選填）</div>
+      <div class="settings-sub big-sub">把各課程的名單檔案放在同一個雲端硬碟資料夾裡，設定好之後，「新增課程」畫面就能直接用下拉選單選課程，不用每次手動上傳檔案。這組設定跟上面的 Google 試算表同步是分開的，也可以把同一組網址分享給其他老師一起使用同一個資料夾。<br><b>不設定也可以正常用檔案上傳的方式建立課程。</b></div>
+
+      <div class="account-warning"><b>⚠️ 一樣請用你「私人的 Google 帳號」</b>來建立資料夾、部署這支 Apps Script，理由跟前面的 Google 試算表同步相同——學校帳號常會被管理員限制，導致部署後沒有反應。</div>
+      <div class="account-warning"><b>💻 以下設定步驟請用電腦操作，手機無法完成部署。</b>設定好以後，平常用手機選課程完全不受影響。</div>
+
+      <div class="guide-step">
+        <div class="guide-num">1</div>
+        <div><b>在雲端硬碟建一個資料夾，把課程名單都放進去</b><div class="guide-text">名單檔案可以是 <b>Google 試算表</b>（推薦，讀取最穩定）或 <b>.xlsx 檔案</b>，內容格式跟本機上傳完全一樣：第一列要有「班級」「座號」欄位，姓名欄位可選填。</div></div>
+      </div>
+
+      <label class="field-label">① 雲端硬碟資料夾網址</label>
+      <input type="text" id="driveFolderUrlInput" placeholder="https://drive.google.com/drive/folders/..." />
+
+      <details class="setup-details" id="driveSetupDetails">
+        <summary>第一次使用？按這裡看完整設定方法（電腦操作）</summary>
+        <div class="setup-body">
+          <div class="guide-step compact"><div class="guide-num">2</div><div><b>到 <a href="https://script.google.com" target="_blank" rel="noopener">script.google.com</a>，按「新增專案」</b><div class="guide-text">這次不用從某份試算表裡面開，直接開一個獨立專案就可以。</div></div></div>
+          <div class="guide-step compact"><div class="guide-num">3</div><div><b>把畫面裡原本的內容全部刪掉</b><div class="guide-text">改貼上下面這一段程式碼（可以按「複製程式碼」按鈕）。</div></div></div>
+          <button type="button" class="primary-btn ghost small-btn" id="copyDriveScriptBtn">複製雲端硬碟讀取程式</button>
+          <div class="guide-code-note">複製後，貼到 Apps Script，按上面工具列的「儲存」（磁片圖示），隨便取個名字。</div>
+          <pre id="driveAppsScriptCode" class="apps-script-code"></pre>
+          <div class="guide-step compact"><div class="guide-num">4</div><div><b>資料夾裡如果有 .xlsx 檔案，要多加一個服務</b><div class="guide-text">左側選單「服務」旁的 ＋ 號 → 選「Drive API」→ 版本選「v3」→ 按「加入」。如果資料夾裡全部都是 Google 試算表，這一步可以跳過。</div></div></div>
+          <div class="guide-step compact"><div class="guide-num">5</div><div><b>按「部署」→「新增部署作業」→「網頁應用程式」</b><div class="guide-text">「具有存取權的使用者」選「所有人」，按「部署」，並依畫面指示完成帳號授權（跟前面 Google 試算表同步的授權步驟一樣）。</div></div></div>
+          <div class="guide-step compact"><div class="guide-num">6</div><div><b>複製部署後顯示的「網頁應用程式」網址</b><div class="guide-text">網址通常會長得像：<code>https://script.google.com/macros/s/.../exec</code></div></div></div>
+          <label class="field-label">② 雲端硬碟讀取服務網址（只需設定一次）</label>
+          <input type="text" id="driveLogUrlInput" placeholder="https://script.google.com/macros/s/.../exec" />
+          <button type="button" class="primary-btn ghost small-btn" id="testDriveBtn">🟢 測試雲端硬碟連線</button>
+          <div class="google-test-result" id="driveTestResult"></div>
+          <div class="guide-text" style="margin-top:6px">按「測試連線」——如果看到資料夾名稱與檔案數量，代表部署成功；如果看到錯誤畫面，回到第 4～5 步檢查部署設定。</div>
+          <div class="google-note"><b>設定完成後：</b>到「新增課程」畫面，就會多一個「從雲端硬碟選擇」的下拉選單可以直接選課程名單。</div>
+        </div>
+      </details>
+    </div>
+
     <div class="stack">
       <button class="primary-btn" id="saveSettingsBtn">儲存設定</button>
       <button class="primary-btn ghost" id="backFromSettingsBtn">← 返回</button>
@@ -513,6 +582,12 @@ if ('serviceWorker' in navigator) {
     <div id="classContainer" aria-label="依班級整合的學生名單"></div>
 
     <div class="sticky-actions stack">
+      <div class="period-picker">
+        <span class="ppk-label">本次登記節次</span>
+        <button type="button" class="ppk-btn" id="periodPrevBtn" aria-label="往前一節">－</button>
+        <span class="ppk-value" id="periodPickerValue">—</span>
+        <button type="button" class="ppk-btn" id="periodNextBtn" aria-label="往後一節">＋</button>
+      </div>
       <button class="primary-btn" id="genMsgBtn">完成本節點名</button>
       <div class="auto-google-note" id="autoGoogleNote">已設定 Google 時，每節點名都會自動記錄。</div>
     </div>
@@ -555,6 +630,7 @@ if ('serviceWorker' in navigator) {
   let parsedUpload = null;  // classes object staged from file, before save
   let pendingCourseName = '';
   let rosterEditMode = false;
+  let manualPeriod = null; // null = 跟隨自動偵測的節次；0~8 = 老師手動調整過的節次（0代表「非上課時段」）
 
   // ---------- storage helpers ----------
   // Browser persistence: IndexedDB. This works on HTTPS/PWA and keeps
@@ -694,6 +770,7 @@ if ('serviceWorker' in navigator) {
     currentCourseId = id;
     currentRoster = roster;
     rosterEditMode = false;
+    manualPeriod = null;
     // reset attendance state: everyone present by default
     Object.values(currentRoster.classes).forEach(students => {
       students.forEach(s => { s.absent = false; });
@@ -703,7 +780,7 @@ if ('serviceWorker' in navigator) {
   }
 
   $('homeBtn').addEventListener('click', () => { renderHome(); showScreen('home'); });
-  $('newCourseBtn').addEventListener('click', () => { resetUploadScreen(); showScreen('upload'); });
+  $('newCourseBtn').addEventListener('click', () => { initUploadScreen(); showScreen('upload'); });
 
   // ---------- upload screen ----------
   function resetUploadScreen(){
@@ -716,6 +793,44 @@ if ('serviceWorker' in navigator) {
     $('uploadPreview').innerHTML = '';
     $('saveCourseBtn').disabled = true;
     parsedUpload = null;
+    if($('driveFileSelect')) $('driveFileSelect').value = '';
+  }
+
+  // 如果設定頁已經設好雲端硬碟資料夾，就抓取檔案清單填進下拉選單；沒設定就隱藏這個區塊。
+  async function initUploadScreen(){
+    resetUploadScreen();
+    const box = $('drivePickerBox');
+    const select = $('driveFileSelect');
+    const hint = $('drivePickerHint');
+    const folderUrl = (await getSetting(DRIVE_FOLDER_KEY,'')).trim();
+    const webAppUrl = (await getSetting(DRIVE_LOG_KEY,'')).trim();
+    if(!folderUrl || !webAppUrl){
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+    select.innerHTML = '<option value="">讀取中…</option>';
+    select.disabled = true;
+    hint.textContent = '正在讀取雲端硬碟資料夾內容…';
+    try{
+      const data = await jsonpRequest(webAppUrl, {action:'listFolder', folderUrl});
+      if(data && data.ok){
+        const files = data.files || [];
+        select.innerHTML = '<option value="">請選擇檔案…</option>' + files.map(f =>
+          `<option value="${escapeHtml(f.id)}" data-mime="${escapeHtml(f.mimeType)}" data-name="${escapeHtml(f.name)}">${escapeHtml(f.name)}</option>`
+        ).join('');
+        select.disabled = false;
+        hint.textContent = files.length
+          ? `資料夾「${data.folderName||''}」共 ${files.length} 個檔案，選好後仍可自行修改課程名稱。`
+          : `資料夾「${data.folderName||''}」目前沒有找到課程名單檔案。`;
+      }else{
+        select.innerHTML = '<option value="">讀取失敗</option>';
+        hint.textContent = '❌ 讀取失敗：'+(data && data.message ? data.message : '請到設定頁檢查雲端硬碟網址。');
+      }
+    }catch(e){
+      select.innerHTML = '<option value="">讀取失敗</option>';
+      hint.textContent = '❌ 無法連到雲端硬碟讀取服務，請到設定頁檢查設定或稍後再試。';
+    }
   }
 
   $('cancelUploadBtn').addEventListener('click', () => { renderHome(); showScreen('home'); });
@@ -771,6 +886,7 @@ if ('serviceWorker' in navigator) {
         pendingCourseName = String(file.name || '').replace(/\.[^.]+$/, '').trim() || '未命名課程';
         $('courseNameInput').value = pendingCourseName;
         $('uploadError').innerHTML = '';
+        if($('driveFileSelect')) $('driveFileSelect').value = '';
         renderPreview(classes);
         $('fileDropText').textContent = '✓ ' + file.name;
         $('fileDrop').classList.add('has-file');
@@ -784,6 +900,38 @@ if ('serviceWorker' in navigator) {
     };
     reader.readAsArrayBuffer(file);
   }
+
+  $('driveFileSelect').addEventListener('change', async () => {
+    const select = $('driveFileSelect');
+    const fileId = select.value;
+    const hint = $('drivePickerHint');
+    if(!fileId) return;
+    const opt = select.options[select.selectedIndex];
+    const mimeType = opt.dataset.mime;
+    const fileName = opt.dataset.name || opt.textContent;
+    const webAppUrl = (await getSetting(DRIVE_LOG_KEY,'')).trim();
+    hint.textContent = '讀取檔案中…';
+    $('uploadError').innerHTML = '';
+    try{
+      const data = await jsonpRequest(webAppUrl, {action:'readFile', fileId, mimeType});
+      if(data && data.ok){
+        const classes = parseRows(data.rows || []);
+        parsedUpload = classes;
+        pendingCourseName = String(fileName || '').replace(/\.[^.]+$/, '').trim() || '未命名課程';
+        $('courseNameInput').value = pendingCourseName;
+        $('fileInput').value = '';
+        $('fileDropText').textContent = '點擊或拖曳檔案到這裡上傳';
+        $('fileDrop').classList.remove('has-file');
+        renderPreview(classes);
+        hint.textContent = `已載入「${fileName}」，可視需要修改課程名稱後儲存。`;
+        updateSaveEnabled();
+      }else{
+        $('uploadError').innerHTML = `<div class="error-box">讀取失敗：${escapeHtml((data && data.message) || '無法讀取檔案內容。')}</div>`;
+      }
+    }catch(e){
+      $('uploadError').innerHTML = `<div class="error-box">讀取失敗：無法連到雲端硬碟讀取服務，請稍後再試。</div>`;
+    }
+  });
 
   function renderPreview(classes){
     const box = $('uploadPreview');
@@ -939,9 +1087,28 @@ if ('serviceWorker' in navigator) {
   // ---------- Settings / period / Google logging ----------
   const GOOGLE_SHEET_KEY = 'google-sheet-url';
   const GOOGLE_LOG_KEY = 'google-log-url';
+  const DRIVE_FOLDER_KEY = 'drive-folder-url';
+  const DRIVE_LOG_KEY = 'drive-log-url';
   const PERIODS_KEY = 'attendance-periods';
   const MESSAGE_PREFIX_KEY = 'message-prefix';
   const DEFAULT_MESSAGE_PREFIX = '@程程';
+
+  // 用 <script> 標籤呼叫 Apps Script 網頁應用程式並取回資料（JSONP 方式），
+  // 因為 Apps Script 網頁應用程式的回應不支援一般 fetch 的跨網域讀取。
+  function jsonpRequest(baseUrl, params){
+    return new Promise((resolve, reject) => {
+      if(!baseUrl){ reject(new Error('缺少服務網址')); return; }
+      const cb = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
+      const script = document.createElement('script');
+      const timer = setTimeout(() => { cleanup(); reject(new Error('連線逾時')); }, 12000);
+      function cleanup(){ clearTimeout(timer); delete window[cb]; script.remove(); }
+      window[cb] = (data) => { cleanup(); resolve(data); };
+      script.onerror = () => { cleanup(); reject(new Error('連線失敗')); };
+      const qs = Object.keys(params||{}).map(k => encodeURIComponent(k)+'='+encodeURIComponent(params[k])).join('&');
+      script.src = baseUrl + (baseUrl.includes('?') ? '&' : '?') + qs + (qs?'&':'') + 'callback=' + cb;
+      document.body.appendChild(script);
+    });
+  }
   const DEFAULT_PERIODS = [
     ['08:05','08:55'],
     ['09:10','10:00'],
@@ -954,6 +1121,8 @@ if ('serviceWorker' in navigator) {
   ];
 
   const GOOGLE_APPS_SCRIPT_CODE = "/**\n * 跨群選修點名｜Google Apps Script\n *\n * 用途：讓 index.html 把點名結果寫進指定的 Google 試算表。\n * Web App 以「執行身分：我」部署後，網頁把試算表網址與點名資料 POST 過來。\n *\n * 試算表格式：\n * A 欄：班級\n * B 欄：座號\n * C 欄：姓名\n * D 欄開始：每次點名一個新欄，第一列寫「日期｜第X節」\n * 例如：D1 = 2026/09/06｜第3節\n *       D2:Dn = 出席／未出席\n */\n\nfunction doGet() {\n  return ContentService\n    .createTextOutput('跨群選修點名 Google 紀錄服務正常運作')\n    .setMimeType(ContentService.MimeType.TEXT);\n}\n\nfunction doPost(e) {\n  const lock = LockService.getScriptLock();\n  lock.waitLock(30000);\n  try {\n    if (!e || !e.postData || !e.postData.contents) {\n      return jsonOutput({ok:false, message:'沒有收到資料'});\n    }\n\n    const data = JSON.parse(e.postData.contents);\n    const sheetUrl = String(data.sheetUrl || '').trim();\n    if (!sheetUrl) return jsonOutput({ok:false, message:'缺少 Google 試算表網址'});\n\n    const ss = SpreadsheetApp.openByUrl(sheetUrl);\n    const sheet = ss.getSheets()[0];\n\n    const rows = Array.isArray(data.rows) ? data.rows : [];\n    if (!rows.length) return jsonOutput({ok:false, message:'沒有學生資料'});\n\n    const date = String(data.date || '').trim() || Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy/MM/dd');\n    const period = String(data.period || '').trim() || '非上課時段';\n    const periodLabel = period === '非上課時段' ? period : '第' + period + '節';\n    const header = date + '｜' + periodLabel;\n\n    // 確保前三欄標題存在。\n    if (sheet.getLastRow() === 0) {\n      sheet.getRange(1, 1, 1, 3).setValues([['班級', '座號', '姓名']]);\n    } else {\n      const first = sheet.getRange(1, 1, 1, 3).getValues()[0];\n      if (!first[0] && !first[1] && !first[2]) {\n        sheet.getRange(1, 1, 1, 3).setValues([['班級', '座號', '姓名']]);\n      }\n    }\n\n    // 每次點名都新增一欄，不覆蓋既有紀錄。\n    const newCol = Math.max(sheet.getLastColumn() + 1, 4);\n    sheet.getRange(1, newCol).setValue(header);\n\n    // 讀取既有學生資料，依「班級 + 座號」找學生所在列。\n    const lastRow = Math.max(sheet.getLastRow(), 2);\n    const existing = lastRow >= 2 ? sheet.getRange(2, 1, lastRow - 1, 3).getValues() : [];\n    const rowMap = new Map();\n    existing.forEach((r, i) => {\n      const key = makeKey(r[0], r[1]);\n      if (key) rowMap.set(key, i + 2);\n    });\n\n    // 若新名單出現原本沒有的學生，就加到最下面。\n    const newStudents = [];\n    rows.forEach(item => {\n      const key = makeKey(item.className, item.seat);\n      if (key && !rowMap.has(key)) {\n        newStudents.push([\n          String(item.className || ''),\n          String(item.seat || ''),\n          String(item.name || '')\n        ]);\n      }\n    });\n\n    if (newStudents.length) {\n      const startRow = Math.max(sheet.getLastRow() + 1, 2);\n      sheet.getRange(startRow, 1, newStudents.length, 3).setValues(newStudents);\n      newStudents.forEach((r, i) => {\n        const key = makeKey(r[0], r[1]);\n        rowMap.set(key, startRow + i);\n      });\n    }\n\n    // 寫入本次點名狀態。\n    rows.forEach(item => {\n      const key = makeKey(item.className, item.seat);\n      if (!key) return;\n      const row = rowMap.get(key);\n      if (!row) return;\n      sheet.getRange(row, newCol).setValue(String(item.status || ''));\n    });\n\n    // 簡單格式化，讓期末查看比較清楚。\n    sheet.getRange(1, 1, 1, newCol).setFontWeight('bold');\n    sheet.getRange(1, newCol).setWrap(true);\n    sheet.setFrozenRows(1);\n    sheet.setFrozenColumns(3);\n    sheet.autoResizeColumns(1, 3);\n\n    return jsonOutput({ok:true, message:'已新增一欄點名紀錄', column:newCol, header:header});\n  } catch (err) {\n    return jsonOutput({ok:false, message:String(err && err.message ? err.message : err)});\n  } finally {\n    lock.releaseLock();\n  }\n}\n\nfunction makeKey(cls, seat) {\n  const c = String(cls || '').trim();\n  const s = String(seat || '').trim();\n  return c && s ? c + '|' + s : '';\n}\n\nfunction jsonOutput(obj) {\n  return ContentService\n    .createTextOutput(JSON.stringify(obj))\n    .setMimeType(ContentService.MimeType.JSON);\n}\n";
+
+  const DRIVE_APPS_SCRIPT_CODE = "/**\n * 課程名單雲端硬碟讀取服務｜Google Apps Script\n *\n * 用途：讓點名 App 讀取你指定的 Google 雲端硬碟資料夾裡的課程名單檔案，\n * 在「新增課程」畫面用下拉選單直接選課程，不用每次手動上傳檔案。\n *\n * 這是一支「獨立」的 Apps Script 專案（跟「Google 試算表同步」用的那一支\n * 是分開的兩個部署，各自有各自的網址）。部署方式：\n *\n * 1. 用你的私人 Google 帳號到 script.google.com，點「新增專案」\n *    （這次不需要從某一份試算表裡面開，直接開一個獨立專案就可以）。\n * 2. 把這個檔案的內容整段貼進去，取代原本的內容。\n * 3. 如果你的資料夾裡「只有 Google 試算表、沒有 .xlsx 檔案」，可以跳過這一步；\n *    如果資料夾裡「有 .xlsx 檔案」，需要多加一個服務才能讀取：\n *    左側選單「服務」旁的 ＋ 號 → 選「Drive API」→ 版本選「v3」→ 按「加入」。\n * 4. 按「部署」→「新增部署作業」→ 類型選「網頁應用程式」→\n *    「具有存取權的使用者」選「所有人」→ 部署 → 依需要完成帳號授權。\n * 5. 複製部署後的網址，貼到 App 設定頁「課程名單雲端硬碟」的\n *    「雲端硬碟讀取服務網址」欄位。\n *\n * 支援的檔案格式：\n * - Google 試算表（推薦，讀取最穩定、不需要額外設定）\n * - .xlsx 檔案（會先自動轉成暫存的 Google 試算表讀取，讀完立刻刪除暫存檔；\n *   需要完成上面第 3 步的 Drive API 進階服務設定）\n *\n * 名單檔案內容格式：跟本機上傳完全相同——第一列是標題列，\n * 需包含「班級」「座號」欄位，姓名欄位可選填。\n */\n\nconst XLSX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';\n\nfunction doGet(e) {\n  const p = (e && e.parameter) ? e.parameter : {};\n  const callback = String(p.callback || '').replace(/[^a-zA-Z0-9_$.]/g, '');\n\n  let result;\n  try {\n    if (p.action === 'listFolder') {\n      result = listFolder(String(p.folderUrl || p.folderId || '').trim());\n    } else if (p.action === 'readFile') {\n      result = readFile(String(p.fileId || '').trim(), String(p.mimeType || '').trim());\n    } else {\n      result = { ok: true, message: '課程名單雲端硬碟讀取服務正常運作' };\n    }\n  } catch (err) {\n    result = { ok: false, message: String(err && err.message ? err.message : err) };\n  }\n\n  const text = JSON.stringify(result);\n  if (callback) {\n    return ContentService\n      .createTextOutput(callback + '(' + text + ');')\n      .setMimeType(ContentService.MimeType.JAVASCRIPT);\n  }\n  return ContentService.createTextOutput(text).setMimeType(ContentService.MimeType.JSON);\n}\n\n// 從網址或直接貼的 ID 裡取出雲端硬碟資料夾的 ID。\nfunction extractDriveId(input) {\n  const s = String(input || '').trim();\n  const m = s.match(/[-\\w]{20,}/);\n  return m ? m[0] : s;\n}\n\n// 列出資料夾裡的課程名單檔案（Google 試算表 + .xlsx）。\nfunction listFolder(folderUrlOrId) {\n  const folderId = extractDriveId(folderUrlOrId);\n  if (!folderId) return { ok: false, message: '缺少雲端硬碟資料夾網址' };\n\n  const folder = DriveApp.getFolderById(folderId);\n  const files = [];\n\n  const sheetIter = folder.getFilesByType(MimeType.GOOGLE_SHEETS);\n  while (sheetIter.hasNext()) {\n    const f = sheetIter.next();\n    files.push({ id: f.getId(), name: f.getName(), mimeType: MimeType.GOOGLE_SHEETS });\n  }\n\n  const xlsxIter = folder.getFilesByType(XLSX_MIME_TYPE);\n  while (xlsxIter.hasNext()) {\n    const f = xlsxIter.next();\n    files.push({ id: f.getId(), name: f.getName(), mimeType: XLSX_MIME_TYPE });\n  }\n\n  files.sort(function (a, b) { return a.name.localeCompare(b.name, 'zh-Hant'); });\n  return { ok: true, folderName: folder.getName(), files: files };\n}\n\n// 讀取單一檔案的內容，回傳跟本機上傳解析出來一樣的「整張表格」資料（二維陣列）。\nfunction readFile(fileId, mimeType) {\n  if (!fileId) return { ok: false, message: '缺少檔案 ID' };\n\n  let ss;\n  let tempFileId = null;\n  try {\n    if (mimeType === XLSX_MIME_TYPE) {\n      // .xlsx 檔案：先轉成暫存的 Google 試算表才能讀取內容，用完即刪。\n      const blob = DriveApp.getFileById(fileId).getBlob();\n      const converted = Drive.Files.create(\n        { name: '__attendance_temp_convert__' + fileId, mimeType: MimeType.GOOGLE_SHEETS },\n        blob\n      );\n      tempFileId = converted.id;\n      ss = SpreadsheetApp.openById(converted.id);\n    } else {\n      ss = SpreadsheetApp.openById(fileId);\n    }\n\n    const sheet = ss.getSheets()[0];\n    const values = sheet.getDataRange().getValues();\n    return { ok: true, rows: values };\n  } catch (err) {\n    if (String(err).indexOf('Drive is not defined') !== -1) {\n      return { ok: false, message: '讀取 .xlsx 檔案需要先啟用「Drive API」進階服務，請參考程式最上面的說明完成設定。' };\n    }\n    throw err;\n  } finally {\n    if (tempFileId) {\n      try { Drive.Files.delete(tempFileId); } catch (e2) { /* 刪不掉暫存檔也沒關係，不影響結果 */ }\n    }\n  }\n}\n";
 
   async function getSetting(key, fallback=''){ return (await storageGet(key)) ?? fallback; }
 
@@ -975,6 +1144,11 @@ if ('serviceWorker' in navigator) {
     if(box) box.textContent=GOOGLE_APPS_SCRIPT_CODE;
   }
 
+  function buildDriveGuideCode(){
+    const box=$('driveAppsScriptCode');
+    if(box) box.textContent=DRIVE_APPS_SCRIPT_CODE;
+  }
+
   async function loadSettings(){
     const savedPeriods = await getSetting(PERIODS_KEY, null);
     const periods = savedPeriods ? JSON.parse(savedPeriods) : DEFAULT_PERIODS;
@@ -984,6 +1158,8 @@ if ('serviceWorker' in navigator) {
     });
     $('googleSheetUrlInput').value = await getSetting(GOOGLE_SHEET_KEY,'');
     $('googleLogUrlInput').value = await getSetting(GOOGLE_LOG_KEY,'');
+    $('driveFolderUrlInput').value = await getSetting(DRIVE_FOLDER_KEY,'');
+    $('driveLogUrlInput').value = await getSetting(DRIVE_LOG_KEY,'');
     $('messagePrefixInput').value = await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
     updateGoogleNote();
   }
@@ -996,6 +1172,8 @@ if ('serviceWorker' in navigator) {
     await storageSet(PERIODS_KEY, JSON.stringify(periods));
     await storageSet(GOOGLE_SHEET_KEY, $('googleSheetUrlInput').value.trim());
     await storageSet(GOOGLE_LOG_KEY, $('googleLogUrlInput').value.trim());
+    await storageSet(DRIVE_FOLDER_KEY, $('driveFolderUrlInput').value.trim());
+    await storageSet(DRIVE_LOG_KEY, $('driveLogUrlInput').value.trim());
     await storageSet(MESSAGE_PREFIX_KEY, $('messagePrefixInput').value);
     updateCurrentPeriod();
     updateGoogleNote();
@@ -1052,6 +1230,7 @@ if ('serviceWorker' in navigator) {
   $('settingsBtn').addEventListener('click', async ()=>{
     buildPeriodSettings();
     buildGoogleGuideCode();
+    buildDriveGuideCode();
     await loadSettings();
     showScreen('settings');
   });
@@ -1156,6 +1335,54 @@ if ('serviceWorker' in navigator) {
     }
   });
 
+  async function testDriveConnection(){
+    const folderUrl=(await getSetting(DRIVE_FOLDER_KEY,'')).trim() || $('driveFolderUrlInput').value.trim();
+    const webAppUrl=(await getSetting(DRIVE_LOG_KEY,'')).trim() || $('driveLogUrlInput').value.trim();
+    const result=$('driveTestResult');
+    if(!folderUrl || !webAppUrl){
+      result.className='google-test-result err';
+      result.textContent='❌ 請先填好「① 雲端硬碟資料夾網址」及「② 雲端硬碟讀取服務網址」。';
+      return false;
+    }
+    result.className='google-test-result';
+    result.textContent='測試中…';
+    try{
+      const data = await jsonpRequest(webAppUrl, {action:'listFolder', folderUrl});
+      if(data && data.ok){
+        const count = (data.files||[]).length;
+        result.className='google-test-result ok';
+        result.textContent=`✅ 連線成功！資料夾「${data.folderName||''}」裡找到 ${count} 個課程名單檔案。現在「新增課程」畫面就能直接選取。`;
+        return true;
+      }else{
+        result.className='google-test-result err';
+        result.textContent='❌ 連線失敗：'+(data && data.message ? data.message : '無法讀取資料夾。');
+        return false;
+      }
+    }catch(e){
+      result.className='google-test-result err';
+      result.textContent='❌ 無法連到雲端硬碟讀取服務。請確認 Apps Script 已部署為「網頁應用程式」，且存取權為「所有人」。';
+      return false;
+    }
+  }
+
+  $('testDriveBtn').addEventListener('click', async ()=>{
+    await storageSet(DRIVE_FOLDER_KEY, $('driveFolderUrlInput').value.trim());
+    await storageSet(DRIVE_LOG_KEY, $('driveLogUrlInput').value.trim());
+    await testDriveConnection();
+  });
+
+  $('copyDriveScriptBtn').addEventListener('click', async () => {
+    const code=$('driveAppsScriptCode').textContent;
+    try{
+      await navigator.clipboard.writeText(code);
+      $('driveSetupDetails').classList.add('show-code');
+      toast('已複製雲端硬碟讀取程式');
+    }catch(e){
+      toast('複製失敗，請直接選取下方程式');
+      $('driveSetupDetails').classList.add('show-code');
+    }
+  });
+
   // ---------- two-period roll call / message generation ----------
   // 每門課都是雙節課：第一節點完名先記錄下來，等第二節上課時間開始後
   // 再點一次名，兩節課的紀錄才會合併成一則訊息送出。
@@ -1187,13 +1414,39 @@ if ('serviceWorker' in navigator) {
     return prefix ? `${prefix}\n${body}` : body;
   }
 
-  // 判斷目前點名進度，更新畫面上的提示與按鈕文字/是否可按。
+  // 節次調整器：預設跟隨自動偵測的節次，但老師可以手動往前/往後調整
+  // （例如忘記點名、事後補登，或想連續完成兩次點名時使用）。
+  function currentPickerValue(auto){
+    return manualPeriod !== null ? manualPeriod : (auto || 0);
+  }
+
+  async function refreshPeriodPicker(){
+    const valueEl = $('periodPickerValue');
+    if(!valueEl) return;
+    const auto = await getCurrentPeriod();
+    const val = currentPickerValue(auto);
+    valueEl.textContent = periodLabel(val || null);
+  }
+
+  $('periodPrevBtn').addEventListener('click', async () => {
+    const auto = await getCurrentPeriod();
+    manualPeriod = Math.max(0, currentPickerValue(auto) - 1);
+    refreshPeriodPicker();
+  });
+  $('periodNextBtn').addEventListener('click', async () => {
+    const auto = await getCurrentPeriod();
+    manualPeriod = Math.min(8, currentPickerValue(auto) + 1);
+    refreshPeriodPicker();
+  });
+
+  // 判斷目前點名進度，更新畫面上的提示文字（僅供提醒，不會鎖住按鈕）。
   async function refreshSessionUI(){
     const bar = $('sessionStatusBar');
     const btn = $('genMsgBtn');
     if(!bar || !btn || !currentRoster) return;
+    await refreshPeriodPicker();
     const today = taipeiDateStr();
-    const period = await getCurrentPeriod();
+    const auto = await getCurrentPeriod();
     const pending = currentRoster.pendingSession;
 
     if(!pending || pending.date !== today){
@@ -1203,56 +1456,55 @@ if ('serviceWorker' in navigator) {
       return;
     }
 
-    const canFinalize = period !== null && period !== pending.period;
     bar.hidden = false;
-    if(canFinalize){
-      bar.className = 'session-status ready';
-      bar.textContent = `🔔 已進入${periodLabel(period)}，請完成第二次點名，再按下方按鈕送出這兩節課的紀錄。`;
-      btn.textContent = '完成第二次點名並送出紀錄';
-      btn.disabled = false;
-    }else{
+    const stillSamePeriod = auto !== null && auto === pending.period;
+    if(stillSamePeriod){
       bar.className = 'session-status waiting';
-      bar.textContent = `✅ 已完成${periodLabel(pending.period)}的點名，請等待下一節上課時間開始後，再進行第二次點名。`;
-      btn.textContent = '等待下一節上課時間';
-      btn.disabled = true;
+      bar.textContent = `✅ 已完成${periodLabel(pending.period)}的點名。如果現在還是同一節，可以先等一下；如果是要補點其他節，可以在下方調整節次後直接送出。`;
+    }else{
+      bar.className = 'session-status ready';
+      bar.textContent = `🔔 已可以進行第二次點名，請確認下方節次無誤，完成點名後按下方按鈕送出這兩節課的紀錄。`;
     }
+    btn.textContent = '完成第二次點名並送出紀錄';
+    btn.disabled = false;
   }
 
   async function handleGenMsgClick(){
     const btn = $('genMsgBtn');
     const today = taipeiDateStr();
-    const period = await getCurrentPeriod();
+    const auto = await getCurrentPeriod();
+    const period = manualPeriod !== null ? (manualPeriod || null) : auto;
     const pending = currentRoster.pendingSession;
     const alreadyStartedToday = pending && pending.date === today;
 
-    // 還在第一次點名的同一節課裡按到按鈕——時間還沒到，先擋下來。
-    if(alreadyStartedToday && !(period !== null && period !== pending.period)){
-      toast(pending.period
-        ? `已完成第 ${pending.period} 節點名，請等待下一節上課時間開始後再點名一次`
-        : '已完成第一次點名，請等待下一節上課時間開始後再點名一次');
-      return;
+    // 兩次都選了同一節——多半是誤按，先跟老師確認一次，但不強制擋下來。
+    if(alreadyStartedToday && period === pending.period){
+      const ok = window.confirm(`兩次點名都是${periodLabel(period)}，確定要合併送出嗎？\n\n如果其實是要等下一節再點，可以按「取消」。`);
+      if(!ok) return;
     }
 
     btn.disabled = true;
     btn.textContent = '處理中…';
     try{
       if(!alreadyStartedToday){
-        // ---- 第一節：先記錄下來，重置畫面等第二節再點一次 ----
+        // ---- 第一節：先記錄下來，重置畫面準備點第二次 ----
         const records = snapshotAbsences();
         const googleResult = await recordToGoogle(period);
         currentRoster.pendingSession = { date: today, period, records };
         resetAttendanceToPresent();
+        manualPeriod = null;
         await setRoster(currentCourseId, currentRoster);
         renderAttendance();
-        if(googleResult.configured && googleResult.sent) toast('已記錄第一次點名，Google 紀錄已送出，請於下一節再次點名');
+        if(googleResult.configured && googleResult.sent) toast('已記錄第一次點名，Google 紀錄已送出，可繼續點第二次');
         else if(googleResult.configured && !googleResult.sent) toast('已記錄第一次點名，但 Google 紀錄送出失敗');
-        else toast('已記錄第一次點名，請於下一節上課後再次點名');
+        else toast('已記錄第一次點名，請於下一節再點一次名');
       }else{
         // ---- 第二節：合併兩節紀錄，產生並送出訊息 ----
         const secondRecords = snapshotAbsences();
         const googleResult = await recordToGoogle(period);
         const msg = await buildMessage(pending, { period, records: secondRecords });
         currentRoster.pendingSession = null;
+        manualPeriod = null;
         await setRoster(currentCourseId, currentRoster);
         $('messageBox').textContent = msg;
         $('lineShareLink').href = 'https://line.me/R/msg/text/?' + encodeURIComponent(msg);
@@ -1291,6 +1543,7 @@ if ('serviceWorker' in navigator) {
   // ---------- init ----------
   buildPeriodSettings();
   buildGoogleGuideCode();
+  buildDriveGuideCode();
   loadSettings();
   updateGoogleNote();
   setInterval(updateCurrentPeriod, 30000);
