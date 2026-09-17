@@ -691,7 +691,8 @@ if ('serviceWorker' in navigator) {
   let rosterEditMode = false;
   let manualPeriod = null; // null = 跟隨自動偵測的節次；0~8 = 老師手動調整過的節次（0代表「非上課時段」）
   let lastCompletedSessions = null; // 最近一次「完成兩節點名」時，兩節各自的節次與缺席紀錄，供「返回修改點名」還原用
-  let pendingEditSecond = null; // 從結果畫面按「返回修改點名」後，暫存第二節原本的紀錄，等第一節改完再自動帶入
+  let editingPair = null; // 從結果畫面按「返回修改點名」後，記錄這兩節原本各自是第幾節；
+                          // 修改模式下，不管老師先改哪一節、只改其中一節，按送出都會直接用「這節的最新內容 + 另一節目前已知的內容」重新產生訊息。
   let lastSeenDate = null; // 用來偵測「跨到新的一天」，避免舊資料留到下次點名
 
   // ---------- storage helpers ----------
@@ -834,7 +835,7 @@ if ('serviceWorker' in navigator) {
     rosterEditMode = false;
     manualPeriod = null;
     lastCompletedSessions = null;
-    pendingEditSecond = null;
+    editingPair = null;
     await checkDayRollover(); // 如果距離上次點名已經跨到新的一天，先把舊的暫存資料清乾淨
     // reset attendance state: everyone present by default
     Object.values(currentRoster.classes).forEach(students => {
@@ -1541,7 +1542,7 @@ if ('serviceWorker' in navigator) {
     if(lastSeenDate === today) return false;
     lastSeenDate = today;
     lastCompletedSessions = null;
-    pendingEditSecond = null;
+    editingPair = null;
     manualPeriod = null;
     if(currentRoster){
       currentRoster.pendingSession = null;
@@ -1613,6 +1614,19 @@ if ('serviceWorker' in navigator) {
     await refreshPeriodPicker();
     const today = taipeiDateStr();
     const auto = await getCurrentPeriod();
+
+    if(editingPair){
+      // ---- 修改模式：這兩節原本就都已經有紀錄了，不管現在看的是哪一節、只改了哪一節，
+      // 按下按鈕都會直接用「這節最新內容 + 另一節目前已知的內容」重新產生訊息，不需要分兩次送出。
+      const viewingPeriod = currentPickerValue(auto) || null;
+      bar.hidden = false;
+      bar.className = 'session-status ready';
+      bar.textContent = `📝 修改模式：目前畫面是${periodLabel(viewingPeriod)}的紀錄，改好之後直接送出，會馬上用兩節最新的內容重新產生訊息。`;
+      btn.textContent = '完成修改並重新產生訊息';
+      btn.disabled = false;
+      return;
+    }
+
     const pending = currentRoster.pendingSession;
 
     if(!pending || pending.date !== today){
@@ -1641,6 +1655,53 @@ if ('serviceWorker' in navigator) {
     const today = taipeiDateStr();
     const auto = await getCurrentPeriod();
     const period = manualPeriod !== null ? (manualPeriod || null) : auto;
+
+    if(editingPair){
+      // ---- 修改「已完成的兩節紀錄」模式 ----
+      // 老師可能只改了其中一節（不管是第一節還是第二節，順序不限），
+      // 按下送出時：這節用畫面上最新輸入的內容，另一節用目前已知最新的內容（可能是原本沒動過的，
+      // 也可能是老師剛剛已經切過去改過的），兩節湊齊後直接重新產生訊息，不會要求老師再點一次名。
+      btn.disabled = true;
+      btn.textContent = '處理中…';
+      try{
+        const records = snapshotAbsences();
+        const googleResult = await recordToGoogle(period);
+        saveDraftForPeriod(period);
+
+        let firstPeriod, firstRecords, secondPeriod, secondRecords;
+        if(period === editingPair.secondPeriod && period !== editingPair.firstPeriod){
+          secondPeriod = period; secondRecords = records;
+          firstPeriod = editingPair.firstPeriod;
+          firstRecords = getRecordsForPeriod(firstPeriod) || {};
+        }else{
+          firstPeriod = period; firstRecords = records;
+          secondPeriod = editingPair.secondPeriod;
+          secondRecords = getRecordsForPeriod(secondPeriod) || {};
+        }
+
+        const msg = await buildMessage({period:firstPeriod, records:firstRecords}, {period:secondPeriod, records:secondRecords});
+        lastCompletedSessions = {
+          date: today,
+          first: { period: firstPeriod, records: firstRecords },
+          second: { period: secondPeriod, records: secondRecords }
+        };
+        editingPair = null;
+        currentRoster.pendingSession = null;
+        manualPeriod = null;
+        await setRoster(currentCourseId, currentRoster);
+        $('messageBox').textContent = msg;
+        $('lineShareLink').href = 'https://line.me/R/msg/text/?' + encodeURIComponent(msg);
+        showScreen('result');
+        if(googleResult.configured && googleResult.sent) toast('已更新，訊息已重新產生，Google 紀錄已送出');
+        else if(googleResult.configured && !googleResult.sent) toast('已更新，訊息已重新產生，但 Google 紀錄送出失敗');
+        else toast('已更新，訊息已重新產生');
+      } finally {
+        btn.disabled = false;
+        await refreshSessionUI();
+      }
+      return;
+    }
+
     const pending = currentRoster.pendingSession;
     const alreadyStartedToday = pending && pending.date === today;
 
@@ -1659,18 +1720,11 @@ if ('serviceWorker' in navigator) {
         const googleResult = await recordToGoogle(period);
         currentRoster.pendingSession = { date: today, period, records };
         saveDraftForPeriod(period);
-        if(pendingEditSecond){
-          // ---- 從「返回修改點名」進來：改完第一節後，自動帶入原本第二節的紀錄繼續修改 ----
-          manualPeriod = pendingEditSecond.period;
-          restoreRecords(pendingEditSecond.records);
-          pendingEditSecond = null;
-        }else{
-          // 第一次點名送出後，直接把節次調整器往前推一節（接下來幾乎都是點下一節的名），
-          // 如果這個節次之前已經輸入過紀錄（例如老師剛剛自己切換節次核對過），就帶入那份紀錄。
-          const nextPeriodValue = Math.min(8, (period || 0) + 1);
-          manualPeriod = nextPeriodValue;
-          loadPeriodForDisplay(nextPeriodValue || null);
-        }
+        // 第一次點名送出後，直接把節次調整器往前推一節（接下來幾乎都是點下一節的名），
+        // 如果這個節次之前已經輸入過紀錄（例如老師剛剛自己切換節次核對過），就帶入那份紀錄。
+        const nextPeriodValue = Math.min(8, (period || 0) + 1);
+        manualPeriod = nextPeriodValue;
+        loadPeriodForDisplay(nextPeriodValue || null);
         await setRoster(currentCourseId, currentRoster);
         renderAttendance();
         if(googleResult.configured && googleResult.sent) toast('已記錄第一次點名，Google 紀錄已送出，可繼續點第二次');
@@ -1708,11 +1762,12 @@ if ('serviceWorker' in navigator) {
   $('backToAttendBtn').addEventListener('click', async () => {
     await checkDayRollover();
     if(lastCompletedSessions && currentRoster){
-      // 回到「第一個節次」重新開始修改，並暫存第二節的原始紀錄，等第一節改完後自動帶入。
+      // 回到「第一個節次」開始修改，並記住這兩節原本各自是第幾節；
+      // 不管接下來老師先改哪一節、只改一節，送出時都會直接用兩節最新的內容重新產生訊息。
       restoreRecords(lastCompletedSessions.first.records);
       currentRoster.pendingSession = null;
       manualPeriod = lastCompletedSessions.first.period;
-      pendingEditSecond = lastCompletedSessions.second;
+      editingPair = { firstPeriod: lastCompletedSessions.first.period, secondPeriod: lastCompletedSessions.second.period };
       await setRoster(currentCourseId, currentRoster);
       renderAttendance();
     }
