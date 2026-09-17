@@ -313,6 +313,24 @@
     z-index:50;opacity:0;pointer-events:none;transition:opacity .2s
   }
   .toast.show{opacity:1}
+
+  .loading-overlay{
+    position:fixed;inset:0;z-index:80;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(18,58,90,.55);padding:20px;
+  }
+  .loading-overlay .loading-box{
+    background:var(--white);border:3px solid var(--navy);border-radius:18px;
+    padding:26px 24px;text-align:center;max-width:320px;
+    box-shadow:0 6px 0 rgba(18,58,90,.25);
+  }
+  .loading-overlay .loading-spinner{
+    width:34px;height:34px;margin:0 auto 12px;border-radius:50%;
+    border:5px solid var(--turq-soft);border-top-color:var(--navy);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-overlay .loading-text{font-size:18px;font-weight:900;color:var(--navy);line-height:1.6}
   a.line-link{text-decoration:none}
 
 
@@ -636,6 +654,12 @@ if ('serviceWorker' in navigator) {
 
 </div>
 <div class="toast" id="toast"></div>
+<div class="loading-overlay" id="loadingOverlay" hidden>
+  <div class="loading-box">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingOverlayText">請稍等，雲端硬碟資料載入中…</div>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -650,6 +674,15 @@ if ('serviceWorker' in navigator) {
     setTimeout(()=>t.classList.remove('show'), 1800);
   }
 
+  // 讀取雲端硬碟時跳出的明顯提示視窗，讀取完成（不管成功或失敗）後要記得呼叫 hideLoading() 關掉。
+  function showLoading(msg){
+    $('loadingOverlayText').textContent = msg || '請稍等，資料載入中…';
+    $('loadingOverlay').hidden = false;
+  }
+  function hideLoading(){
+    $('loadingOverlay').hidden = true;
+  }
+
   let currentCourseId = null;
   let currentRoster = null; // { name, classes: { className: [{seat,name}] }, pendingSession }
   let parsedUpload = null;  // classes object staged from file, before save
@@ -658,6 +691,7 @@ if ('serviceWorker' in navigator) {
   let manualPeriod = null; // null = 跟隨自動偵測的節次；0~8 = 老師手動調整過的節次（0代表「非上課時段」）
   let lastCompletedSessions = null; // 最近一次「完成兩節點名」時，兩節各自的節次與缺席紀錄，供「返回修改點名」還原用
   let pendingEditSecond = null; // 從結果畫面按「返回修改點名」後，暫存第二節原本的紀錄，等第一節改完再自動帶入
+  let lastSeenDate = null; // 用來偵測「跨到新的一天」，避免舊資料留到下次點名
 
   // ---------- storage helpers ----------
   // Browser persistence: IndexedDB. This works on HTTPS/PWA and keeps
@@ -800,10 +834,14 @@ if ('serviceWorker' in navigator) {
     manualPeriod = null;
     lastCompletedSessions = null;
     pendingEditSecond = null;
+    await checkDayRollover(); // 如果距離上次點名已經跨到新的一天，先把舊的暫存資料清乾淨
     // reset attendance state: everyone present by default
     Object.values(currentRoster.classes).forEach(students => {
       students.forEach(s => { s.absent = false; });
     });
+    // 如果今天已經對目前這個節次輸入過紀錄（例如中途切出去又回來），直接帶入，避免看起來像資料不見了。
+    const auto = await getCurrentPeriod();
+    loadPeriodForDisplay(currentPickerValue(auto) || null);
     renderAttendance();
     showScreen('attend');
   }
@@ -840,7 +878,8 @@ if ('serviceWorker' in navigator) {
     box.hidden = false;
     select.innerHTML = '<option value="">讀取中…</option>';
     select.disabled = true;
-    hint.textContent = '正在讀取雲端硬碟資料夾內容…';
+    hint.textContent = '⏳ 請等待雲端硬碟載入資料…';
+    showLoading('請稍等，雲端硬碟資料載入中…');
     try{
       const data = await jsonpRequest(webAppUrl, {action:'listFolder', folderUrl});
       if(data && data.ok){
@@ -859,6 +898,8 @@ if ('serviceWorker' in navigator) {
     }catch(e){
       select.innerHTML = '<option value="">讀取失敗</option>';
       hint.textContent = '❌ 無法連到雲端硬碟讀取服務，請到設定頁檢查設定或稍後再試。';
+    } finally {
+      hideLoading();
     }
   }
 
@@ -939,7 +980,8 @@ if ('serviceWorker' in navigator) {
     const mimeType = opt.dataset.mime;
     const fileName = opt.dataset.name || opt.textContent;
     const webAppUrl = (await getSetting(DRIVE_LOG_KEY, DEFAULT_DRIVE_LOG_URL)).trim();
-    hint.textContent = '讀取檔案中…';
+    hint.textContent = '⏳ 請等待雲端硬碟載入資料…';
+    showLoading('請稍等，雲端硬碟資料載入中…');
     $('uploadError').innerHTML = '';
     try{
       const data = await jsonpRequest(webAppUrl, {action:'readFile', fileId, mimeType});
@@ -959,6 +1001,8 @@ if ('serviceWorker' in navigator) {
       }
     }catch(e){
       $('uploadError').innerHTML = `<div class="error-box">讀取失敗：無法連到雲端硬碟讀取服務，請稍後再試。</div>`;
+    } finally {
+      hideLoading();
     }
   });
 
@@ -1254,6 +1298,7 @@ if ('serviceWorker' in navigator) {
   }
 
   async function updateCurrentPeriod(){
+    await checkDayRollover();
     await updateLiveClock();
     if(currentRoster) await refreshSessionUI();
   }
@@ -1448,6 +1493,68 @@ if ('serviceWorker' in navigator) {
     });
   }
 
+  // ---------- 節次草稿：讓老師可以自由切換節次調整器，每個節次各自保留當時輸入的紀錄 ----------
+  // 存放在 currentRoster.periodDrafts = { date, records: { '<節次或none>': {班級: [缺席座號]} } }
+  function draftKey(period){ return period === null || period === undefined ? 'none' : String(period); }
+
+  function ensureDraftsToday(){
+    const today = taipeiDateStr();
+    if(!currentRoster.periodDrafts || currentRoster.periodDrafts.date !== today){
+      currentRoster.periodDrafts = { date: today, records: {} };
+    }
+    return currentRoster.periodDrafts;
+  }
+
+  function saveDraftForPeriod(period){
+    const drafts = ensureDraftsToday();
+    drafts.records[draftKey(period)] = snapshotAbsences();
+  }
+
+  // 找出某個節次「當初輸入過的紀錄」：優先看草稿，再看目前記錄中、已完成送出的第一節/第二節紀錄。
+  // 都找不到就回傳 null，代表這個節次還沒有人點過名，畫面上應該顯示全員出席。
+  function getRecordsForPeriod(period){
+    const today = taipeiDateStr();
+    const drafts = currentRoster.periodDrafts;
+    if(drafts && drafts.date === today && drafts.records[draftKey(period)]){
+      return drafts.records[draftKey(period)];
+    }
+    const pending = currentRoster.pendingSession;
+    if(pending && pending.date === today && pending.period === period) return pending.records;
+    if(lastCompletedSessions && lastCompletedSessions.date === today){
+      if(lastCompletedSessions.first.period === period) return lastCompletedSessions.first.records;
+      if(lastCompletedSessions.second.period === period) return lastCompletedSessions.second.records;
+    }
+    return null;
+  }
+
+  // 把畫面切換去顯示某個節次：有紀錄就帶入，沒有就顯示全員出席（代表這節還沒點過名）。
+  function loadPeriodForDisplay(period){
+    const records = getRecordsForPeriod(period);
+    if(records) restoreRecords(records);
+    else resetAttendanceToPresent();
+  }
+
+  // 偵測「跨到新的一天」：只要日期變了（例如老師把瀏覽器分頁一直開著沒關，隔了一天甚至隔週才又點開），
+  // 就把所有跟「今天點名」有關的暫存資料全部清空，並強制把畫面重設為全新、乾淨、預設「出席」的狀態，
+  // 確保絕對不會把之前點名的紀錄誤帶到新的一次點名裡。
+  async function checkDayRollover(){
+    const today = taipeiDateStr();
+    if(lastSeenDate === null){ lastSeenDate = today; return false; }
+    if(lastSeenDate === today) return false;
+    lastSeenDate = today;
+    lastCompletedSessions = null;
+    pendingEditSecond = null;
+    manualPeriod = null;
+    if(currentRoster){
+      currentRoster.pendingSession = null;
+      currentRoster.periodDrafts = null;
+      resetAttendanceToPresent();
+      if(currentCourseId) await setRoster(currentCourseId, currentRoster);
+      if($('screen-attend').classList.contains('active')) renderAttendance();
+    }
+    return true;
+  }
+
   async function buildMessage(first, second){
     const prefix = await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
     const classes = Object.keys(currentRoster.classes).sort((a,b) => String(a).localeCompare(String(b),'zh-Hant',{numeric:true}));
@@ -1475,15 +1582,29 @@ if ('serviceWorker' in navigator) {
     valueEl.textContent = periodLabel(val || null);
   }
 
+  // 切換節次調整器時：先把目前畫面上（正在輸入、還沒送出）的狀態存成這個節次的草稿，
+  // 再把新節次「當初輸入過的紀錄」帶進畫面——這樣老師可以自由來回切換節次核對／修改，
+  // 不會因為換了節次，畫面內容跟原本輸入的對不起來。
+  async function switchPickerPeriod(newManualPeriod){
+    if(!currentRoster) { manualPeriod = newManualPeriod; refreshPeriodPicker(); return; }
+    await checkDayRollover();
+    const auto = await getCurrentPeriod();
+    const leavingPeriod = currentPickerValue(auto) || null;
+    saveDraftForPeriod(leavingPeriod);
+    manualPeriod = newManualPeriod;
+    const enteringPeriod = newManualPeriod || null;
+    loadPeriodForDisplay(enteringPeriod);
+    await setRoster(currentCourseId, currentRoster);
+    renderAttendance();
+  }
+
   $('periodPrevBtn').addEventListener('click', async () => {
     const auto = await getCurrentPeriod();
-    manualPeriod = Math.max(0, currentPickerValue(auto) - 1);
-    refreshPeriodPicker();
+    await switchPickerPeriod(Math.max(0, currentPickerValue(auto) - 1));
   });
   $('periodNextBtn').addEventListener('click', async () => {
     const auto = await getCurrentPeriod();
-    manualPeriod = Math.min(8, currentPickerValue(auto) + 1);
-    refreshPeriodPicker();
+    await switchPickerPeriod(Math.min(8, currentPickerValue(auto) + 1));
   });
 
   // 判斷目前點名進度，更新畫面上的提示文字（僅供提醒，不會鎖住按鈕）。
@@ -1517,6 +1638,7 @@ if ('serviceWorker' in navigator) {
   }
 
   async function handleGenMsgClick(){
+    await checkDayRollover();
     const btn = $('genMsgBtn');
     const today = taipeiDateStr();
     const auto = await getCurrentPeriod();
@@ -1538,16 +1660,18 @@ if ('serviceWorker' in navigator) {
         const records = snapshotAbsences();
         const googleResult = await recordToGoogle(period);
         currentRoster.pendingSession = { date: today, period, records };
+        saveDraftForPeriod(period);
         if(pendingEditSecond){
           // ---- 從「返回修改點名」進來：改完第一節後，自動帶入原本第二節的紀錄繼續修改 ----
-          restoreRecords(pendingEditSecond.records);
           manualPeriod = pendingEditSecond.period;
+          restoreRecords(pendingEditSecond.records);
           pendingEditSecond = null;
         }else{
-          resetAttendanceToPresent();
-          // 第一次點名送出後，直接把節次調整器往前推一節，
-          // 因為接下來第二次點名幾乎都是點下一節的名。
-          manualPeriod = Math.min(8, (period || 0) + 1);
+          // 第一次點名送出後，直接把節次調整器往前推一節（接下來幾乎都是點下一節的名），
+          // 如果這個節次之前已經輸入過紀錄（例如老師剛剛自己切換節次核對過），就帶入那份紀錄。
+          const nextPeriodValue = Math.min(8, (period || 0) + 1);
+          manualPeriod = nextPeriodValue;
+          loadPeriodForDisplay(nextPeriodValue || null);
         }
         await setRoster(currentCourseId, currentRoster);
         renderAttendance();
@@ -1558,8 +1682,10 @@ if ('serviceWorker' in navigator) {
         // ---- 第二節：合併兩節紀錄，產生並送出訊息 ----
         const secondRecords = snapshotAbsences();
         const googleResult = await recordToGoogle(period);
+        saveDraftForPeriod(period);
         const msg = await buildMessage(pending, { period, records: secondRecords });
         lastCompletedSessions = {
+          date: today,
           first: { period: pending.period, records: pending.records },
           second: { period, records: secondRecords }
         };
@@ -1582,6 +1708,7 @@ if ('serviceWorker' in navigator) {
   $('genMsgBtn').addEventListener('click', handleGenMsgClick);
 
   $('backToAttendBtn').addEventListener('click', async () => {
+    await checkDayRollover();
     if(lastCompletedSessions && currentRoster){
       // 回到「第一個節次」重新開始修改，並暫存第二節的原始紀錄，等第一節改完後自動帶入。
       restoreRecords(lastCompletedSessions.first.records);
