@@ -265,22 +265,24 @@
   .student-chip.edit-mode .del-student{display:flex}
 
   .session-status{
-    border-radius:13px;padding:10px 13px;margin:10px 0;font-size:12px;line-height:1.7;
-    font-weight:800;border:2px solid var(--navy);
+    padding:0 2px;margin:6px 0 2px;font-size:11px;line-height:1.7;
+    font-weight:400;border:none;background:none;
   }
-  .session-status.waiting{background:var(--blue-panel);color:var(--muted)}
-  .session-status.ready{background:var(--yellow-soft);color:var(--navy);border-color:var(--red)}
+  .session-status.waiting{color:var(--muted)}
+  .session-status.ready{color:var(--navy);font-weight:700}
 
   .period-picker{
-    display:flex;align-items:center;justify-content:center;gap:10px;
-    background:var(--blue-panel);border:2px solid var(--navy);border-radius:12px;
-    padding:8px 12px;margin-bottom:9px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    background:var(--yellow-soft);border:3px solid var(--red);border-radius:14px;
+    padding:12px 14px;margin-bottom:10px;
+    box-shadow:0 4px 0 rgba(18,58,90,.15);
   }
-  .period-picker .ppk-label{font-size:11px;font-weight:900;color:var(--muted)}
-  .period-picker .ppk-value{font-size:16px;font-weight:900;color:var(--navy);min-width:64px;text-align:center}
+  .period-picker .ppk-label{font-size:12px;font-weight:900;color:var(--navy);letter-spacing:.5px}
+  .period-picker .ppk-row{display:flex;align-items:center;justify-content:center;gap:12px}
+  .period-picker .ppk-value{font-size:24px;font-weight:900;color:var(--red);min-width:78px;text-align:center}
   .period-picker .ppk-btn{
-    width:32px;height:32px;border-radius:8px;border:2px solid var(--navy);
-    background:var(--white);color:var(--navy);font-size:16px;font-weight:900;
+    width:38px;height:38px;border-radius:9px;border:2px solid var(--navy);
+    background:var(--white);color:var(--navy);font-size:18px;font-weight:900;
     font-family:inherit;cursor:pointer;
   }
   .period-picker .ppk-btn:active{transform:scale(.94)}
@@ -329,7 +331,7 @@
   .current-class-bar .value{font-size:20px;letter-spacing:.5px;white-space:nowrap}
   .current-class-meta{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:13px;font-weight:900}
   .current-class-meta .time{font-variant-numeric:tabular-nums}
-  .current-class-meta .period{font-size:12px}
+  .current-class-meta .period{font-size:10px;font-weight:400;opacity:.8}
   .class-title{background:var(--turq);}
   .auto-course-name{
     width:100%;padding:12px 13px;border-radius:12px;border:2px solid var(--navy);
@@ -426,10 +428,6 @@ if ('serviceWorker' in navigator) {
       <div class="sub">上傳試算表，設定課程與班級座號名單</div>
     </div>
 
-    <label class="field-label">課程名稱</label>
-    <input type="text" class="auto-course-name" id="courseNameInput" placeholder="選擇 .xlsx 檔案後，會自動帶入檔名" />
-    <div class="hint">例如：<b>多媒體概論.xlsx</b> → 課程名稱會自動變成「多媒體概論」，也可以自行修改成其他名稱。</div>
-
     <div class="drive-picker" id="drivePickerBox" hidden>
       <label class="field-label">從雲端硬碟選擇課程名單</label>
       <select id="driveFileSelect">
@@ -438,7 +436,7 @@ if ('serviceWorker' in navigator) {
       <div class="hint" id="drivePickerHint">讀取中…</div>
     </div>
 
-    <label class="field-label">試算表檔案（.xlsx / .csv）</label>
+    <label class="field-label">或上傳試算表檔案（.xlsx / .csv）</label>
     <div class="file-drop" id="fileDrop">
       <div id="fileDropText">點擊或拖曳檔案到這裡上傳</div>
       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
@@ -450,6 +448,10 @@ if ('serviceWorker' in navigator) {
 
     <div id="uploadError"></div>
     <div id="uploadPreview"></div>
+
+    <label class="field-label">課程名稱</label>
+    <input type="text" class="auto-course-name" id="courseNameInput" placeholder="選好上面的來源後，會自動帶入名稱" />
+    <div class="hint">例如：<b>多媒體概論.xlsx</b> → 課程名稱會自動變成「多媒體概論」，也可以自行修改成其他名稱。</div>
 
     <div class="stack">
       <button class="primary-btn" id="saveCourseBtn" disabled>儲存課程並開始點名</button>
@@ -471,9 +473,28 @@ if ('serviceWorker' in navigator) {
     </div>
 
     <div class="settings-card">
+      <div class="settings-title">進階同步設定</div>
+      <div class="settings-sub">Google 試算表同步、課程名單雲端硬碟——這兩項設定好一次之後就不太需要再調整。</div>
+      <button type="button" class="primary-btn ghost small-btn" id="openAdvancedSyncBtn" style="margin-top:10px">前往進階同步設定 →</button>
+    </div>
+
+    <div class="settings-card">
       <div class="settings-title">上課節次時間</div>
       <div class="settings-sub">程式會依現在時間，自動判斷目前是第 1～8 節。若目前時間不在任何區間，會顯示「非上課時段」。</div>
       <div id="periodSettings"></div>
+    </div>
+
+    <div class="stack">
+      <button class="primary-btn" id="saveSettingsBtn">儲存設定</button>
+      <button class="primary-btn ghost" id="backFromSettingsBtn">← 返回</button>
+    </div>
+  </section>
+
+  <!-- SETTINGS: ADVANCED SYNC -->
+  <section class="screen" id="screen-settings-sync">
+    <div class="course-header">
+      <div class="title">進階同步設定</div>
+      <div class="sub">Google 試算表同步與課程名單雲端硬碟，設定好一次之後平常不太需要再調整。</div>
     </div>
 
     <div class="settings-card google-settings-card">
@@ -550,8 +571,8 @@ if ('serviceWorker' in navigator) {
     </div>
 
     <div class="stack">
-      <button class="primary-btn" id="saveSettingsBtn">儲存設定</button>
-      <button class="primary-btn ghost" id="backFromSettingsBtn">← 返回</button>
+      <button class="primary-btn" id="saveAdvancedSyncBtn">儲存設定</button>
+      <button class="primary-btn ghost" id="backFromAdvancedSyncBtn">← 返回設定</button>
     </div>
   </section>
 
@@ -560,7 +581,7 @@ if ('serviceWorker' in navigator) {
     <div class="course-header">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div class="title" id="attendCourseName">—</div>
-        <button type="button" class="icon-btn edit-roster-toggle" id="editRosterBtn">編輯名單</button>
+        <button type="button" class="icon-btn edit-roster-toggle" id="editRosterBtn">休學簡易刪除</button>
       </div>
       <div class="sub" id="attendSub">點擊學生標記為未出席，預設為全員出席；每節課都要各別點名一次，兩節點完才會送出紀錄</div>
     </div>
@@ -575,7 +596,7 @@ if ('serviceWorker' in navigator) {
       </div>
       <div class="current-class-meta">
         <span class="time" id="liveClock">--:--</span>
-        <span class="period" id="livePeriod">第?節</span>
+        <span class="period" id="livePeriod">（自動偵測：第?節）</span>
       </div>
     </div>
     <div class="session-status" id="sessionStatusBar" hidden></div>
@@ -583,10 +604,12 @@ if ('serviceWorker' in navigator) {
 
     <div class="sticky-actions stack">
       <div class="period-picker">
-        <span class="ppk-label">本次登記節次</span>
-        <button type="button" class="ppk-btn" id="periodPrevBtn" aria-label="往前一節">－</button>
-        <span class="ppk-value" id="periodPickerValue">—</span>
-        <button type="button" class="ppk-btn" id="periodNextBtn" aria-label="往後一節">＋</button>
+        <span class="ppk-label">✅ 送出前最後確認：本次登記節次</span>
+        <div class="ppk-row">
+          <button type="button" class="ppk-btn" id="periodPrevBtn" aria-label="往前一節">－</button>
+          <span class="ppk-value" id="periodPickerValue">—</span>
+          <button type="button" class="ppk-btn" id="periodNextBtn" aria-label="往後一節">＋</button>
+        </div>
       </div>
       <button class="primary-btn" id="genMsgBtn">完成本節點名</button>
       <div class="auto-google-note" id="autoGoogleNote">已設定 Google 時，每節點名都會自動記錄。</div>
@@ -615,7 +638,7 @@ if ('serviceWorker' in navigator) {
 <script>
 (function(){
   const $ = (id) => document.getElementById(id);
-  const screens = ['home','upload','attend','result','settings'];
+  const screens = ['home','upload','attend','result','settings','settings-sync'];
   function showScreen(name){
     screens.forEach(s => $('screen-'+s).classList.toggle('active', s===name));
     window.scrollTo(0,0);
@@ -986,7 +1009,7 @@ if ('serviceWorker' in navigator) {
     refreshSessionUI();
 
     const editBtn = $('editRosterBtn');
-    editBtn.textContent = rosterEditMode ? '完成編輯' : '編輯名單';
+    editBtn.textContent = rosterEditMode ? '完成編輯' : '休學簡易刪除';
     editBtn.classList.toggle('active', rosterEditMode);
 
     const container = $('classContainer');
@@ -1221,7 +1244,7 @@ if ('serviceWorker' in navigator) {
     if(!clock || !periodEl) return;
     clock.textContent = formatTaipeiTime();
     const p = await getCurrentPeriod();
-    periodEl.textContent = p ? `第${p}節` : '非上課時段';
+    periodEl.textContent = p ? `（自動偵測：第${p}節，僅供參考）` : '（自動偵測：非上課時段，僅供參考）';
   }
 
   async function updateCurrentPeriod(){
@@ -1238,6 +1261,14 @@ if ('serviceWorker' in navigator) {
   });
   $('backFromSettingsBtn').addEventListener('click', ()=>{ updateCurrentPeriod(); showScreen(currentRoster ? 'attend' : 'home'); });
   $('saveSettingsBtn').addEventListener('click', saveSettings);
+  $('openAdvancedSyncBtn').addEventListener('click', async ()=>{
+    buildGoogleGuideCode();
+    buildDriveGuideCode();
+    await loadSettings();
+    showScreen('settings-sync');
+  });
+  $('backFromAdvancedSyncBtn').addEventListener('click', ()=>{ showScreen('settings'); });
+  $('saveAdvancedSyncBtn').addEventListener('click', saveSettings);
 
   function taipeiDateStr(){
     return new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).replace(/\//g,'/');
@@ -1494,7 +1525,9 @@ if ('serviceWorker' in navigator) {
         const googleResult = await recordToGoogle(period);
         currentRoster.pendingSession = { date: today, period, records };
         resetAttendanceToPresent();
-        manualPeriod = null;
+        // 第一次點名送出後，直接把節次調整器往前推一節，
+        // 因為接下來第二次點名幾乎都是點下一節的名。
+        manualPeriod = Math.min(8, (period || 0) + 1);
         await setRoster(currentCourseId, currentRoster);
         renderAttendance();
         if(googleResult.configured && googleResult.sent) toast('已記錄第一次點名，Google 紀錄已送出，可繼續點第二次');
