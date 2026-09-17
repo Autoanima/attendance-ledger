@@ -232,6 +232,7 @@
   }
   .student-chip .seat::after{content:"✓";font-size:15px}
   .student-chip .nm{
+    flex:1;min-width:0;
     font-size:19px;line-height:1.3;font-weight:700;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)
   }
@@ -241,6 +242,23 @@
   }
   .student-chip.absent .seat::after{content:"×";font-size:22px}
   .student-chip.absent .nm{color:#98453E;text-decoration:line-through}
+
+  .edit-roster-toggle.active{background:var(--red);color:var(--white);border-color:var(--navy)}
+  .student-chip.edit-mode{cursor:default}
+  .student-chip.edit-mode:active{transform:none}
+  .student-chip .del-student{
+    display:none;flex:none;width:36px;height:36px;border-radius:9px;
+    border:2px solid var(--red);background:var(--red-soft);color:var(--red);
+    font-size:18px;font-weight:900;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .student-chip.edit-mode .del-student{display:flex}
+
+  .session-status{
+    border-radius:13px;padding:10px 13px;margin:10px 0;font-size:12px;line-height:1.7;
+    font-weight:800;border:2px solid var(--navy);
+  }
+  .session-status.waiting{background:var(--blue-panel);color:var(--muted)}
+  .session-status.ready{background:var(--yellow-soft);color:var(--navy);border-color:var(--red)}
 
   .sticky-actions{
     position:sticky;bottom:0;padding:11px 0 4px;margin-top:11px;
@@ -291,7 +309,9 @@
   .auto-course-name{
     width:100%;padding:12px 13px;border-radius:12px;border:2px solid var(--navy);
     background:var(--yellow-soft);color:var(--navy);font-size:16px;font-weight:900;
+    font-family:inherit;
   }
+  .auto-course-name::placeholder{color:var(--muted);font-weight:700}
   .google-settings-card .big-sub{font-size:12px;line-height:1.8}
   .google-settings-card .big-sub b{color:var(--navy)}
   .guide-step{display:grid;grid-template-columns:30px 1fr;gap:9px;align-items:start;margin-top:13px}
@@ -382,8 +402,8 @@ if ('serviceWorker' in navigator) {
     </div>
 
     <label class="field-label">課程名稱</label>
-    <div class="auto-course-name" id="courseNameAuto">選擇 .xlsx 檔案後，會自動使用檔名作為課程名稱</div>
-    <div class="hint">例如：<b>多媒體概論.xlsx</b> → 課程名稱會自動變成「多媒體概論」</div>
+    <input type="text" class="auto-course-name" id="courseNameInput" placeholder="選擇 .xlsx 檔案後，會自動帶入檔名" />
+    <div class="hint">例如：<b>多媒體概論.xlsx</b> → 課程名稱會自動變成「多媒體概論」，也可以自行修改成其他名稱。</div>
 
     <label class="field-label">試算表檔案（.xlsx / .csv）</label>
     <div class="file-drop" id="fileDrop">
@@ -413,7 +433,7 @@ if ('serviceWorker' in navigator) {
 
     <div class="settings-card">
       <div class="settings-title">訊息開頭文字</div>
-      <div class="settings-sub">按「產生訊息」時，會自動加在整段訊息最前面，可依需要自行修改或清空。</div>
+      <div class="settings-sub">送出最終點名訊息時，會自動加在整段訊息最前面，可依需要自行修改或清空。</div>
       <input type="text" id="messagePrefixInput" placeholder="例如：@程程" />
     </div>
 
@@ -425,7 +445,7 @@ if ('serviceWorker' in navigator) {
 
     <div class="settings-card google-settings-card">
       <div class="settings-title">Google 試算表（選填）</div>
-      <div class="settings-sub big-sub">如果你希望按「產生訊息」時，也自動把本次點名寫進 Google 試算表，請完成下面設定。<br><b>不設定也可以正常點名與產生 LINE 訊息。</b></div>
+      <div class="settings-sub big-sub">如果你希望每次點名（含第一節、第二節）送出時，也自動把點名結果寫進 Google 試算表，請完成下面設定。<br><b>不設定也可以正常點名與產生 LINE 訊息。</b></div>
 
       <div class="account-warning"><b>⚠️ 請務必用你「私人的 Google 帳號」（自己的 Gmail，不是學校配發的帳號）來開這份試算表、部署 Apps Script。</b><br>學校帳號通常是 Google Workspace 網域帳號，校方管理員多半會限制或直接關閉「部署為任何人都能存取的網頁應用程式」這個功能，就算整個步驟都照著做，最後同步還是會沒有反應、抓不出原因。用自己的私人帳號做這件事才會成功。</div>
       <div class="account-warning"><b>💻 以下設定步驟請用電腦操作，手機無法完成部署。</b><br>第一次設定大約只要 5 分鐘，且只需要做一次；設定好以後，平常用手機點名、產生訊息完全不受影響，一樣正常同步。</div>
@@ -455,7 +475,7 @@ if ('serviceWorker' in navigator) {
           <button type="button" class="primary-btn ghost small-btn" id="testGoogleBtn">🟢 測試 Google 連線</button>
           <div class="google-test-result" id="googleTestResult"></div>
           <div class="guide-text" style="margin-top:6px">按「測試連線」——如果看到一段確認文字，代表部署成功；如果看到錯誤畫面，回到第 4～6 步檢查部署設定（尤其是「具有存取權的使用者」是不是選「所有人」）。</div>
-          <div class="google-note"><b>設定完成後：</b>平常點名時不需要再手動處理，只要按「產生訊息」，系統就會一併把本次點名同步進 Google 試算表，不用再手動觸發。</div>
+          <div class="google-note"><b>設定完成後：</b>平常點名時不需要再手動處理，每節點名送出時（含第一節、第二節），系統都會自動同步進 Google 試算表，不用再手動觸發。</div>
         </div>
       </details>
     </div>
@@ -469,8 +489,11 @@ if ('serviceWorker' in navigator) {
   <!-- ATTENDANCE -->
   <section class="screen" id="screen-attend">
     <div class="course-header">
-      <div class="title" id="attendCourseName">—</div>
-      <div class="sub" id="attendSub">點擊學生標記為未出席，預設為全員出席</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div class="title" id="attendCourseName">—</div>
+        <button type="button" class="icon-btn edit-roster-toggle" id="editRosterBtn">編輯名單</button>
+      </div>
+      <div class="sub" id="attendSub">點擊學生標記為未出席，預設為全員出席；每節課都要各別點名一次，兩節點完才會送出紀錄</div>
     </div>
     <div class="summary-bar">
       <span>共 <b id="totalCount">0</b> 人</span>
@@ -486,11 +509,12 @@ if ('serviceWorker' in navigator) {
         <span class="period" id="livePeriod">第?節</span>
       </div>
     </div>
+    <div class="session-status" id="sessionStatusBar" hidden></div>
     <div id="classContainer" aria-label="依班級整合的學生名單"></div>
 
     <div class="sticky-actions stack">
-      <button class="primary-btn" id="genMsgBtn">產生訊息</button>
-      <div class="auto-google-note" id="autoGoogleNote">已設定 Google 時，「產生訊息」會自動記錄點名。</div>
+      <button class="primary-btn" id="genMsgBtn">完成本節點名</button>
+      <div class="auto-google-note" id="autoGoogleNote">已設定 Google 時，每節點名都會自動記錄。</div>
     </div>
   </section>
 
@@ -527,9 +551,10 @@ if ('serviceWorker' in navigator) {
   }
 
   let currentCourseId = null;
-  let currentRoster = null; // { name, classes: { className: [{seat,name}] } }
+  let currentRoster = null; // { name, classes: { className: [{seat,name}] }, pendingSession }
   let parsedUpload = null;  // classes object staged from file, before save
   let pendingCourseName = '';
+  let rosterEditMode = false;
 
   // ---------- storage helpers ----------
   // Browser persistence: IndexedDB. This works on HTTPS/PWA and keeps
@@ -668,6 +693,7 @@ if ('serviceWorker' in navigator) {
     if(!roster){ toast('讀取名單失敗'); return; }
     currentCourseId = id;
     currentRoster = roster;
+    rosterEditMode = false;
     // reset attendance state: everyone present by default
     Object.values(currentRoster.classes).forEach(students => {
       students.forEach(s => { s.absent = false; });
@@ -682,7 +708,7 @@ if ('serviceWorker' in navigator) {
   // ---------- upload screen ----------
   function resetUploadScreen(){
     pendingCourseName = '';
-    $('courseNameAuto').textContent = '選擇 .xlsx 檔案後，會自動使用檔名作為課程名稱';
+    $('courseNameInput').value = '';
     $('fileInput').value = '';
     $('fileDropText').textContent = '點擊或拖曳檔案到這裡上傳';
     $('fileDrop').classList.remove('has-file');
@@ -743,7 +769,7 @@ if ('serviceWorker' in navigator) {
         const classes = parseRows(rows);
         parsedUpload = classes;
         pendingCourseName = String(file.name || '').replace(/\.[^.]+$/, '').trim() || '未命名課程';
-        $('courseNameAuto').textContent = pendingCourseName;
+        $('courseNameInput').value = pendingCourseName;
         $('uploadError').innerHTML = '';
         renderPreview(classes);
         $('fileDropText').textContent = '✓ ' + file.name;
@@ -775,12 +801,16 @@ if ('serviceWorker' in navigator) {
   $('fileInput').addEventListener('change', (e) => {
     if(e.target.files[0]) handleFile(e.target.files[0]);
   });
+  $('courseNameInput').addEventListener('input', () => {
+    pendingCourseName = $('courseNameInput').value;
+    updateSaveEnabled();
+  });
   function updateSaveEnabled(){
-    $('saveCourseBtn').disabled = !(parsedUpload && pendingCourseName);
+    $('saveCourseBtn').disabled = !(parsedUpload && $('courseNameInput').value.trim());
   }
 
   $('saveCourseBtn').addEventListener('click', async () => {
-    const name = pendingCourseName.trim();
+    const name = $('courseNameInput').value.trim();
     if(!name || !parsedUpload) return;
     const id = 'c' + Date.now();
     const rosterData = { name, classes: parsedUpload };
@@ -805,6 +835,11 @@ if ('serviceWorker' in navigator) {
     if(classResizeHandler) window.removeEventListener('resize', classResizeHandler);
     $('attendCourseName').textContent = currentRoster.name;
     updateLiveClock();
+    refreshSessionUI();
+
+    const editBtn = $('editRosterBtn');
+    editBtn.textContent = rosterEditMode ? '完成編輯' : '編輯名單';
+    editBtn.classList.toggle('active', rosterEditMode);
 
     const container = $('classContainer');
     container.innerHTML = '';
@@ -820,13 +855,21 @@ if ('serviceWorker' in navigator) {
 
         currentRoster.classes[cls].forEach(stu => {
           const chip = document.createElement('div');
-          chip.className = 'student-chip' + (stu.absent ? ' absent' : '');
-          chip.innerHTML = `<span class="seat">${escapeHtml(stu.seat)}</span><span class="nm">${escapeHtml(stu.name || '座號'+stu.seat)}</span>`;
+          chip.className = 'student-chip' + (stu.absent ? ' absent' : '') + (rosterEditMode ? ' edit-mode' : '');
+          chip.innerHTML = `<span class="seat">${escapeHtml(stu.seat)}</span><span class="nm">${escapeHtml(stu.name || '座號'+stu.seat)}</span><button type="button" class="del-student" aria-label="刪除這位學生">✕</button>`;
           chip.addEventListener('click', () => {
+            if(rosterEditMode) return;
             stu.absent = !stu.absent;
             chip.classList.toggle('absent', stu.absent);
             updateSummary();
             if(currentCourseId && currentRoster) setRoster(currentCourseId, currentRoster);
+          });
+          chip.querySelector('.del-student').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const label = stu.name ? `${cls} ${stu.seat}號 ${stu.name}` : `${cls} ${stu.seat}號`;
+            const ok = window.confirm(`確定要從名單中刪除「${label}」嗎？\n\n這個動作無法復原（例如學生休學時使用）。`);
+            if(!ok) return;
+            removeStudent(cls, stu.seat);
           });
           grid.appendChild(chip);
         });
@@ -860,6 +903,27 @@ if ('serviceWorker' in navigator) {
 
     updateSummary();
   }
+
+  async function removeStudent(cls, seat){
+    if(!currentRoster || !currentRoster.classes[cls]) return;
+    currentRoster.classes[cls] = currentRoster.classes[cls].filter(s => s.seat !== seat);
+    if(!currentRoster.classes[cls].length) delete currentRoster.classes[cls];
+    await setRoster(currentCourseId, currentRoster);
+    const idx = await getIndex();
+    const pos = idx.findIndex(c => c.id === currentCourseId);
+    if(pos >= 0){
+      idx[pos].studentCount = Object.values(currentRoster.classes).reduce((n,l)=>n+l.length,0);
+      idx[pos].classCount = Object.keys(currentRoster.classes).length;
+      await setIndex(idx);
+    }
+    renderAttendance();
+    toast('已刪除該名學生');
+  }
+
+  $('editRosterBtn').addEventListener('click', () => {
+    rosterEditMode = !rosterEditMode;
+    renderAttendance();
+  });
 
   function updateSummary(){
     let total=0, absent=0;
@@ -982,6 +1046,7 @@ if ('serviceWorker' in navigator) {
 
   async function updateCurrentPeriod(){
     await updateLiveClock();
+    if(currentRoster) await refreshSessionUI();
   }
 
   $('settingsBtn').addEventListener('click', async ()=>{
@@ -993,11 +1058,15 @@ if ('serviceWorker' in navigator) {
   $('backFromSettingsBtn').addEventListener('click', ()=>{ updateCurrentPeriod(); showScreen(currentRoster ? 'attend' : 'home'); });
   $('saveSettingsBtn').addEventListener('click', saveSettings);
 
-  async function buildGooglePayload(){
+  function taipeiDateStr(){
+    return new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).replace(/\//g,'/');
+  }
+
+  async function buildGooglePayload(periodOverride){
     const sheetUrl = (await getSetting(GOOGLE_SHEET_KEY,'')).trim();
-    const period = await getCurrentPeriod();
+    const period = periodOverride !== undefined ? periodOverride : await getCurrentPeriod();
     const now = new Date();
-    const dateStr = new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(now).replace(/\//g,'/');
+    const dateStr = taipeiDateStr();
     const rows=[];
     Object.keys(currentRoster.classes).forEach(cls=>currentRoster.classes[cls].forEach(stu=>rows.push({
       className:cls, seat:stu.seat, name:stu.name||'', status:stu.absent?'未出席':'出席'
@@ -1005,12 +1074,12 @@ if ('serviceWorker' in navigator) {
     return {sheetUrl, course:currentRoster.name, date:dateStr, period:period?String(period):'非上課時段', timestamp:now.toISOString(), rows};
   }
 
-  async function recordToGoogle(){
+  async function recordToGoogle(periodOverride){
     const sheetUrl = (await getSetting(GOOGLE_SHEET_KEY,'')).trim();
     const webAppUrl = (await getSetting(GOOGLE_LOG_KEY,'')).trim();
     if(!sheetUrl || !webAppUrl) return {configured:false};
     try{
-      const payload=await buildGooglePayload();
+      const payload=await buildGooglePayload(periodOverride);
       await fetch(webAppUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
       return {configured:true, sent:true};
     }catch(e){
@@ -1025,7 +1094,7 @@ if ('serviceWorker' in navigator) {
     const sheetUrl=(await getSetting(GOOGLE_SHEET_KEY,'')).trim();
     const webAppUrl=(await getSetting(GOOGLE_LOG_KEY,'')).trim();
     const ready=!!(sheetUrl && webAppUrl);
-    note.textContent=ready ? '✓ 已設定 Google：按「產生訊息」時會自動記錄點名。' : 'Google 試算表未設定；仍可正常點名與產生訊息。';
+    note.textContent=ready ? '✓ 已設定 Google：每一節點名送出時都會自動記錄。' : 'Google 試算表未設定；仍可正常點名與產生訊息。';
     note.classList.toggle('ready',ready);
     note.classList.toggle('off',!ready);
   }
@@ -1054,7 +1123,7 @@ if ('serviceWorker' in navigator) {
         cleanup();
         if(data && data.ok){
           result.className='google-test-result ok';
-          result.textContent=`✅ 連線成功！已找到試算表：「${data.sheetName || ''}」。現在按「產生訊息」就會自動記錄。`;
+          result.textContent=`✅ 連線成功！已找到試算表：「${data.sheetName || ''}」。現在點名送出時就會自動記錄。`;
           resolve(true);
         }else{
           result.className='google-test-result err';
@@ -1087,52 +1156,118 @@ if ('serviceWorker' in navigator) {
     }
   });
 
-  // ---------- result / message generation ----------
-  function timestampNow(){
-    const d = new Date();
-    const fmt = new Intl.DateTimeFormat('zh-TW', {
-      timeZone:'Asia/Taipei', year:'numeric', month:'2-digit', day:'2-digit',
-      hour:'2-digit', minute:'2-digit', hour12:false
+  // ---------- two-period roll call / message generation ----------
+  // 每門課都是雙節課：第一節點完名先記錄下來，等第二節上課時間開始後
+  // 再點一次名，兩節課的紀錄才會合併成一則訊息送出。
+  function periodLabel(p){ return p ? `第${p}節` : '非上課時段'; }
+  function statusLabel(seats){ return (seats && seats.length) ? `缺席${seats.join('、')}號` : '全員到齊'; }
+
+  function snapshotAbsences(){
+    const records = {};
+    Object.keys(currentRoster.classes).forEach(cls => {
+      records[cls] = currentRoster.classes[cls].filter(s=>s.absent).map(s=>s.seat);
     });
-    return fmt.format(d).replace(/\//g,'/');
+    return records;
   }
 
-  async function buildMessage(){
-    const ts = timestampNow();
-    const period = await getCurrentPeriod();
+  function resetAttendanceToPresent(){
+    Object.values(currentRoster.classes).forEach(list => list.forEach(s => { s.absent = false; }));
+  }
+
+  async function buildMessage(first, second){
     const prefix = await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
-    const classLines = Object.keys(currentRoster.classes)
-      .sort((a,b) => String(a).localeCompare(String(b),'zh-Hant',{numeric:true}))
-      .map(cls => {
-        const absentSeats = currentRoster.classes[cls].filter(s=>s.absent).map(s=>s.seat);
-        return absentSeats.length ? `${cls} 缺席${absentSeats.join('、')}號` : `${cls} 全員到齊`;
-      });
-    const body = `${currentRoster.name}\n${ts}，${period ? `第${period}節` : '非上課時段'}\n${classLines.join('\n')}`;
+    const classes = Object.keys(currentRoster.classes).sort((a,b) => String(a).localeCompare(String(b),'zh-Hant',{numeric:true}));
+    const lines = [];
+    classes.forEach(cls => {
+      lines.push(cls);
+      lines.push(`　${periodLabel(first.period)} ${statusLabel(first.records[cls])}`);
+      lines.push(`　${periodLabel(second.period)} ${statusLabel(second.records[cls])}`);
+    });
+    const body = `${currentRoster.name}\n${lines.join('\n')}`;
     return prefix ? `${prefix}\n${body}` : body;
   }
 
-  $('genMsgBtn').addEventListener('click', async () => {
-    const btn=$('genMsgBtn');
-    btn.disabled=true;
-    btn.textContent='產生中…';
-    try{
-      const msg = await buildMessage();
-      const googleResult = await recordToGoogle();
-      $('messageBox').textContent = msg;
-      $('lineShareLink').href = 'https://line.me/R/msg/text/?' + encodeURIComponent(msg);
-      showScreen('result');
-      if(googleResult.configured && googleResult.sent){
-        toast('訊息已產生，Google 點名紀錄已送出');
-      }else if(googleResult.configured && !googleResult.sent){
-        toast('訊息已產生，但 Google 紀錄送出失敗');
-      }else{
-        toast('訊息已產生');
-      }
-    }finally{
-      btn.disabled=false;
-      btn.textContent='產生訊息';
+  // 判斷目前點名進度，更新畫面上的提示與按鈕文字/是否可按。
+  async function refreshSessionUI(){
+    const bar = $('sessionStatusBar');
+    const btn = $('genMsgBtn');
+    if(!bar || !btn || !currentRoster) return;
+    const today = taipeiDateStr();
+    const period = await getCurrentPeriod();
+    const pending = currentRoster.pendingSession;
+
+    if(!pending || pending.date !== today){
+      bar.hidden = true;
+      btn.textContent = '完成本節點名';
+      btn.disabled = false;
+      return;
     }
-  });
+
+    const canFinalize = period !== null && period !== pending.period;
+    bar.hidden = false;
+    if(canFinalize){
+      bar.className = 'session-status ready';
+      bar.textContent = `🔔 已進入${periodLabel(period)}，請完成第二次點名，再按下方按鈕送出這兩節課的紀錄。`;
+      btn.textContent = '完成第二次點名並送出紀錄';
+      btn.disabled = false;
+    }else{
+      bar.className = 'session-status waiting';
+      bar.textContent = `✅ 已完成${periodLabel(pending.period)}的點名，請等待下一節上課時間開始後，再進行第二次點名。`;
+      btn.textContent = '等待下一節上課時間';
+      btn.disabled = true;
+    }
+  }
+
+  async function handleGenMsgClick(){
+    const btn = $('genMsgBtn');
+    const today = taipeiDateStr();
+    const period = await getCurrentPeriod();
+    const pending = currentRoster.pendingSession;
+    const alreadyStartedToday = pending && pending.date === today;
+
+    // 還在第一次點名的同一節課裡按到按鈕——時間還沒到，先擋下來。
+    if(alreadyStartedToday && !(period !== null && period !== pending.period)){
+      toast(pending.period
+        ? `已完成第 ${pending.period} 節點名，請等待下一節上課時間開始後再點名一次`
+        : '已完成第一次點名，請等待下一節上課時間開始後再點名一次');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '處理中…';
+    try{
+      if(!alreadyStartedToday){
+        // ---- 第一節：先記錄下來，重置畫面等第二節再點一次 ----
+        const records = snapshotAbsences();
+        const googleResult = await recordToGoogle(period);
+        currentRoster.pendingSession = { date: today, period, records };
+        resetAttendanceToPresent();
+        await setRoster(currentCourseId, currentRoster);
+        renderAttendance();
+        if(googleResult.configured && googleResult.sent) toast('已記錄第一次點名，Google 紀錄已送出，請於下一節再次點名');
+        else if(googleResult.configured && !googleResult.sent) toast('已記錄第一次點名，但 Google 紀錄送出失敗');
+        else toast('已記錄第一次點名，請於下一節上課後再次點名');
+      }else{
+        // ---- 第二節：合併兩節紀錄，產生並送出訊息 ----
+        const secondRecords = snapshotAbsences();
+        const googleResult = await recordToGoogle(period);
+        const msg = await buildMessage(pending, { period, records: secondRecords });
+        currentRoster.pendingSession = null;
+        await setRoster(currentCourseId, currentRoster);
+        $('messageBox').textContent = msg;
+        $('lineShareLink').href = 'https://line.me/R/msg/text/?' + encodeURIComponent(msg);
+        showScreen('result');
+        if(googleResult.configured && googleResult.sent) toast('訊息已產生，Google 點名紀錄已送出');
+        else if(googleResult.configured && !googleResult.sent) toast('訊息已產生，但 Google 紀錄送出失敗');
+        else toast('訊息已產生');
+      }
+    } finally {
+      btn.disabled = false;
+      await refreshSessionUI();
+    }
+  }
+
+  $('genMsgBtn').addEventListener('click', handleGenMsgClick);
 
   $('backToAttendBtn').addEventListener('click', () => showScreen('attend'));
 
