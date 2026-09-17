@@ -430,6 +430,7 @@ if ('serviceWorker' in navigator) {
 
     <div class="drive-picker" id="drivePickerBox" hidden>
       <label class="field-label">從雲端硬碟選擇課程名單</label>
+      <div class="hint" style="margin-top:-3px">此區為期初教務處統一釋出的名單</div>
       <select id="driveFileSelect">
         <option value="">請選擇檔案…</option>
       </select>
@@ -437,6 +438,7 @@ if ('serviceWorker' in navigator) {
     </div>
 
     <label class="field-label">或上傳試算表檔案（.xlsx / .csv）</label>
+    <div class="hint" style="margin-top:-3px">此區可自行上傳，和雲端的名單互不干擾</div>
     <div class="file-drop" id="fileDrop">
       <div id="fileDropText">點擊或拖曳檔案到這裡上傳</div>
       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
