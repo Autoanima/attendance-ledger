@@ -656,6 +656,8 @@ if ('serviceWorker' in navigator) {
   let pendingCourseName = '';
   let rosterEditMode = false;
   let manualPeriod = null; // null = 跟隨自動偵測的節次；0~8 = 老師手動調整過的節次（0代表「非上課時段」）
+  let lastCompletedSessions = null; // 最近一次「完成兩節點名」時，兩節各自的節次與缺席紀錄，供「返回修改點名」還原用
+  let pendingEditSecond = null; // 從結果畫面按「返回修改點名」後，暫存第二節原本的紀錄，等第一節改完再自動帶入
 
   // ---------- storage helpers ----------
   // Browser persistence: IndexedDB. This works on HTTPS/PWA and keeps
@@ -796,6 +798,8 @@ if ('serviceWorker' in navigator) {
     currentRoster = roster;
     rosterEditMode = false;
     manualPeriod = null;
+    lastCompletedSessions = null;
+    pendingEditSecond = null;
     // reset attendance state: everyone present by default
     Object.values(currentRoster.classes).forEach(students => {
       students.forEach(s => { s.absent = false; });
@@ -1436,6 +1440,14 @@ if ('serviceWorker' in navigator) {
     Object.values(currentRoster.classes).forEach(list => list.forEach(s => { s.absent = false; }));
   }
 
+  // 依「班級 → 缺席座號陣列」的紀錄，還原目前畫面上每位學生的出席狀態（供返回修改時使用）。
+  function restoreRecords(records){
+    Object.keys(currentRoster.classes).forEach(cls => {
+      const absentSeats = new Set((records && records[cls]) || []);
+      currentRoster.classes[cls].forEach(s => { s.absent = absentSeats.has(s.seat); });
+    });
+  }
+
   async function buildMessage(first, second){
     const prefix = await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
     const classes = Object.keys(currentRoster.classes).sort((a,b) => String(a).localeCompare(String(b),'zh-Hant',{numeric:true}));
@@ -1526,10 +1538,17 @@ if ('serviceWorker' in navigator) {
         const records = snapshotAbsences();
         const googleResult = await recordToGoogle(period);
         currentRoster.pendingSession = { date: today, period, records };
-        resetAttendanceToPresent();
-        // 第一次點名送出後，直接把節次調整器往前推一節，
-        // 因為接下來第二次點名幾乎都是點下一節的名。
-        manualPeriod = Math.min(8, (period || 0) + 1);
+        if(pendingEditSecond){
+          // ---- 從「返回修改點名」進來：改完第一節後，自動帶入原本第二節的紀錄繼續修改 ----
+          restoreRecords(pendingEditSecond.records);
+          manualPeriod = pendingEditSecond.period;
+          pendingEditSecond = null;
+        }else{
+          resetAttendanceToPresent();
+          // 第一次點名送出後，直接把節次調整器往前推一節，
+          // 因為接下來第二次點名幾乎都是點下一節的名。
+          manualPeriod = Math.min(8, (period || 0) + 1);
+        }
         await setRoster(currentCourseId, currentRoster);
         renderAttendance();
         if(googleResult.configured && googleResult.sent) toast('已記錄第一次點名，Google 紀錄已送出，可繼續點第二次');
@@ -1540,6 +1559,10 @@ if ('serviceWorker' in navigator) {
         const secondRecords = snapshotAbsences();
         const googleResult = await recordToGoogle(period);
         const msg = await buildMessage(pending, { period, records: secondRecords });
+        lastCompletedSessions = {
+          first: { period: pending.period, records: pending.records },
+          second: { period, records: secondRecords }
+        };
         currentRoster.pendingSession = null;
         manualPeriod = null;
         await setRoster(currentCourseId, currentRoster);
@@ -1558,7 +1581,18 @@ if ('serviceWorker' in navigator) {
 
   $('genMsgBtn').addEventListener('click', handleGenMsgClick);
 
-  $('backToAttendBtn').addEventListener('click', () => showScreen('attend'));
+  $('backToAttendBtn').addEventListener('click', async () => {
+    if(lastCompletedSessions && currentRoster){
+      // 回到「第一個節次」重新開始修改，並暫存第二節的原始紀錄，等第一節改完後自動帶入。
+      restoreRecords(lastCompletedSessions.first.records);
+      currentRoster.pendingSession = null;
+      manualPeriod = lastCompletedSessions.first.period;
+      pendingEditSecond = lastCompletedSessions.second;
+      await setRoster(currentCourseId, currentRoster);
+      renderAttendance();
+    }
+    showScreen('attend');
+  });
 
   $('copyBtn').addEventListener('click', async () => {
     const msg = $('messageBox').textContent;
