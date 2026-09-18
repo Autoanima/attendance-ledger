@@ -917,22 +917,38 @@ if ('serviceWorker' in navigator) {
     return -1;
   }
 
+  // 有些學校匯出的名條，最上面會有一兩列課程標題（例如「君毅高中……課程名條」「班級/○○○ 教室：… 教師：…」），
+  // 真正的欄位標題（班級、座號、姓名…）要再往下一兩列才會出現，甚至標題列後面還會空一列才是學生資料。
+  // 所以不能直接假設第一列就是標題列，要往下找「同時找得到班級欄跟座號欄」的那一列，才當作標題列。
+  function findHeaderRowIndex(rows){
+    const scanLimit = Math.min(rows.length, 20);
+    for(let r=0; r<scanLimit; r++){
+      const row = rows[r];
+      if(!row) continue;
+      const clsCol = findCol(row, ['班級','班別','class']);
+      const seatCol = findCol(row, ['座號','學號','seat','no']);
+      if(clsCol !== -1 && seatCol !== -1) return r;
+    }
+    return -1;
+  }
+
   function parseRows(rows){
     if(!rows.length) throw new Error('檔案內容是空的。');
-    const header = rows[0];
+    const headerRowIndex = findHeaderRowIndex(rows);
+    if(headerRowIndex === -1){
+      throw new Error('找不到「班級」或「座號」欄位，請確認試算表裡有一列同時包含這兩個欄位標題。');
+    }
+    const header = rows[headerRowIndex];
     const clsCol = findCol(header, ['班級','班別','class']);
     const seatCol = findCol(header, ['座號','學號','seat','no']);
     const nameCol = findCol(header, ['姓名','名字','name']);
-    if(clsCol === -1 || seatCol === -1){
-      throw new Error('找不到「班級」或「座號」欄位，請確認試算表第一列是否為標題列。');
-    }
     const classes = {};
-    for(let r=1; r<rows.length; r++){
+    for(let r=headerRowIndex+1; r<rows.length; r++){
       const row = rows[r];
-      if(!row || row.every(c => c===undefined || c==='')) continue;
+      if(!row || row.every(c => c===undefined || c==='')) continue; // 跳過標題列跟資料列中間可能出現的空白列
       const cls = String(row[clsCol] ?? '').trim();
       const seat = String(row[seatCol] ?? '').trim();
-      if(!cls || !seat) continue;
+      if(!cls || !seat) continue; // 跳過簽名欄等不是學生資料的列
       const name = nameCol !== -1 ? String(row[nameCol] ?? '').trim() : '';
       if(!classes[cls]) classes[cls] = [];
       classes[cls].push({ seat, name, absent:false });
