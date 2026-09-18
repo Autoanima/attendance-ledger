@@ -898,7 +898,7 @@ if ('serviceWorker' in navigator) {
       }
     }catch(e){
       select.innerHTML = '<option value="">讀取失敗</option>';
-      hint.textContent = '❌ 無法連到雲端硬碟讀取服務，請到設定頁檢查設定或稍後再試。';
+      hint.textContent = '❌ ' + ((e && e.message) || '無法連到雲端硬碟讀取服務') + '，請到設定頁檢查設定或稍後再試。';
     }
   }
 
@@ -999,7 +999,8 @@ if ('serviceWorker' in navigator) {
     showLoading('請稍等，雲端硬碟資料載入中…');
     $('uploadError').innerHTML = '';
     try{
-      const data = await jsonpRequest(webAppUrl, {action:'readFile', fileId, mimeType});
+      // .xlsx 檔案在雲端硬碟那邊要先轉檔才能讀取內容，比列清單慢，逾時時間拉長一點再判定失敗。
+      const data = await jsonpRequest(webAppUrl, {action:'readFile', fileId, mimeType}, 30000);
       if(data && data.ok){
         const classes = parseRows(data.rows || []);
         parsedUpload = classes;
@@ -1012,10 +1013,24 @@ if ('serviceWorker' in navigator) {
         hint.textContent = `已載入「${fileName}」，可視需要修改課程名稱後儲存。`;
         updateSaveEnabled();
       }else{
-        $('uploadError').innerHTML = `<div class="error-box">讀取失敗：${escapeHtml((data && data.message) || '無法讀取檔案內容。')}</div>`;
+        // 這次選的檔案沒有讀成功，把上一次（可能是別的檔案）殘留的預覽、課程名稱、課程資料都清掉，
+        // 避免下拉選單顯示的是這個檔案、但畫面上還留著另一個檔案的內容，造成存錯課程的名單。
+        parsedUpload = null;
+        pendingCourseName = '';
+        $('courseNameInput').value = '';
+        $('uploadPreview').innerHTML = '';
+        updateSaveEnabled();
+        $('uploadError').innerHTML = `<div class="error-box">讀取失敗：${escapeHtml((data && data.message) || '無法讀取檔案內容。')}（目前沒有任何名單資料被載入，請重新選擇或改用本機上傳）</div>`;
       }
     }catch(e){
-      $('uploadError').innerHTML = `<div class="error-box">讀取失敗：無法連到雲端硬碟讀取服務，請稍後再試。</div>`;
+      // 把實際的錯誤訊息顯示出來（例如「連線逾時」或檔案格式問題），
+      // 不要一律顯示「無法連線」，避免看不出真正的原因；同樣要清掉上一次殘留的內容，避免存錯名單。
+      parsedUpload = null;
+      pendingCourseName = '';
+      $('courseNameInput').value = '';
+      $('uploadPreview').innerHTML = '';
+      updateSaveEnabled();
+      $('uploadError').innerHTML = `<div class="error-box">讀取失敗：${escapeHtml((e && e.message) || '無法連到雲端硬碟讀取服務，請稍後再試。')}（目前沒有任何名單資料被載入，請重新選擇或改用本機上傳）</div>`;
     } finally {
       hideLoading();
     }
@@ -1185,12 +1200,15 @@ if ('serviceWorker' in navigator) {
 
   // 用 <script> 標籤呼叫 Apps Script 網頁應用程式並取回資料（JSONP 方式），
   // 因為 Apps Script 網頁應用程式的回應不支援一般 fetch 的跨網域讀取。
-  function jsonpRequest(baseUrl, params){
+  function jsonpRequest(baseUrl, params, timeoutMs){
     return new Promise((resolve, reject) => {
       if(!baseUrl){ reject(new Error('缺少服務網址')); return; }
       const cb = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
       const script = document.createElement('script');
-      const timer = setTimeout(() => { cleanup(); reject(new Error('連線逾時')); }, 12000);
+      // .xlsx 檔案在 Apps Script 那邊要先轉成暫存的 Google 試算表才能讀取，
+      // 遇到 Apps Script 冷啟動或檔案比較大時，可能需要比列清單更久的時間，所以逾時時間拉長一點，
+      // 避免明明還在讀取、只是比較慢，卻被判定成連線失敗。
+      const timer = setTimeout(() => { cleanup(); reject(new Error('連線逾時')); }, timeoutMs || 20000);
       function cleanup(){ clearTimeout(timer); delete window[cb]; script.remove(); }
       window[cb] = (data) => { cleanup(); resolve(data); };
       script.onerror = () => { cleanup(); reject(new Error('連線失敗')); };
