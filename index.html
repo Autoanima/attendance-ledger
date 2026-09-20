@@ -104,6 +104,21 @@
     font-size:13px;line-height:1.8;background:var(--blue-panel);
   }
 
+  .ad-note{
+    margin-top:22px;padding-top:16px;border-top:1px dashed var(--line);
+    display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;
+  }
+  .ad-note-text{
+    flex:1 1 220px;font-size:14px;line-height:1.85;color:var(--muted);text-align:justify;text-justify:inter-ideograph;
+  }
+  .ad-note-text b{color:var(--navy)}
+  .ad-note-link{
+    flex:none;display:inline-block;padding:10px 22px;border-radius:24px;
+    border:2px solid var(--navy);background:var(--white);color:var(--navy);
+    text-decoration:none;font-weight:900;font-size:14px;white-space:nowrap;
+  }
+  .ad-note-link:active{opacity:.75}
+
   .primary-btn{
     width:100%;padding:12px 14px;border-radius:13px;
     border:2px solid var(--navy);
@@ -437,6 +452,11 @@ if ('serviceWorker' in navigator) {
     <div id="courseList"></div>
     <div class="stack">
       <button class="primary-btn" id="newCourseBtn">＋ 新增課程（上傳或下拉選擇名單）</button>
+    </div>
+
+    <div class="ad-note">
+      <div class="ad-note-text">💡 <b>工商推薦</b>：Typeless，AI 語音輸入工具，每週免費 2000 字額度，這個點名工具的開發，全靠一張嘴嘰哩呱啦來代替繁瑣的打字、它還能幫忙去除語言贅字、整理邏輯和脈絡，並用條列式整理，輕鬆、超級無敵多，大家可以試用看看！用旁邊按鈕連結安裝，開發者也能收到 $5 使用額度回饋，謝謝支持 🥹</div>
+      <a class="ad-note-link" href="https://www.typeless.com/refer?code=YEIOLF9" target="_blank" rel="noopener">前往安裝</a>
     </div>
   </section>
 
