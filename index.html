@@ -52,7 +52,7 @@
   }
 
   header.top{
-    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:10px;
     min-height:70px;
     padding:12px 15px;
     margin-bottom:16px;
@@ -63,12 +63,16 @@
   }
 
   header.top .brand{
-    font-size:25px;font-weight:900;letter-spacing:1px;color:var(--navy);
-    line-height:1.1;
+    font-size:22px;font-weight:900;letter-spacing:.5px;color:var(--navy);
+    line-height:1.2;
   }
 
   /* Remove English subtitle entirely */
   header.top .brand small{display:none}
+
+  header.top .header-actions{
+    display:flex;gap:6px;align-items:center;flex-shrink:0;
+  }
 
   .icon-btn{
     background:var(--white);color:var(--navy);
@@ -77,6 +81,7 @@
     cursor:pointer;box-shadow:0 3px 0 rgba(18,58,90,.18);
   }
   .icon-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(18,58,90,.18)}
+  .icon-btn.icon-only{padding:8px 10px;font-size:15px;line-height:1}
 
   .screen{display:none;animation:fade .2s ease}
   .screen.active{display:block}
@@ -102,7 +107,9 @@
     border:2px dashed #82B9CB;border-radius:17px;
     padding:25px 16px;text-align:center;color:var(--muted);
     font-size:13px;line-height:1.8;background:var(--blue-panel);
+    cursor:pointer;
   }
+  .empty-note:active{opacity:.75}
 
   .ad-note{
     margin-top:22px;padding-top:16px;border-top:1px dashed var(--line);
@@ -399,7 +406,17 @@
     padding:13px 14px;margin-bottom:12px;
   }
   .settings-title{font-size:18px;font-weight:900;color:var(--navy);margin-bottom:4px}
-  .settings-sub{font-size:11px;color:var(--muted);line-height:1.7}
+  .settings-sub{font-size:11px;color:var(--muted);line-height:1.7;text-align:justify;text-justify:inter-ideograph}
+  .settings-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+  .settings-title-row .settings-title{margin-bottom:0}
+  .prefix-toggle-btn{
+    flex-shrink:0;background:var(--white);color:var(--navy);
+    border:2px solid var(--navy);border-radius:20px;
+    padding:5px 13px;font-size:12px;font-weight:800;font-family:inherit;
+    cursor:pointer;
+  }
+  .prefix-toggle-btn.off{background:var(--line);color:var(--muted);border-color:var(--line)}
+  #messagePrefixInput:disabled{background:var(--line);color:var(--muted);opacity:.7}
   .period-row{
     display:grid;grid-template-columns:48px 1fr 12px 1fr;align-items:center;gap:7px;
     margin-top:8px;
@@ -426,7 +443,7 @@
   @media(max-width:560px){
     .wrap{padding:10px 10px 6px}
     header.top{min-height:64px;border-radius:16px;padding:10px 12px}
-    header.top .brand{font-size:22px}
+    header.top .brand{font-size:17px}
     .row2{flex-direction:row}
     .student-chip .nm{font-size:18px}
     .current-class-bar{padding:8px 10px;margin:8px 0}
@@ -448,8 +465,8 @@ if ('serviceWorker' in navigator) {
 <div class="wrap">
 
   <header class="top">
-    <div class="brand">跨群選修/本土語 點名</div>
-    <div style="display:flex;gap:7px;align-items:center"><button class="icon-btn" id="settingsBtn">設定</button><button class="icon-btn" id="homeBtn">課程列表</button></div>
+    <div class="brand">跨群/本土語/社團 點名</div>
+    <div class="header-actions"><button class="icon-btn icon-only" id="refreshAppBtn" title="按這裡可以取得最新版本" aria-label="重新整理，取得最新版本">🔄</button><button class="icon-btn" id="settingsBtn">設定</button><button class="icon-btn" id="homeBtn">課程列表</button></div>
   </header>
 
   <!-- HOME -->
@@ -513,8 +530,11 @@ if ('serviceWorker' in navigator) {
     </div>
 
     <div class="settings-card">
-      <div class="settings-title">訊息開頭文字</div>
-      <div class="settings-sub">送出最終點名訊息時，會自動加在整段訊息最前面，可依需要自行修改或清空。</div>
+      <div class="settings-title-row">
+        <div class="settings-title">訊息開頭文字</div>
+        <button type="button" class="prefix-toggle-btn" id="prefixToggleBtn">已開啟</button>
+      </div>
+      <div class="settings-sub">送出最終點名訊息時，會自動加在整段訊息最前面，可依需要自行修改或清空；社團點名，可自行關閉、或更改為其他想加的文字，比如說社團上課的地點。</div>
       <input type="text" id="messagePrefixInput" placeholder="例如：@程程" />
     </div>
 
@@ -842,7 +862,11 @@ if ('serviceWorker' in navigator) {
     const list = await getIndex();
     const container = $('courseList');
     if(!list.length){
-      container.innerHTML = '<div class="empty-note">還沒有任何課程。<br>點擊下方按鈕上傳第一份名單試算表。</div>';
+      container.innerHTML = '<div class="empty-note" id="emptyNoteAdd" role="button" tabindex="0">還沒有任何課程。</div>';
+      $('emptyNoteAdd').addEventListener('click', () => { initUploadScreen(); showScreen('upload'); });
+      $('emptyNoteAdd').addEventListener('keydown', (e) => {
+        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); initUploadScreen(); showScreen('upload'); }
+      });
       return;
     }
     container.innerHTML = '';
@@ -1247,6 +1271,7 @@ if ('serviceWorker' in navigator) {
   const PERIODS_KEY = 'attendance-periods';
   const MESSAGE_PREFIX_KEY = 'message-prefix';
   const DEFAULT_MESSAGE_PREFIX = '@程程';
+  const MESSAGE_PREFIX_ENABLED_KEY = 'message-prefix-enabled';
   const AD_CACHE_KEY = 'ad-enabled-cache';
   const AD_SECRET_KEY = 'ad-toggle-secret';
 
@@ -1346,8 +1371,19 @@ if ('serviceWorker' in navigator) {
     $('driveFolderUrlInput').value = await getSetting(DRIVE_FOLDER_KEY, DEFAULT_DRIVE_FOLDER_URL);
     $('driveLogUrlInput').value = await getSetting(DRIVE_LOG_KEY, DEFAULT_DRIVE_LOG_URL);
     $('messagePrefixInput').value = await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
+    const prefixEnabled = await getSetting(MESSAGE_PREFIX_ENABLED_KEY, true);
+    applyPrefixToggleUI(prefixEnabled !== false);
     if($('adSecretInput')) $('adSecretInput').value = await getSetting(AD_SECRET_KEY, '');
     updateGoogleNote();
+  }
+
+  function applyPrefixToggleUI(enabled){
+    const btn = $('prefixToggleBtn');
+    const input = $('messagePrefixInput');
+    if(!btn || !input) return;
+    input.disabled = !enabled;
+    btn.textContent = enabled ? '已開啟' : '已關閉';
+    btn.classList.toggle('off', !enabled);
   }
 
   async function saveSettings(){
@@ -1422,6 +1458,38 @@ if ('serviceWorker' in navigator) {
     await loadSettings();
     showScreen('settings');
   });
+
+  // 「訊息開頭文字」開關：關閉後輸入框會鎖住（但保留原本打的文字，之後重新開啟不用再打一次），
+  // 送出點名訊息時就不會再加這段開頭文字；點一下立刻存檔，不用等按「儲存設定」。
+  if($('prefixToggleBtn')){
+    $('prefixToggleBtn').addEventListener('click', async ()=>{
+      const nowEnabled = $('prefixToggleBtn').classList.contains('off');
+      applyPrefixToggleUI(nowEnabled);
+      await storageSet(MESSAGE_PREFIX_ENABLED_KEY, nowEnabled);
+      toast(nowEnabled ? '訊息開頭文字已開啟' : '訊息開頭文字已關閉');
+    });
+  }
+  // 手動「取得最新版本」：把服務工作者快取起來的舊版本清掉、確認新版本可以立刻生效，
+  // 再用不帶快取的方式重新整理，確保就算使用者一直沒關掉這個分頁，也一定能拿到最新程式碼。
+  // 重新整理後會用 sessionStorage 記一個標記，下面 init 區塊看到這個標記就跳出「已更新成最新版本」。
+  async function forceRefreshApp(){
+    try{
+      if('serviceWorker' in navigator){
+        const reg = await navigator.serviceWorker.getRegistration();
+        if(reg){ await reg.update(); }
+      }
+    }catch(e){ /* 檢查更新失敗也沒關係，下面還是會照樣重新整理 */ }
+    try{
+      if('caches' in window){
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+    }catch(e){ /* 清快取失敗也沒關係，不影響接下來的重新整理 */ }
+    try{ sessionStorage.setItem('justRefreshedApp','1'); }catch(e){}
+    location.reload();
+  }
+  if($('refreshAppBtn')) $('refreshAppBtn').addEventListener('click', forceRefreshApp);
+
   $('backFromSettingsBtn').addEventListener('click', ()=>{ updateCurrentPeriod(); showScreen(currentRoster ? 'attend' : 'home'); });
   $('saveSettingsBtn').addEventListener('click', saveSettings);
   $('openAdvancedSyncBtn').addEventListener('click', async ()=>{
@@ -1758,7 +1826,8 @@ if ('serviceWorker' in navigator) {
   }
 
   async function buildMessage(first, second){
-    const prefix = await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
+    const prefixEnabled = await getSetting(MESSAGE_PREFIX_ENABLED_KEY, true);
+    const prefix = (prefixEnabled === false) ? '' : await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
     const classes = Object.keys(currentRoster.classes).sort((a,b) => String(a).localeCompare(String(b),'zh-Hant',{numeric:true}));
     const lines = [];
     classes.forEach(cls => {
@@ -2004,6 +2073,12 @@ if ('serviceWorker' in navigator) {
   renderHome();
   showScreen('home');
   checkAdConfig();
+  try{
+    if(sessionStorage.getItem('justRefreshedApp')){
+      sessionStorage.removeItem('justRefreshedApp');
+      toast('已更新成最新版本');
+    }
+  }catch(e){}
 })();
 </script>
 </body>
