@@ -411,6 +411,10 @@
   }
   .period-row input[type=time]:focus{outline:none;border-color:var(--turq)}
   .settings-divider{height:1px;background:var(--line);margin:14px 0}
+  .version-tag{
+    text-align:center;font-size:11px;color:var(--muted);opacity:.55;
+    margin-top:18px;padding:10px;user-select:none;-webkit-user-select:none;
+  }
   .google-note{font-size:11px;line-height:1.7;color:var(--muted);margin-top:6px}
   .google-note b{color:var(--navy)}
   .account-warning{margin-top:10px;padding:11px 12px;border-radius:11px;background:var(--red-soft);border:2px solid var(--red);color:#7F3833;font-size:12px;line-height:1.75}
@@ -530,6 +534,8 @@ if ('serviceWorker' in navigator) {
       <button class="primary-btn" id="saveSettingsBtn">儲存設定</button>
       <button class="primary-btn ghost" id="backFromSettingsBtn">← 返回</button>
     </div>
+
+    <div class="version-tag" id="versionTapTarget">v1.0</div>
   </section>
 
   <!-- SETTINGS: ADVANCED SYNC -->
@@ -616,6 +622,24 @@ if ('serviceWorker' in navigator) {
       <button type="button" class="primary-btn ghost small-btn" id="cleanupDriveTempBtn">🧹 清除雲端硬碟暫存檔案</button>
       <div class="google-test-result" id="cleanupDriveTempResult"></div>
     </div>
+
+    <div class="settings-divider" id="adSwitchDivider" hidden></div>
+    <details class="setup-details" id="adSwitchDetails" hidden>
+      <summary>進階：遠端廣告開關（只有你自己使用，點此展開）</summary>
+      <div class="setup-body">
+        <div class="guide-text">頁面最下方有一則低調的推薦廣告，平常是隱藏的。這裡可以讓你「一個開關」影響全部的使用者——包括已經把 App 加到手機主畫面的人，不需要任何人重新安裝或更新。運作方式：App 每次打開時，會偷偷問一次「雲端硬碟讀取服務」用的 Apps Script「現在廣告要開還是關」，並把答案記在手機本機，離線或問不到的時候就沿用上次記住的狀態（從沒問到過就預設關閉，不會有人意外先看到廣告）。</div>
+        <div class="guide-text">要讓這個開關生效，必須先把上面「雲端硬碟讀取服務」設定好（廣告開關跟共用同一支 Apps Script，不用另外部署）。接著到 Apps Script 編輯畫面，把「複製雲端硬碟讀取程式」那段更新過的程式碼重新貼上（取代原本內容），把最上面的 <code>AD_TOGGLE_SECRET</code> 改成你自己想的一串英數字密語，再照原本流程「管理部署作業 → 編輯 → 新版本 → 部署」重新部署一次（網址通常不會變）。</div>
+        <label class="field-label">廣告控制密語</label>
+        <input type="password" id="adSecretInput" placeholder="要跟 Apps Script 裡的 AD_TOGGLE_SECRET 一致" autocomplete="off" />
+        <div class="guide-text" style="margin-top:4px">這組密語只會存在你自己這台裝置的瀏覽器裡，不會被放進分享給其他老師的檔案裡。</div>
+        <div class="stack" style="margin-top:10px">
+          <button type="button" class="primary-btn ghost small-btn" id="adOnBtn">開啟廣告（所有使用者）</button>
+          <button type="button" class="primary-btn ghost small-btn" id="adOffBtn">關閉廣告（所有使用者）</button>
+          <button type="button" class="primary-btn ghost small-btn" id="adRecheckBtn">重新檢查這台裝置目前狀態</button>
+        </div>
+        <div class="google-test-result" id="adSwitchResult"></div>
+      </div>
+    </details>
 
     <div class="stack">
       <button class="primary-btn" id="saveAdvancedSyncBtn">儲存設定</button>
@@ -1224,6 +1248,7 @@ if ('serviceWorker' in navigator) {
   const MESSAGE_PREFIX_KEY = 'message-prefix';
   const DEFAULT_MESSAGE_PREFIX = '@程程';
   const AD_CACHE_KEY = 'ad-enabled-cache';
+  const AD_SECRET_KEY = 'ad-toggle-secret';
 
   // 首頁廣告開關：向雲端硬碟讀取服務問「現在廣告要開還是關」，
   // 老師用手機按一次連結切換，全部使用者下次打開 App 就會套用最新狀態。
@@ -1321,6 +1346,7 @@ if ('serviceWorker' in navigator) {
     $('driveFolderUrlInput').value = await getSetting(DRIVE_FOLDER_KEY, DEFAULT_DRIVE_FOLDER_URL);
     $('driveLogUrlInput').value = await getSetting(DRIVE_LOG_KEY, DEFAULT_DRIVE_LOG_URL);
     $('messagePrefixInput').value = await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
+    if($('adSecretInput')) $('adSecretInput').value = await getSetting(AD_SECRET_KEY, '');
     updateGoogleNote();
   }
 
@@ -1335,6 +1361,7 @@ if ('serviceWorker' in navigator) {
     await storageSet(DRIVE_FOLDER_KEY, $('driveFolderUrlInput').value.trim());
     await storageSet(DRIVE_LOG_KEY, $('driveLogUrlInput').value.trim());
     await storageSet(MESSAGE_PREFIX_KEY, $('messagePrefixInput').value);
+    if($('adSecretInput')) await storageSet(AD_SECRET_KEY, $('adSecretInput').value);
     updateCurrentPeriod();
     updateGoogleNote();
     toast('設定已儲存');
@@ -1405,6 +1432,68 @@ if ('serviceWorker' in navigator) {
   });
   $('backFromAdvancedSyncBtn').addEventListener('click', ()=>{ showScreen('settings'); });
   $('saveAdvancedSyncBtn').addEventListener('click', saveSettings);
+
+  // 廣告開關密語每次輸入變動就直接存起來（只存在這台裝置本機），
+  // 不用等按「儲存設定」才生效，避免忘記存導致密語跟畫面對不起來。
+  if($('adSecretInput')){
+    $('adSecretInput').addEventListener('change', async ()=>{
+      await storageSet(AD_SECRET_KEY, $('adSecretInput').value);
+    });
+  }
+
+  async function toggleAdRemote(on){
+    const resultEl = $('adSwitchResult');
+    const secret = ($('adSecretInput').value || '').trim();
+    if(!secret){ resultEl.textContent = '請先輸入廣告控制密語（要跟 Apps Script 裡的 AD_TOGGLE_SECRET 一致）。'; return; }
+    await storageSet(AD_SECRET_KEY, secret);
+    const webAppUrl = (await getSetting(DRIVE_LOG_KEY, DEFAULT_DRIVE_LOG_URL)).trim() || $('driveLogUrlInput').value.trim();
+    resultEl.textContent = '處理中…';
+    try{
+      const data = await jsonpRequest(webAppUrl, {action:'setAdConfig', secret, on: on?'1':'0'}, 15000);
+      if(data && data.ok){
+        await storageSet(AD_CACHE_KEY, !!data.adOn);
+        applyAdVisibility(!!data.adOn);
+        resultEl.textContent = '✅ ' + (data.message || '設定完成');
+      }else{
+        resultEl.textContent = '❌ ' + ((data && data.message) || '設定失敗，請確認密語是否正確。');
+      }
+    }catch(e){
+      resultEl.textContent = '❌ 連線失敗：' + e.message;
+    }
+  }
+
+  // 版本號連續點擊 20 次，才會解鎖顯示「遠端廣告開關」——平常完全看不到這個功能，
+  // 避免學生或其他老師滑到設定頁時，意外發現或點到廣告控制項。
+  // 解鎖狀態只存在這次瀏覽期間（重新整理或關掉 App 就會恢復隱藏），不會寫進裝置儲存空間。
+  let versionTapCount = 0;
+  let versionTapResetTimer = null;
+  if($('versionTapTarget')){
+    $('versionTapTarget').addEventListener('click', ()=>{
+      versionTapCount++;
+      clearTimeout(versionTapResetTimer);
+      versionTapResetTimer = setTimeout(()=>{ versionTapCount = 0; }, 2000);
+      if(versionTapCount >= 20){
+        versionTapCount = 0;
+        if($('adSwitchDetails')) $('adSwitchDetails').hidden = false;
+        if($('adSwitchDivider')) $('adSwitchDivider').hidden = false;
+        toast('🔓 廣告設定已解鎖，進入「前往進階同步設定」即可看到');
+      }
+    });
+  }
+
+  if($('adOnBtn')) $('adOnBtn').addEventListener('click', ()=> toggleAdRemote(true));
+  if($('adOffBtn')) $('adOffBtn').addEventListener('click', ()=> toggleAdRemote(false));
+  if($('adRecheckBtn')) $('adRecheckBtn').addEventListener('click', async ()=>{
+    const resultEl = $('adSwitchResult');
+    resultEl.textContent = '檢查中…';
+    try{
+      await checkAdConfig();
+      const cached = await storageGet(AD_CACHE_KEY);
+      resultEl.textContent = 'ℹ️ 這台裝置目前廣告狀態：' + (cached === true ? '開啟' : '關閉');
+    }catch(e){
+      resultEl.textContent = '❌ 檢查失敗：' + e.message;
+    }
+  });
 
   function taipeiDateStr(){
     return new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).replace(/\//g,'/');
