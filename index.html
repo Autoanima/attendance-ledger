@@ -74,6 +74,25 @@
     display:flex;gap:6px;align-items:center;flex-shrink:0;
   }
 
+  /* 跨群/本土語 ⇄ 社團 模式切換：取代原本純文字標題，維持差不多的排版與字重。 */
+  header.top .mode-switch{
+    display:flex;align-items:center;gap:4px;min-width:0;flex-shrink:1;
+  }
+  .mode-btn{
+    background:transparent;color:var(--navy);
+    border:2px solid transparent;border-radius:10px;
+    padding:4px 7px;font-size:16px;font-weight:900;font-family:inherit;letter-spacing:.5px;
+    cursor:pointer;white-space:nowrap;opacity:.45;flex-shrink:0;
+  }
+  .mode-btn.active{
+    background:var(--white);border-color:var(--navy);opacity:1;
+    box-shadow:0 2px 0 rgba(18,58,90,.18);
+  }
+  .mode-btn:active{transform:translateY(1px)}
+  header.top .mode-suffix{
+    font-size:16px;font-weight:900;color:var(--navy);flex-shrink:0;margin-left:1px;
+  }
+
   .icon-btn{
     background:var(--white);color:var(--navy);
     border:2px solid var(--navy);border-radius:11px;
@@ -328,6 +347,13 @@
     font-family:'Noto Sans TC','Klee One',sans-serif;
     box-shadow:0 4px 0 rgba(18,58,90,.10)
   }
+  .all-present-note{
+    background:var(--blue-panel);color:var(--ink);
+    border:2px solid var(--navy);border-radius:16px;
+    padding:18px 14px;font-size:14px;line-height:1.8;font-weight:700;
+    text-align:justify;text-justify:inter-ideograph;
+    box-shadow:0 4px 0 rgba(18,58,90,.10)
+  }
 
   .toast{
     position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
@@ -442,14 +468,34 @@
 
   @media(max-width:560px){
     .wrap{padding:10px 10px 6px}
-    header.top{min-height:64px;border-radius:16px;padding:10px 12px}
+    header.top{min-height:64px;border-radius:16px;padding:10px 12px;gap:6px}
     header.top .brand{font-size:17px}
+    .mode-btn{font-size:13px;padding:3px 6px;border-radius:9px}
+    header.top .mode-suffix{font-size:13px}
+    header.top .header-actions{gap:4px}
+    .icon-btn{padding:7px 8px}
+    .icon-btn.icon-only{padding:7px 7px;font-size:14px}
     .row2{flex-direction:row}
     .student-chip .nm{font-size:18px}
     .current-class-bar{padding:8px 10px;margin:8px 0}
     .current-class-bar .value{font-size:18px}
     .current-class-meta{gap:5px;font-size:12px}
     .current-class-meta .period{font-size:11px}
+  }
+  @media(max-width:400px){
+    header.top{padding:9px 9px;gap:4px}
+    .mode-btn{font-size:12px;padding:3px 5px}
+    header.top .mode-suffix{font-size:12px}
+    header.top .header-actions{gap:3px}
+    .icon-btn{padding:6px 7px;font-size:11px}
+    .icon-btn.icon-only{padding:6px 6px;font-size:13px}
+  }
+  @media(max-width:330px){
+    header.top{padding:8px 7px;gap:3px}
+    .mode-btn{font-size:11px;padding:2px 4px}
+    header.top .mode-suffix{font-size:11px}
+    .icon-btn{padding:5px 5px;font-size:10px}
+    .icon-btn.icon-only{padding:5px 5px;font-size:12px}
   }
 </style>
 
@@ -465,7 +511,11 @@ if ('serviceWorker' in navigator) {
 <div class="wrap">
 
   <header class="top">
-    <div class="brand">跨群/本土語/社團 點名</div>
+    <div class="brand mode-switch" id="modeSwitch">
+      <button type="button" class="mode-btn active" id="modeBtnCampus" data-mode="campus">跨群/本土語</button>
+      <button type="button" class="mode-btn" id="modeBtnClub" data-mode="club">社團</button>
+      <span class="mode-suffix">點名</span>
+    </div>
     <div class="header-actions"><button class="icon-btn icon-only" id="refreshAppBtn" title="按這裡可以取得最新版本" aria-label="重新整理，取得最新版本">🔄</button><button class="icon-btn" id="settingsBtn">設定</button><button class="icon-btn" id="homeBtn">課程列表</button></div>
   </header>
 
@@ -534,7 +584,7 @@ if ('serviceWorker' in navigator) {
         <div class="settings-title">訊息開頭文字</div>
         <button type="button" class="prefix-toggle-btn" id="prefixToggleBtn">已開啟</button>
       </div>
-      <div class="settings-sub">送出最終點名訊息時，會自動加在整段訊息最前面，可依需要自行修改或清空；社團點名，可自行關閉、或更改為其他想加的文字，比如說社團上課的地點。</div>
+      <div class="settings-sub">送出最終點名訊息時，會自動加在整段訊息最前面，可依需要自行修改或清空；社團點名時，建議關閉、或更改為其他想加的文字，比如說社團上課的地點。</div>
       <input type="text" id="messagePrefixInput" placeholder="例如：@程程" />
     </div>
 
@@ -711,6 +761,7 @@ if ('serviceWorker' in navigator) {
   <section class="screen" id="screen-result">
     <div class="stamp"><span class="seal">已產生 · 待送出</span></div>
     <div class="message-box" id="messageBox"></div>
+    <div class="all-present-note" id="allPresentNote" hidden>🎉 這兩節全員到齊，社團點名不需要特別發送訊息，已省略訊息內容。</div>
     <div class="stack">
       <a class="line-link" id="lineShareLink" target="_blank" rel="noopener">
         <button class="primary-btn line-send-btn">傳送到 LINE 群組</button>
@@ -718,7 +769,7 @@ if ('serviceWorker' in navigator) {
       <button class="primary-btn ghost" id="copyBtn">複製訊息文字</button>
       <button class="primary-btn ghost" id="backToAttendBtn">← 返回修改點名</button>
     </div>
-    <div class="hint" style="margin-top:14px;">
+    <div class="hint" id="resultLineHint" style="margin-top:14px;">
       「傳送到 LINE 群組」會開啟 LINE 並帶入訊息內容，需要你手動選擇要傳送的群組或聯絡人送出——網頁本身無法未經你操作就自動送出訊息給指定對象。
     </div>
   </section>
@@ -764,6 +815,7 @@ if ('serviceWorker' in navigator) {
   let editingPair = null; // 從結果畫面按「返回修改點名」後，記錄這兩節原本各自是第幾節；
                           // 修改模式下，不管老師先改哪一節、只改其中一節，按送出都會直接用「這節的最新內容 + 另一節目前已知的內容」重新產生訊息。
   let lastSeenDate = null; // 用來偵測「跨到新的一天」，避免舊資料留到下次點名
+  let appMode = 'campus'; // 'campus' = 跨群/本土語（維持原本規則）；'club' = 社團（訊息開頭預設關閉、全員到齊時不產生訊息）
 
   // ---------- storage helpers ----------
   // Browser persistence: IndexedDB. This works on HTTPS/PWA and keeps
@@ -924,6 +976,36 @@ if ('serviceWorker' in navigator) {
 
   $('homeBtn').addEventListener('click', () => { renderHome(); showScreen('home'); });
   $('newCourseBtn').addEventListener('click', () => { initUploadScreen(); showScreen('upload'); });
+
+  // ---------- 跨群/本土語 ⇄ 社團 模式切換 ----------
+  // 只切換「模式狀態」與畫面上的按鈕外觀／設定頁的訊息開頭開關；
+  // 跨群/本土語本身的點名方式、邏輯、送出的文字訊息格式完全不受影響、照原本規則。
+  function applyModeSwitchUI(mode){
+    const campusBtn = $('modeBtnCampus');
+    const clubBtn = $('modeBtnClub');
+    if(campusBtn) campusBtn.classList.toggle('active', mode !== 'club');
+    if(clubBtn) clubBtn.classList.toggle('active', mode === 'club');
+  }
+
+  async function setAppMode(mode){
+    if(mode !== 'club') mode = 'campus';
+    appMode = mode;
+    applyModeSwitchUI(mode);
+    await storageSet(APP_MODE_KEY, mode);
+    // 如果設定頁正開著，讓「訊息開頭文字」開關立刻切換成這個模式各自記住的狀態。
+    if($('screen-settings') && $('screen-settings').classList.contains('active')){
+      await refreshPrefixToggleForMode();
+    }
+  }
+
+  if($('modeBtnCampus')) $('modeBtnCampus').addEventListener('click', () => setAppMode('campus'));
+  if($('modeBtnClub')) $('modeBtnClub').addEventListener('click', () => setAppMode('club'));
+
+  async function initAppMode(){
+    const savedMode = await getSetting(APP_MODE_KEY, 'campus');
+    appMode = (savedMode === 'club') ? 'club' : 'campus';
+    applyModeSwitchUI(appMode);
+  }
 
   // ---------- upload screen ----------
   function resetUploadScreen(){
@@ -1271,7 +1353,17 @@ if ('serviceWorker' in navigator) {
   const PERIODS_KEY = 'attendance-periods';
   const MESSAGE_PREFIX_KEY = 'message-prefix';
   const DEFAULT_MESSAGE_PREFIX = '@程程';
-  const MESSAGE_PREFIX_ENABLED_KEY = 'message-prefix-enabled';
+  // 「訊息開頭文字」的開關，跨群/本土語跟社團模式分開記憶，互不影響：
+  // 跨群/本土語預設開啟（維持原本規則），社團預設關閉。
+  const MESSAGE_PREFIX_ENABLED_KEY_CAMPUS = 'message-prefix-enabled-campus';
+  const MESSAGE_PREFIX_ENABLED_KEY_CLUB = 'message-prefix-enabled-club';
+  const APP_MODE_KEY = 'app-mode';
+  function prefixEnabledKeyForMode(mode){
+    return mode === 'club' ? MESSAGE_PREFIX_ENABLED_KEY_CLUB : MESSAGE_PREFIX_ENABLED_KEY_CAMPUS;
+  }
+  function defaultPrefixEnabledForMode(mode){
+    return mode !== 'club'; // 跨群/本土語預設 true，社團預設 false
+  }
   const AD_CACHE_KEY = 'ad-enabled-cache';
   const AD_SECRET_KEY = 'ad-toggle-secret';
 
@@ -1371,8 +1463,7 @@ if ('serviceWorker' in navigator) {
     $('driveFolderUrlInput').value = await getSetting(DRIVE_FOLDER_KEY, DEFAULT_DRIVE_FOLDER_URL);
     $('driveLogUrlInput').value = await getSetting(DRIVE_LOG_KEY, DEFAULT_DRIVE_LOG_URL);
     $('messagePrefixInput').value = await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
-    const prefixEnabled = await getSetting(MESSAGE_PREFIX_ENABLED_KEY, true);
-    applyPrefixToggleUI(prefixEnabled !== false);
+    await refreshPrefixToggleForMode();
     if($('adSecretInput')) $('adSecretInput').value = await getSetting(AD_SECRET_KEY, '');
     updateGoogleNote();
   }
@@ -1384,6 +1475,12 @@ if ('serviceWorker' in navigator) {
     input.disabled = !enabled;
     btn.textContent = enabled ? '已開啟' : '已關閉';
     btn.classList.toggle('off', !enabled);
+  }
+
+  // 依目前模式（跨群/本土語 或 社團）讀出各自記住的「訊息開頭文字」開關狀態並套用到畫面。
+  async function refreshPrefixToggleForMode(){
+    const prefixEnabled = await getPrefixEnabledForMode(appMode);
+    applyPrefixToggleUI(prefixEnabled !== false);
   }
 
   async function saveSettings(){
@@ -1465,7 +1562,7 @@ if ('serviceWorker' in navigator) {
     $('prefixToggleBtn').addEventListener('click', async ()=>{
       const nowEnabled = $('prefixToggleBtn').classList.contains('off');
       applyPrefixToggleUI(nowEnabled);
-      await storageSet(MESSAGE_PREFIX_ENABLED_KEY, nowEnabled);
+      await storageSet(prefixEnabledKeyForMode(appMode), nowEnabled);
       toast(nowEnabled ? '訊息開頭文字已開啟' : '訊息開頭文字已關閉');
     });
   }
@@ -1825,8 +1922,17 @@ if ('serviceWorker' in navigator) {
     return true;
   }
 
+  // 讀出「訊息開頭文字」開關狀態：跨群/本土語沿用舊版原本存的那把 key（相容舊資料，
+  // 行為完全不變），社團模式則用自己獨立的 key、預設關閉。
+  async function getPrefixEnabledForMode(mode){
+    if(mode === 'club'){
+      return await getSetting(MESSAGE_PREFIX_ENABLED_KEY_CLUB, false);
+    }
+    return await getSetting(MESSAGE_PREFIX_ENABLED_KEY_CAMPUS, await getSetting('message-prefix-enabled', true));
+  }
+
   async function buildMessage(first, second){
-    const prefixEnabled = await getSetting(MESSAGE_PREFIX_ENABLED_KEY, true);
+    const prefixEnabled = await getPrefixEnabledForMode(appMode);
     const prefix = (prefixEnabled === false) ? '' : await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
     const classes = Object.keys(currentRoster.classes).sort((a,b) => String(a).localeCompare(String(b),'zh-Hant',{numeric:true}));
     const lines = [];
@@ -1837,6 +1943,39 @@ if ('serviceWorker' in navigator) {
     });
     const body = `${currentRoster.name}\n${lines.join('\n')}`;
     return prefix ? `${prefix}\n${body}` : body;
+  }
+
+  // 檢查這兩節是否「全班每一班都全員到齊」（兩節都沒有任何缺席座號）。
+  // 只有社團模式會用到——全員到齊時可以省略發送訊息。
+  function isAllPresent(first, second){
+    const classes = Object.keys(currentRoster.classes);
+    return classes.every(cls => {
+      const a = first.records[cls];
+      const b = second.records[cls];
+      return (!a || !a.length) && (!b || !b.length);
+    });
+  }
+
+  // 社團模式的結果畫面：全員到齊時顯示「不需要發送訊息」的提示，隱藏訊息內容與 LINE／複製按鈕，
+  // 但仍然保留「返回修改點名」讓老師可以回去修正；跨群/本土語模式完全不會走到這裡。
+  function showSkippedResultScreen(){
+    $('messageBox').hidden = true;
+    $('allPresentNote').hidden = false;
+    $('lineShareLink').style.display = 'none';
+    $('copyBtn').style.display = 'none';
+    $('resultLineHint').style.display = 'none';
+    showScreen('result');
+  }
+
+  function showNormalResultScreen(msg){
+    $('messageBox').hidden = false;
+    $('messageBox').textContent = msg;
+    $('allPresentNote').hidden = true;
+    $('lineShareLink').style.display = '';
+    $('copyBtn').style.display = '';
+    $('resultLineHint').style.display = '';
+    $('lineShareLink').href = 'https://line.me/R/msg/text/?' + encodeURIComponent(msg);
+    showScreen('result');
   }
 
   // 節次調整器：預設跟隨自動偵測的節次，但老師可以手動往前/往後調整
@@ -1951,7 +2090,10 @@ if ('serviceWorker' in navigator) {
           secondRecords = getRecordsForPeriod(secondPeriod) || {};
         }
 
-        const msg = await buildMessage({period:firstPeriod, records:firstRecords}, {period:secondPeriod, records:secondRecords});
+        const firstArg = {period:firstPeriod, records:firstRecords};
+        const secondArg = {period:secondPeriod, records:secondRecords};
+        const msg = await buildMessage(firstArg, secondArg);
+        const skipMessage = appMode === 'club' && isAllPresent(firstArg, secondArg);
         lastCompletedSessions = {
           date: today,
           first: { period: firstPeriod, records: firstRecords },
@@ -1961,12 +2103,16 @@ if ('serviceWorker' in navigator) {
         currentRoster.pendingSession = null;
         manualPeriod = null;
         await setRoster(currentCourseId, currentRoster);
-        $('messageBox').textContent = msg;
-        $('lineShareLink').href = 'https://line.me/R/msg/text/?' + encodeURIComponent(msg);
-        showScreen('result');
-        if(googleResult.configured && googleResult.sent) toast('已更新，訊息已重新產生，Google 紀錄已送出');
-        else if(googleResult.configured && !googleResult.sent) toast('已更新，訊息已重新產生，但 Google 紀錄送出失敗');
-        else toast('已更新，訊息已重新產生');
+        if(skipMessage) showSkippedResultScreen(); else showNormalResultScreen(msg);
+        if(skipMessage){
+          if(googleResult.configured && googleResult.sent) toast('已更新，全員到齊不需發送訊息，Google 紀錄已送出');
+          else if(googleResult.configured && !googleResult.sent) toast('已更新，全員到齊不需發送訊息，但 Google 紀錄送出失敗');
+          else toast('已更新，全員到齊不需發送訊息');
+        }else{
+          if(googleResult.configured && googleResult.sent) toast('已更新，訊息已重新產生，Google 紀錄已送出');
+          else if(googleResult.configured && !googleResult.sent) toast('已更新，訊息已重新產生，但 Google 紀錄送出失敗');
+          else toast('已更新，訊息已重新產生');
+        }
       } finally {
         btn.disabled = false;
         await refreshSessionUI();
@@ -2007,7 +2153,9 @@ if ('serviceWorker' in navigator) {
         const secondRecords = snapshotAbsences();
         const googleResult = await recordToGoogle(period);
         saveDraftForPeriod(period);
-        const msg = await buildMessage(pending, { period, records: secondRecords });
+        const secondArg2 = { period, records: secondRecords };
+        const msg = await buildMessage(pending, secondArg2);
+        const skipMessage = appMode === 'club' && isAllPresent(pending, secondArg2);
         lastCompletedSessions = {
           date: today,
           first: { period: pending.period, records: pending.records },
@@ -2016,12 +2164,16 @@ if ('serviceWorker' in navigator) {
         currentRoster.pendingSession = null;
         manualPeriod = null;
         await setRoster(currentCourseId, currentRoster);
-        $('messageBox').textContent = msg;
-        $('lineShareLink').href = 'https://line.me/R/msg/text/?' + encodeURIComponent(msg);
-        showScreen('result');
-        if(googleResult.configured && googleResult.sent) toast('訊息已產生，Google 點名紀錄已送出');
-        else if(googleResult.configured && !googleResult.sent) toast('訊息已產生，但 Google 紀錄送出失敗');
-        else toast('訊息已產生');
+        if(skipMessage) showSkippedResultScreen(); else showNormalResultScreen(msg);
+        if(skipMessage){
+          if(googleResult.configured && googleResult.sent) toast('全員到齊，不需發送訊息，Google 點名紀錄已送出');
+          else if(googleResult.configured && !googleResult.sent) toast('全員到齊，不需發送訊息，但 Google 紀錄送出失敗');
+          else toast('全員到齊，不需發送訊息');
+        }else{
+          if(googleResult.configured && googleResult.sent) toast('訊息已產生，Google 點名紀錄已送出');
+          else if(googleResult.configured && !googleResult.sent) toast('訊息已產生，但 Google 紀錄送出失敗');
+          else toast('訊息已產生');
+        }
       }
     } finally {
       btn.disabled = false;
@@ -2067,7 +2219,10 @@ if ('serviceWorker' in navigator) {
   buildPeriodSettings();
   buildGoogleGuideCode();
   buildDriveGuideCode();
-  loadSettings();
+  (async () => {
+    await initAppMode(); // 要先讀出模式，設定頁裡「訊息開頭文字」開關才能一開始就顯示正確的模式
+    await loadSettings();
+  })();
   updateGoogleNote();
   setInterval(updateCurrentPeriod, 30000);
   renderHome();
