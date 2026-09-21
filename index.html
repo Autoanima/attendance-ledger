@@ -759,7 +759,7 @@ if ('serviceWorker' in navigator) {
 
   <!-- RESULT -->
   <section class="screen" id="screen-result">
-    <div class="stamp"><span class="seal">已產生 · 待送出</span></div>
+    <div class="stamp"><span class="seal" id="resultSeal">已產生 · 待送出</span></div>
     <div class="message-box" id="messageBox"></div>
     <div class="all-present-note" id="allPresentNote" hidden>🎉 這兩節全員到齊，社團點名不需要特別發送訊息，已省略訊息內容。</div>
     <div class="stack">
@@ -995,6 +995,15 @@ if ('serviceWorker' in navigator) {
     // 如果設定頁正開著，讓「訊息開頭文字」開關立刻切換成這個模式各自記住的狀態。
     if($('screen-settings') && $('screen-settings').classList.contains('active')){
       await refreshPrefixToggleForMode();
+    }
+    // 如果正停在「已產生訊息」的結果畫面，代表老師是點名完之後才發現模式選錯了，
+    // 這時候在跨群/本土語跟社團之間來回切換，直接用剛剛同一份出缺席紀錄、
+    // 依照新模式重新產生一次訊息內容，不用回去重點名；並把印章文字改成「已修改」提醒這是重新產生過的版本。
+    if(lastCompletedSessions && $('screen-result') && $('screen-result').classList.contains('active')){
+      const {skip, msg} = await computeResultForMode(appMode, lastCompletedSessions.first, lastCompletedSessions.second);
+      if(skip) showSkippedResultScreen(); else showNormalResultScreen(msg);
+      setResultStampText('已修改 · 待送出');
+      toast('已切換模式，訊息已依新模式重新產生');
     }
   }
 
@@ -1945,6 +1954,27 @@ if ('serviceWorker' in navigator) {
     return prefix ? `${prefix}\n${body}` : body;
   }
 
+  // 社團模式專用的訊息組法：只列出「有缺席」的班級與節次，兩節都全員到齊的班級整段省略不寫，
+  // 盡量節省傳送訊息的字數；跨群/本土語模式完全不會用到這個函式，維持原本 buildMessage 的格式。
+  async function buildClubMessage(first, second){
+    const prefixEnabled = await getPrefixEnabledForMode('club');
+    const prefix = (prefixEnabled === false) ? '' : await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
+    const classes = Object.keys(currentRoster.classes).sort((a,b) => String(a).localeCompare(String(b),'zh-Hant',{numeric:true}));
+    const lines = [];
+    classes.forEach(cls => {
+      const firstSeats = first.records[cls];
+      const secondSeats = second.records[cls];
+      const firstAbsent = !!(firstSeats && firstSeats.length);
+      const secondAbsent = !!(secondSeats && secondSeats.length);
+      if(!firstAbsent && !secondAbsent) return; // 這班兩節都全員到齊，社團模式省略不提
+      lines.push(cls);
+      if(firstAbsent) lines.push(`　${periodLabel(first.period)} ${statusLabel(firstSeats)}`);
+      if(secondAbsent) lines.push(`　${periodLabel(second.period)} ${statusLabel(secondSeats)}`);
+    });
+    const body = `${currentRoster.name}\n${lines.join('\n')}`;
+    return prefix ? `${prefix}\n${body}` : body;
+  }
+
   // 檢查這兩節是否「全班每一班都全員到齊」（兩節都沒有任何缺席座號）。
   // 只有社團模式會用到——全員到齊時可以省略發送訊息。
   function isAllPresent(first, second){
@@ -1958,12 +1988,18 @@ if ('serviceWorker' in navigator) {
 
   // 社團模式的結果畫面：全員到齊時顯示「不需要發送訊息」的提示，隱藏訊息內容與 LINE／複製按鈕，
   // 但仍然保留「返回修改點名」讓老師可以回去修正；跨群/本土語模式完全不會走到這裡。
+  function setResultStampText(text){
+    const seal = $('resultSeal');
+    if(seal) seal.textContent = text;
+  }
+
   function showSkippedResultScreen(){
     $('messageBox').hidden = true;
     $('allPresentNote').hidden = false;
     $('lineShareLink').style.display = 'none';
     $('copyBtn').style.display = 'none';
     $('resultLineHint').style.display = 'none';
+    setResultStampText('已產生 · 待送出');
     showScreen('result');
   }
 
@@ -1975,7 +2011,17 @@ if ('serviceWorker' in navigator) {
     $('copyBtn').style.display = '';
     $('resultLineHint').style.display = '';
     $('lineShareLink').href = 'https://line.me/R/msg/text/?' + encodeURIComponent(msg);
+    setResultStampText('已產生 · 待送出');
     showScreen('result');
+  }
+
+  // 依「目前模式」重新算出這兩節該顯示的內容（是否省略、訊息文字），
+  // 跨群/本土語一律用原本的 buildMessage；社團才會用只列缺席的 buildClubMessage、
+  // 並且在全員到齊時整份省略——邏輯跟 handleGenMsgClick 送出當下完全一致。
+  async function computeResultForMode(mode, first, second){
+    const skip = mode === 'club' && isAllPresent(first, second);
+    const msg = skip ? '' : await (mode === 'club' ? buildClubMessage(first, second) : buildMessage(first, second));
+    return { skip, msg };
   }
 
   // 節次調整器：預設跟隨自動偵測的節次，但老師可以手動往前/往後調整
@@ -2092,8 +2138,7 @@ if ('serviceWorker' in navigator) {
 
         const firstArg = {period:firstPeriod, records:firstRecords};
         const secondArg = {period:secondPeriod, records:secondRecords};
-        const msg = await buildMessage(firstArg, secondArg);
-        const skipMessage = appMode === 'club' && isAllPresent(firstArg, secondArg);
+        const {skip: skipMessage, msg} = await computeResultForMode(appMode, firstArg, secondArg);
         lastCompletedSessions = {
           date: today,
           first: { period: firstPeriod, records: firstRecords },
@@ -2154,8 +2199,7 @@ if ('serviceWorker' in navigator) {
         const googleResult = await recordToGoogle(period);
         saveDraftForPeriod(period);
         const secondArg2 = { period, records: secondRecords };
-        const msg = await buildMessage(pending, secondArg2);
-        const skipMessage = appMode === 'club' && isAllPresent(pending, secondArg2);
+        const {skip: skipMessage, msg} = await computeResultForMode(appMode, pending, secondArg2);
         lastCompletedSessions = {
           date: today,
           first: { period: pending.period, records: pending.records },
