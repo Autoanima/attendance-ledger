@@ -785,6 +785,19 @@ if ('serviceWorker' in navigator) {
 
 <script>
 (function(){
+  // App 版本號：目前基準版本是 v1.0（2026/09/21 起）。之後每次調整程式碼，
+  // 都會照標準的「語意化版本」規則自動往上加，不用手動記：
+  //   - 小幅微調／文字調整／修 bug → 加最後一碼（Patch），例如 1.0.0 → 1.0.1
+  //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
+  //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
+  // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
+  const APP_VERSION = '1.0.1';
+  function formatVersion(v){
+    const parts = String(v).split('.');
+    while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
+    return 'v' + parts.join('.');
+  }
+
   const $ = (id) => document.getElementById(id);
   const screens = ['home','upload','attend','result','settings','settings-sync'];
   function showScreen(name){
@@ -1950,7 +1963,7 @@ if ('serviceWorker' in navigator) {
       lines.push(`　${periodLabel(first.period)} ${statusLabel(first.records[cls])}`);
       lines.push(`　${periodLabel(second.period)} ${statusLabel(second.records[cls])}`);
     });
-    const body = `${currentRoster.name}\n${lines.join('\n')}`;
+    const body = `${currentRoster.name}\n${taipeiDateStr()}\n${lines.join('\n')}`;
     return prefix ? `${prefix}\n${body}` : body;
   }
 
@@ -1971,7 +1984,7 @@ if ('serviceWorker' in navigator) {
       if(firstAbsent) lines.push(`　${periodLabel(first.period)} ${statusLabel(firstSeats)}`);
       if(secondAbsent) lines.push(`　${periodLabel(second.period)} ${statusLabel(secondSeats)}`);
     });
-    const body = `${currentRoster.name}\n${lines.join('\n')}`;
+    const body = `${currentRoster.name}\n${taipeiDateStr()}\n${lines.join('\n')}`;
     return prefix ? `${prefix}\n${body}` : body;
   }
 
@@ -2260,6 +2273,7 @@ if ('serviceWorker' in navigator) {
   }
 
   // ---------- init ----------
+  if($('versionTapTarget')) $('versionTapTarget').textContent = formatVersion(APP_VERSION);
   buildPeriodSettings();
   buildGoogleGuideCode();
   buildDriveGuideCode();
