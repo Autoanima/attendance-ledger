@@ -1,4 +1,4 @@
-const CACHE='attendance-ledger-v4';
+const CACHE='attendance-ledger-v5';
 const APP=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(APP)).then(()=>self.skipWaiting()));
@@ -13,8 +13,10 @@ self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET') return;
   const isPage = e.request.mode==='navigate' || e.request.url.endsWith('/index.html') || e.request.url.endsWith('/');
   if(isPage){
+    // { cache: 'reload' } 讓瀏覽器直接跳過本機的 HTTP 快取去問伺服器，
+    // 不會因為瀏覽器自己記住的舊回應而抓不到剛部署的新版本。
     e.respondWith(
-      fetch(e.request).then(r=>{
+      fetch(e.request, {cache:'reload'}).then(r=>{
         const copy=r.clone();
         caches.open(CACHE).then(c=>c.put(e.request,copy));
         return r;

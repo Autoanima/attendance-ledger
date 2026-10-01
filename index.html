@@ -347,6 +347,21 @@
     font-family:'Noto Sans TC','Klee One',sans-serif;
     box-shadow:0 4px 0 rgba(18,58,90,.10)
   }
+  .result-period-pick{
+    background:var(--yellow-soft);border:3px solid var(--red);border-radius:14px;
+    padding:10px 12px 12px;margin-bottom:12px;box-shadow:0 4px 0 rgba(18,58,90,.15);
+  }
+  .result-period-pick .rpp-label{font-size:12px;font-weight:900;color:var(--navy);text-align:center;margin-bottom:8px}
+  .result-period-pick .rpp-row{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}
+  .result-period-pick .rpp-chip{
+    min-height:40px;border-radius:9px;border:2px solid var(--navy);
+    background:var(--white);color:var(--navy);font-size:13px;font-weight:900;
+    font-family:inherit;cursor:pointer;padding:0;line-height:1.2;
+  }
+  .result-period-pick .rpp-chip.on{background:var(--red);border-color:var(--red);color:var(--white)}
+  .result-period-pick .rpp-chip:active{transform:scale(.94)}
+  .result-period-pick .rpp-hint{font-size:11px;color:var(--navy);text-align:center;margin-top:8px;line-height:1.6}
+  .result-period-pick .rpp-hint.warn{color:var(--red);font-weight:900}
   .all-present-note{
     background:var(--blue-panel);color:var(--ink);
     border:2px solid var(--navy);border-radius:16px;
@@ -444,14 +459,18 @@
   .prefix-toggle-btn.off{background:var(--line);color:var(--muted);border-color:var(--line)}
   #messagePrefixInput:disabled{background:var(--line);color:var(--muted);opacity:.7}
   .period-row{
-    display:grid;grid-template-columns:48px 1fr 12px 1fr;align-items:center;gap:7px;
+    display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:6px;
     margin-top:8px;
   }
-  .period-row .pname{font-size:14px;font-weight:900;color:var(--navy)}
+  .period-row .pname{font-size:14px;font-weight:900;color:var(--navy);white-space:nowrap}
+  .period-row .psep{color:var(--navy);font-weight:900;text-align:center}
+  /* iOS 的時間欄位有內建最小寬度，會把格子撐破、超出卡片；這裡取消原生外觀並允許縮小，讓兩個時間欄位平均放進卡片裡。 */
   .period-row input[type=time]{
-    width:100%;padding:8px 7px;border-radius:9px;border:2px solid var(--line);
-    background:var(--white);color:var(--ink);font:700 14px inherit;
+    -webkit-appearance:none;appearance:none;box-sizing:border-box;
+    width:100%;min-width:0;max-width:100%;height:40px;padding:6px 4px;border-radius:9px;border:2px solid var(--line);
+    background:var(--white);color:var(--ink);font-family:inherit;font-size:14px;font-weight:700;text-align:center;
   }
+  .period-row input[type=time]::-webkit-date-and-time-value{text-align:center;margin:0}
   .period-row input[type=time]:focus{outline:none;border-color:var(--turq)}
   .settings-divider{height:1px;background:var(--line);margin:14px 0}
   .version-tag{
@@ -760,6 +779,11 @@ if ('serviceWorker' in navigator) {
   <!-- RESULT -->
   <section class="screen" id="screen-result">
     <div class="stamp"><span class="seal" id="resultSeal">已產生 · 待送出</span></div>
+    <div class="result-period-pick" id="resultPeriodPick">
+      <div class="rpp-label">✅ 送出前確認：這兩次點名是第幾節？</div>
+      <div class="rpp-row" id="resultPeriodChips"></div>
+      <div class="rpp-hint" id="resultPeriodHint"></div>
+    </div>
     <div class="message-box" id="messageBox"></div>
     <div class="all-present-note" id="allPresentNote" hidden>🎉 這兩節全員到齊，社團點名不需要特別發送訊息，已省略訊息內容。</div>
     <div class="stack">
@@ -791,7 +815,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '1.0.1';
+  const APP_VERSION = '1.0.2';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -1457,7 +1481,7 @@ if ('serviceWorker' in navigator) {
       const row=document.createElement('div'); row.className='period-row';
       row.innerHTML=`<div class="pname">第 ${i+1} 節</div>
         <input type="time" id="periodStart${i}" aria-label="第 ${i+1} 節開始時間">
-        <div>～</div>
+        <div class="psep">～</div>
         <input type="time" id="periodEnd${i}" aria-label="第 ${i+1} 節結束時間">`;
       box.appendChild(row);
     }
@@ -2006,17 +2030,15 @@ if ('serviceWorker' in navigator) {
     if(seal) seal.textContent = text;
   }
 
-  function showSkippedResultScreen(){
+  function applySkippedResult(){
     $('messageBox').hidden = true;
     $('allPresentNote').hidden = false;
     $('lineShareLink').style.display = 'none';
     $('copyBtn').style.display = 'none';
     $('resultLineHint').style.display = 'none';
-    setResultStampText('已產生 · 待送出');
-    showScreen('result');
   }
 
-  function showNormalResultScreen(msg){
+  function applyNormalResult(msg){
     $('messageBox').hidden = false;
     $('messageBox').textContent = msg;
     $('allPresentNote').hidden = true;
@@ -2024,8 +2046,105 @@ if ('serviceWorker' in navigator) {
     $('copyBtn').style.display = '';
     $('resultLineHint').style.display = '';
     $('lineShareLink').href = 'https://line.me/R/msg/text/?' + encodeURIComponent(msg);
+  }
+
+  function showSkippedResultScreen(){
+    applySkippedResult();
     setResultStampText('已產生 · 待送出');
+    resultPeriodSelection = null;
+    renderResultPeriodPicker();
     showScreen('result');
+  }
+
+  function showNormalResultScreen(msg){
+    applyNormalResult(msg);
+    setResultStampText('已產生 · 待送出');
+    resultPeriodSelection = null;
+    renderResultPeriodPicker();
+    showScreen('result');
+  }
+
+  // ---------- 結果畫面的節次勾選：送出前直接勾「這兩次點名到底是第幾節」 ----------
+  // 兩次點名的內容（誰缺席）不變，只是重新標上節次：先點的那次 → 勾選中較小的節次，後點的那次 → 較大的節次。
+  // 例如原本記成第4、5節，勾成第5、6節後，訊息就會變成第5節、第6節，缺席內容跟著原本的順序走。
+  const RESULT_PERIOD_MAX = 8;
+  let resultPeriodSelection = null; // null = 依照 lastCompletedSessions 目前的節次；否則為老師正在勾選、還沒勾滿兩節的節次陣列
+
+  function currentResultPeriods(){
+    if(!lastCompletedSessions) return [];
+    const set = new Set([lastCompletedSessions.first.period, lastCompletedSessions.second.period].filter(p => p));
+    return [...set].sort((a,b) => a-b);
+  }
+
+  function renderResultPeriodPicker(){
+    const box = $('resultPeriodPick');
+    const row = $('resultPeriodChips');
+    const hint = $('resultPeriodHint');
+    if(!box || !row) return;
+    if(!lastCompletedSessions){ box.hidden = true; return; }
+    box.hidden = false;
+    const selected = resultPeriodSelection || currentResultPeriods();
+    row.innerHTML = '';
+    for(let p = 1; p <= RESULT_PERIOD_MAX; p++){
+      const on = selected.includes(p);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'rpp-chip' + (on ? ' on' : '');
+      b.textContent = `${on ? '✓' : ''}${p}`;
+      b.setAttribute('aria-label', `第${p}節`);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.addEventListener('click', () => toggleResultPeriod(p));
+      row.appendChild(b);
+    }
+    const ok = selected.length === 2;
+    hint.className = 'rpp-hint' + (ok ? '' : ' warn');
+    hint.textContent = ok
+      ? `先點的那次 → ${periodLabel(selected[0])}；後點的那次 → ${periodLabel(selected[1])}`
+      : `請勾選剛好兩節（目前勾了 ${selected.length} 節），勾好後訊息會自動更新`;
+    // 還沒勾滿兩節時，先把傳送／複製鎖起來，避免送出節次不完整的訊息。
+    const sendBtn = document.querySelector('#lineShareLink .line-send-btn');
+    $('lineShareLink').style.pointerEvents = ok ? '' : 'none';
+    if(sendBtn) sendBtn.disabled = !ok;
+    $('copyBtn').disabled = !ok;
+  }
+
+  async function toggleResultPeriod(p){
+    if(!lastCompletedSessions) return;
+    let selected = [...(resultPeriodSelection || currentResultPeriods())];
+    if(selected.includes(p)){
+      selected = selected.filter(x => x !== p);
+    }else{
+      if(selected.length >= 2){ toast('最多勾選兩節，請先取消其中一節'); return; }
+      selected.push(p);
+    }
+    selected.sort((a,b) => a-b);
+    resultPeriodSelection = selected;
+    if(selected.length === 2) await applyResultPeriods(selected[0], selected[1]);
+    renderResultPeriodPicker();
+  }
+
+  // 把兩次點名重新標成新的節次並重新產生訊息；同時搬移節次草稿，
+  // 之後按「返回修改點名」時，每一節帶出來的缺席內容才會跟新的節次對得上。
+  async function applyResultPeriods(newFirst, newSecond){
+    const s = lastCompletedSessions;
+    resultPeriodSelection = null;
+    if(s.first.period === newFirst && s.second.period === newSecond) return;
+    const firstRecords = s.first.records, secondRecords = s.second.records;
+    const drafts = ensureDraftsToday();
+    delete drafts.records[draftKey(s.first.period)];
+    delete drafts.records[draftKey(s.second.period)];
+    drafts.records[draftKey(newFirst)] = firstRecords;
+    drafts.records[draftKey(newSecond)] = secondRecords;
+    lastCompletedSessions = {
+      date: s.date,
+      first: { period: newFirst, records: firstRecords },
+      second: { period: newSecond, records: secondRecords }
+    };
+    if(currentRoster && currentCourseId) await setRoster(currentCourseId, currentRoster);
+    const {skip, msg} = await computeResultForMode(appMode, lastCompletedSessions.first, lastCompletedSessions.second);
+    if(skip) applySkippedResult(); else applyNormalResult(msg);
+    setResultStampText('已修改 · 待送出');
+    toast(`已改為${periodLabel(newFirst)}、${periodLabel(newSecond)}`);
   }
 
   // 依「目前模式」重新算出這兩節該顯示的內容（是否省略、訊息文字），
