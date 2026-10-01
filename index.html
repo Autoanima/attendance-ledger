@@ -76,13 +76,7 @@
 
   /* 左上角：上面一行小標「點名模式」，下面是膠囊形的二選一切換。
      軌道是半透明白色長條，選中的選項是深藍實心膠囊＋白字，沒選中的是深藍字，一看就知道可以切換。 */
-  header.top .mode-switch{
-    display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;flex-shrink:1;
-  }
-  header.top .mode-caption{
-    font-size:11px;font-weight:900;color:var(--navy);opacity:.72;letter-spacing:2px;
-    line-height:1;padding-left:6px;
-  }
+  header.top .mode-switch{display:flex;align-items:center;min-width:0;flex-shrink:1}
   .mode-track{
     display:inline-flex;align-items:center;gap:2px;flex-shrink:0;
     padding:3px;border-radius:999px;
@@ -134,7 +128,7 @@
     background:var(--red-soft);border:1px solid #E5A19B;color:var(--red);
     border-radius:8px;font-size:11px;font-weight:800;padding:5px 7px;
   }
-  /* 課程卡片上的「上課節次」設定：自動偵測 ⇄ 固定節次 */
+  /* 課程卡片上的「上課節次」設定：勾選相鄰的兩節 */
   .course-card .cp-box{margin-top:9px;cursor:default}
   .course-card .cp-seg{display:inline-flex;border:2px solid var(--navy);border-radius:9px;overflow:hidden}
   .course-card .cp-seg button{
@@ -241,19 +235,20 @@
     padding:10px 12px;border-radius:11px;font-size:12px;margin-top:10px;line-height:1.7
   }
 
-  .course-header{
-    background:var(--navy);color:var(--white);
-    border-radius:16px;padding:13px 15px;margin-bottom:10px;
-    border:2px solid var(--navy);box-shadow:0 4px 0 rgba(18,58,90,.13);
-  }
-  .course-header .title{font-size:19px;font-weight:900}
-  .course-header .sub{font-size:11px;color:#D7E8EF;margin-top:3px}
+  /* 各頁面最上面的標題：淺色、不加色塊，跟下面的卡片風格一致 */
+  .course-header{padding:2px 4px 0;margin-bottom:12px;color:var(--navy)}
+  .course-header .title{font-size:21px;font-weight:900;letter-spacing:.5px}
+  .course-header .sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.6}
 
   .summary-bar{
-    display:flex;justify-content:space-between;align-items:center;
     background:var(--blue-panel);border:2px solid var(--navy);
-    border-radius:12px;padding:8px 12px;margin:10px 0;
-    font-size:12px;color:var(--muted);box-shadow:0 2px 0 rgba(18,58,90,.07)
+    border-radius:16px;padding:11px 14px;margin:0 0 10px;
+    box-shadow:0 3px 0 rgba(18,58,90,.10);
+  }
+  .summary-bar .ci-name{font-size:19px;font-weight:900;color:var(--navy);line-height:1.3}
+  .summary-bar .ci-meta{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+    margin-top:4px;font-size:12px;color:var(--muted);
   }
   .summary-bar b{color:var(--navy);font-size:15px}
   .summary-bar span:last-child b{color:var(--red)}
@@ -337,7 +332,6 @@
     padding:4px 4px;border-top:1px solid var(--line);min-height:46px;
   }
   .rc-row:first-child{border-top:none}
-  .rc-row.edit{grid-template-columns:28px minmax(0,1fr) auto;gap:8px}
   .rc-head{
     min-height:34px;background:#EEF5F8;border-radius:10px 10px 0 0;
     position:sticky;top:var(--rc-sticky-top,0px);z-index:5;
@@ -372,10 +366,6 @@
   .rc-cell.on:active{transform:scale(.95)}
   .rc-cell.on.absent{border-color:var(--red);background:var(--red-soft)}
   .rc-ring{width:22px;height:22px;border-radius:50%;border:3px solid var(--red);box-sizing:border-box}
-  .rc-del{
-    width:36px;height:36px;border-radius:9px;border:2px solid var(--red);background:var(--red-soft);color:var(--red);
-    font-size:18px;font-weight:900;font-family:inherit;cursor:pointer;
-  }
   @media(min-width:560px){
     .rc-table{--rc-on-w:76px;--rc-off-w:30px}
     .rc-row{gap:4px;padding:5px 8px}
@@ -396,7 +386,31 @@
   }
   .summary-bar .ab b{color:var(--red)}
 
-  .edit-roster-toggle.active{background:var(--red);color:var(--white);border-color:var(--navy)}
+  /* ---------- 設定 → 名單管理 ---------- */
+  .rm-row{
+    display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:8px;align-items:center;
+    padding:6px 6px;border-top:1px solid var(--line);min-height:46px;
+  }
+  .rm-row:first-child{border-top:none}
+  .rm-row .rc-name{padding-left:2px}
+  .rm-actions{display:flex;gap:6px}
+  .rm-btn{
+    height:34px;min-width:34px;padding:0 10px;border-radius:9px;
+    border:2px solid var(--navy);background:var(--white);color:var(--navy);
+    font-size:12px;font-weight:900;font-family:inherit;cursor:pointer;white-space:nowrap;
+  }
+  .rm-btn.danger{border-color:var(--red);background:var(--red-soft);color:var(--red)}
+  .rm-btn.primary{background:var(--navy);color:var(--white)}
+  .rm-edit{grid-template-columns:1fr;gap:6px}
+  .rm-edit .rm-fields{display:grid;grid-template-columns:70px minmax(0,1fr);gap:6px}
+  .rm-edit .rm-actions{justify-content:flex-end}
+  .rm-fields input,.rm-add input{margin:0;padding:9px 10px;font-size:15px}
+  .rm-add{display:grid;grid-template-columns:minmax(0,1.2fr) 70px minmax(0,1.3fr);gap:6px;margin-top:8px}
+  .rm-add-btn{margin-top:8px}
+  .rm-name-row{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .rm-name-row input{margin:0;flex:1;min-width:0}
+
+
   .student-chip.edit-mode{cursor:default}
   .student-chip.edit-mode:active{transform:none}
   .student-chip .del-student{
@@ -449,8 +463,8 @@
     box-shadow:0 4px 0 rgba(18,58,90,.10)
   }
   .result-period-pick{
-    background:var(--yellow-soft);border:3px solid var(--red);border-radius:14px;
-    padding:10px 12px 12px;margin-bottom:12px;box-shadow:0 4px 0 rgba(18,58,90,.15);
+    background:var(--yellow-soft);border:2px solid var(--navy);border-radius:16px;
+    padding:10px 12px 12px;margin-bottom:12px;box-shadow:0 3px 0 rgba(18,58,90,.10);
   }
   .result-period-pick .rpp-label{font-size:12px;font-weight:900;color:var(--navy);text-align:center;margin-bottom:8px}
   .result-period-pick .rpp-row{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}
@@ -504,14 +518,14 @@
     position:sticky;top:0;z-index:25;
     display:flex;align-items:center;justify-content:space-between;gap:10px;
     width:100%;
-    background:var(--red);color:var(--white);
+    background:var(--navy);color:var(--white);
     border:2px solid var(--navy);border-radius:12px;
-    padding:8px 12px;margin:10px 0 10px;
+    padding:8px 12px;margin:0 0 10px;
     font-size:14px;font-weight:900;
     box-shadow:0 3px 0 rgba(18,58,90,.16);
   }
   .current-class-main{display:flex;align-items:baseline;gap:8px;min-width:0}
-  .current-class-bar .label{font-size:11px;color:#FBECE9;font-weight:900;white-space:nowrap}
+  .current-class-bar .label{font-size:11px;color:#B9D3E2;font-weight:900;white-space:nowrap}
   .current-class-bar .value{font-size:20px;letter-spacing:.5px;white-space:nowrap}
   .current-class-meta{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:13px;font-weight:900}
   .current-class-meta .time{font-variant-numeric:tabular-nums}
@@ -590,7 +604,6 @@
   @media(max-width:400px){
     header.top{padding:9px 9px;gap:4px}
     .mode-btn{font-size:12px;padding:6px 9px}
-    header.top .mode-caption{font-size:10px;letter-spacing:1.5px}
     header.top .header-actions{gap:3px}
     .icon-btn{padding:6px 7px;font-size:11px}
     .icon-btn.icon-only{padding:6px 6px;font-size:13px}
@@ -617,7 +630,6 @@ if ('serviceWorker' in navigator) {
 
   <header class="top">
     <div class="brand mode-switch" id="modeSwitch">
-      <span class="mode-caption">點名模式</span>
       <div class="mode-track" role="group" aria-label="切換點名模式">
         <button type="button" class="mode-btn active" id="modeBtnCampus" data-mode="campus" aria-pressed="true">跨群/本土語</button>
         <button type="button" class="mode-btn" id="modeBtnClub" data-mode="club" aria-pressed="false">社團</button>
@@ -683,7 +695,7 @@ if ('serviceWorker' in navigator) {
   <section class="screen" id="screen-settings">
     <div class="course-header">
       <div class="title">設定</div>
-      <div class="sub">設定上課節次與 Google 試算表，資料會保存在這台裝置。</div>
+      <div class="sub">訊息、名單與同步設定，資料會保存在這台裝置。</div>
     </div>
 
     <div class="settings-card">
@@ -693,6 +705,12 @@ if ('serviceWorker' in navigator) {
       </div>
       <div class="settings-sub">送出最終點名訊息時，會自動加在整段訊息最前面，可依需要自行修改或清空；社團點名時，建議關閉、或更改為其他想加的文字，比如說社團上課的地點。</div>
       <input type="text" id="messagePrefixInput" placeholder="例如：@程程" />
+    </div>
+
+    <div class="settings-card">
+      <div class="settings-title">名單管理</div>
+      <div class="settings-sub">新增、修改、刪除學生（例如轉入、休學、座號或姓名打錯），也可以修改課程名稱。</div>
+      <button type="button" class="primary-btn ghost small-btn" id="openRosterBtn" style="margin-top:10px">前往名單管理 →</button>
     </div>
 
     <div class="settings-card">
@@ -709,6 +727,41 @@ if ('serviceWorker' in navigator) {
     <div class="version-tag" id="versionTapTarget">v1.0</div>
   </section>
 
+  <!-- SETTINGS: ROSTER -->
+  <section class="screen" id="screen-roster">
+    <div class="course-header">
+      <div class="title">名單管理</div>
+      <div class="sub">新增、修改、刪除學生，改好會立刻存檔，點名畫面也會跟著更新。</div>
+    </div>
+
+    <div class="settings-card">
+      <div class="settings-title">選擇課程</div>
+      <select id="rmCourseSelect"></select>
+      <div class="rm-name-row">
+        <input type="text" id="rmCourseName" placeholder="課程名稱" />
+        <button type="button" class="rm-btn primary" id="rmSaveNameBtn">改名</button>
+      </div>
+    </div>
+
+    <div class="settings-card">
+      <div class="settings-title">新增學生</div>
+      <div class="settings-sub">班級可以選現有的，也可以直接打一個新的班級名稱。</div>
+      <div class="rm-add">
+        <input type="text" id="rmAddClass" list="rmClassList" placeholder="班級" />
+        <input type="text" id="rmAddSeat" inputmode="numeric" placeholder="座號" />
+        <input type="text" id="rmAddName" placeholder="姓名（可不填）" />
+      </div>
+      <datalist id="rmClassList"></datalist>
+      <button type="button" class="primary-btn rm-add-btn" id="rmAddBtn">＋ 新增學生</button>
+    </div>
+
+    <div id="rmBody"></div>
+
+    <div class="stack">
+      <button class="primary-btn ghost" id="backFromRosterBtn">← 返回設定</button>
+    </div>
+  </section>
+
   <!-- SETTINGS: ADVANCED SYNC -->
   <section class="screen" id="screen-settings-sync">
     <div class="course-header">
@@ -718,7 +771,7 @@ if ('serviceWorker' in navigator) {
 
     <div class="settings-card google-settings-card">
       <div class="settings-title">Google 試算表（選填）</div>
-      <div class="settings-sub big-sub">如果你希望每次點名（含第一節、第二節）送出時，也自動把點名結果寫進 Google 試算表，請完成下面設定。<br><b>不設定也可以正常點名與產生 LINE 訊息。</b></div>
+      <div class="settings-sub big-sub">如果你希望每次按「完成點名，產生訊息」時，也自動把點名結果寫進 Google 試算表，請完成下面設定。<br><b>不設定也可以正常點名與產生 LINE 訊息。</b></div>
 
       <div class="account-warning"><b>⚠️ 請務必用你「私人的 Google 帳號」（自己的 Gmail，不是學校配發的帳號）來開這份試算表、部署 Apps Script。</b><br>學校帳號通常是 Google Workspace 網域帳號，校方管理員多半會限制或直接關閉「部署為任何人都能存取的網頁應用程式」這個功能，就算整個步驟都照著做，最後同步還是會沒有反應、抓不出原因。用自己的私人帳號做這件事才會成功。</div>
       <div class="account-warning"><b>💻 以下設定步驟請用電腦操作，手機無法完成部署。</b><br>第一次設定大約只要 5 分鐘，且只需要做一次；設定好以後，平常用手機點名、產生訊息完全不受影響，一樣正常同步。</div>
@@ -748,7 +801,7 @@ if ('serviceWorker' in navigator) {
           <button type="button" class="primary-btn ghost small-btn" id="testGoogleBtn">🟢 測試 Google 連線</button>
           <div class="google-test-result" id="googleTestResult"></div>
           <div class="guide-text" style="margin-top:6px">按「測試連線」——如果看到一段確認文字，代表部署成功；如果看到錯誤畫面，回到第 4～6 步檢查部署設定（尤其是「具有存取權的使用者」是不是選「所有人」）。</div>
-          <div class="google-note"><b>設定完成後：</b>平常點名時不需要再手動處理，每節點名送出時（含第一節、第二節），系統都會自動同步進 Google 試算表，不用再手動觸發。</div>
+          <div class="google-note"><b>設定完成後：</b>平常點名時不需要再手動處理，每次按「完成點名，產生訊息」時，兩節的點名結果都會自動同步進 Google 試算表，不用再手動觸發。</div>
         </div>
       </details>
     </div>
@@ -820,16 +873,12 @@ if ('serviceWorker' in navigator) {
 
   <!-- ATTENDANCE -->
   <section class="screen" id="screen-attend">
-    <div class="course-header">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <div class="title" id="attendCourseName">—</div>
-        <button type="button" class="icon-btn edit-roster-toggle" id="editRosterBtn">休學簡易刪除</button>
-      </div>
-      <div class="sub" id="attendSub">點選亮起來的節次格子就會畫圈（＝缺席），再點一次取消；預設全員出席。兩節都確認好，按最下面的按鈕一次送出。</div>
-    </div>
     <div class="summary-bar">
-      <span>共 <b id="totalCount">0</b> 人</span>
-      <span class="ab" id="absentSummary">—</span>
+      <div class="ci-name" id="attendCourseName">—</div>
+      <div class="ci-meta">
+        <span>共 <b id="totalCount">0</b> 人</span>
+        <span class="ab" id="absentSummary">—</span>
+      </div>
     </div>
     <div class="current-class-bar" id="currentClassBar" aria-live="polite">
       <div class="current-class-main">
@@ -848,18 +897,13 @@ if ('serviceWorker' in navigator) {
 
     <div class="sticky-actions stack">
       <button class="primary-btn" id="genMsgBtn">完成點名，產生訊息</button>
-      <div class="auto-google-note" id="autoGoogleNote">已設定 Google 時，每節點名都會自動記錄。</div>
+      <div class="auto-google-note" id="autoGoogleNote">已設定 Google 時，產生訊息時會自動記錄兩節的點名。</div>
     </div>
   </section>
 
   <!-- RESULT -->
   <section class="screen" id="screen-result">
     <div class="stamp"><span class="seal" id="resultSeal">已產生 · 待送出</span></div>
-    <div class="result-period-pick" id="resultPeriodPick">
-      <div class="rpp-label">✅ 送出前確認：這兩次點名是第幾節？</div>
-      <div class="rpp-row" id="resultPeriodChips"></div>
-      <div class="rpp-hint" id="resultPeriodHint"></div>
-    </div>
     <div class="message-box" id="messageBox"></div>
     <div class="all-present-note" id="allPresentNote" hidden>🎉 這兩節全員到齊，社團點名不需要特別發送訊息，已省略訊息內容。</div>
     <div class="stack">
@@ -891,7 +935,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '2.0.0';
+  const APP_VERSION = '2.1.0';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -899,7 +943,7 @@ if ('serviceWorker' in navigator) {
   }
 
   const $ = (id) => document.getElementById(id);
-  const screens = ['home','upload','attend','result','settings','settings-sync'];
+  const screens = ['home','upload','attend','result','settings','settings-sync','roster'];
   function showScreen(name){
     screens.forEach(s => $('screen-'+s).classList.toggle('active', s===name));
     window.scrollTo(0,0);
@@ -923,7 +967,6 @@ if ('serviceWorker' in navigator) {
   let currentRoster = null; // { name, classes: { className: [{seat,name}] }, today: { date, absent: [{班級:[座號]}, {班級:[座號]}] } }
   let parsedUpload = null;  // classes object staged from file, before save
   let pendingCourseName = '';
-  let rosterEditMode = false;
   let lastCompletedSessions = null; // 最近一次產生訊息時，兩節各自的節次與缺席紀錄（結果畫面改節次、切換模式時使用）
   let lastSeenDate = null; // 用來偵測「跨到新的一天」，避免舊資料留到下次點名
   let appMode = 'campus'; // 'campus' = 跨群/本土語（維持原本規則）；'club' = 社團（訊息開頭預設關閉、全員到齊時不產生訊息）
@@ -1131,7 +1174,6 @@ if ('serviceWorker' in navigator) {
     if(!roster){ toast('讀取名單失敗'); return; }
     currentCourseId = id;
     currentRoster = roster;
-    rosterEditMode = false;
     currentCoursePreset = getCoursePreset((await getIndex()).find(c => c.id === id));
     lastCompletedSessions = null;
     periodPanelOpen = false;
@@ -1426,10 +1468,6 @@ if ('serviceWorker' in navigator) {
     renderAttendPeriodPanel();
     updateGenBtn();
 
-    const editBtn = $('editRosterBtn');
-    editBtn.textContent = rosterEditMode ? '完成編輯' : '休學簡易刪除';
-    editBtn.classList.toggle('active', rosterEditMode);
-
     const preset = currentCoursePreset;
     // 亮起來的兩節是寬欄（方便點），其他節次是窄欄
     const colTpl = Array.from({length:8}, (_, i) => (preset && preset.includes(i+1)) ? 'var(--rc-on-w)' : 'var(--rc-off-w)').join(' ');
@@ -1446,7 +1484,7 @@ if ('serviceWorker' in navigator) {
         const table = block.querySelector('.rc-table');
         table.style.setProperty('--rc-cols', colTpl);
 
-        if(!rosterEditMode){
+        {
           const head = document.createElement('div');
           head.className = 'rc-row rc-head';
           let h = '<div class="rc-hseat">座號</div><div class="rc-hname">姓名</div>';
@@ -1460,24 +1498,11 @@ if ('serviceWorker' in navigator) {
 
         currentRoster.classes[cls].forEach(stu => {
           const row = document.createElement('div');
-          row.className = 'rc-row' + (rosterEditMode ? ' edit' : '');
+          row.className = 'rc-row';
           const name = stu.name || '座號' + stu.seat;
           row.innerHTML = `<div class="rc-seat">${escapeHtml(stu.seat)}</div><div class="rc-name">${escapeHtml(name)}</div>`;
 
-          if(rosterEditMode){
-            const del = document.createElement('button');
-            del.type = 'button';
-            del.className = 'rc-del';
-            del.textContent = '✕';
-            del.setAttribute('aria-label', `刪除 ${name}`);
-            del.addEventListener('click', () => {
-              const label = stu.name ? `${cls} ${stu.seat}號 ${stu.name}` : `${cls} ${stu.seat}號`;
-              const ok = window.confirm(`確定要從名單中刪除「${label}」嗎？\n\n這個動作無法復原（例如學生休學時使用）。`);
-              if(!ok) return;
-              removeStudent(cls, stu.seat);
-            });
-            row.appendChild(del);
-          }else{
+          {
             const refreshRowMark = () => row.classList.toggle('has-absent', isAbsentIn(0, cls, stu.seat) || isAbsentIn(1, cls, stu.seat));
             for(let p = 1; p <= 8; p++){
               const slot = slotOfPeriod(p);
@@ -1607,25 +1632,163 @@ if ('serviceWorker' in navigator) {
     renderAttendPeriodPanel();
   });
 
-  async function removeStudent(cls, seat){
-    if(!currentRoster || !currentRoster.classes[cls]) return;
-    currentRoster.classes[cls] = currentRoster.classes[cls].filter(s => s.seat !== seat);
-    if(!currentRoster.classes[cls].length) delete currentRoster.classes[cls];
-    await setRoster(currentCourseId, currentRoster);
-    const idx = await getIndex();
-    const pos = idx.findIndex(c => c.id === currentCourseId);
-    if(pos >= 0){
-      idx[pos].studentCount = Object.values(currentRoster.classes).reduce((n,l)=>n+l.length,0);
-      idx[pos].classCount = Object.keys(currentRoster.classes).length;
-      await setIndex(idx);
-    }
-    renderAttendance();
-    toast('已刪除該名學生');
+  // ---------- 設定 → 名單管理：新增、修改、刪除學生，修改課程名稱 ----------
+  let rmCourseId = null;  // 正在管理的課程
+  let rmRoster = null;    // 那門課的名單（如果就是目前點名中的課程，直接用同一份，改了點名畫面馬上生效）
+  let rmEditing = null;   // 正在編輯的學生 { cls, seat }
+
+  function sortBySeat(list){
+    list.sort((a,b) => String(a.seat).localeCompare(String(b.seat),'zh-Hant',{numeric:true}));
   }
 
-  $('editRosterBtn').addEventListener('click', () => {
-    rosterEditMode = !rosterEditMode;
-    renderAttendance();
+  // 改座號／刪學生時，今天已經畫的圈也要跟著改，才不會對錯人
+  function updateTodaySeat(roster, cls, oldSeat, newSeat){
+    if(!roster.today || !roster.today.absent) return;
+    roster.today.absent.forEach(rec => {
+      const list = rec[cls];
+      if(!list) return;
+      const i = list.indexOf(oldSeat);
+      if(i < 0) return;
+      if(newSeat === null) list.splice(i, 1); else list[i] = newSeat;
+    });
+  }
+
+  async function saveRosterManager(){
+    await setRoster(rmCourseId, rmRoster);
+    await updateCourseIndexEntry(rmCourseId, {
+      name: rmRoster.name,
+      studentCount: Object.values(rmRoster.classes).reduce((n,l) => n + l.length, 0),
+      classCount: Object.keys(rmRoster.classes).length
+    });
+  }
+
+  async function openRosterManager(){
+    const idx = await getIndex();
+    const sel = $('rmCourseSelect');
+    sel.innerHTML = '';
+    if(!idx.length){
+      sel.innerHTML = '<option value="">還沒有任何課程</option>';
+    }
+    idx.slice().reverse().forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.id; o.textContent = c.name;
+      sel.appendChild(o);
+    });
+    const pick = (currentCourseId && idx.some(c => c.id === currentCourseId)) ? currentCourseId : (idx.length ? idx[idx.length-1].id : null);
+    if(pick) sel.value = pick;
+    await loadRosterForManager(pick);
+    showScreen('roster');
+  }
+
+  async function loadRosterForManager(id){
+    rmCourseId = id || null;
+    rmEditing = null;
+    rmRoster = !rmCourseId ? null : (rmCourseId === currentCourseId && currentRoster) ? currentRoster : await getRoster(rmCourseId);
+    renderRosterManager();
+  }
+
+  function renderRosterManager(){
+    const body = $('rmBody');
+    const nameInput = $('rmCourseName');
+    if(!rmRoster){
+      body.innerHTML = '<div class="empty-note">還沒有任何課程，請先到首頁新增課程。</div>';
+      nameInput.value = '';
+      return;
+    }
+    nameInput.value = rmRoster.name || '';
+    const classes = Object.keys(rmRoster.classes).sort((a,b) => String(a).localeCompare(String(b),'zh-Hant',{numeric:true}));
+    $('rmClassList').innerHTML = classes.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
+    body.innerHTML = '';
+    classes.forEach(cls => {
+      const block = document.createElement('div');
+      block.className = 'class-block';
+      block.style.marginBottom = '12px';
+      block.innerHTML = `<div class="class-title">${escapeHtml(cls)}（${rmRoster.classes[cls].length} 人）</div><div class="rc-table"></div>`;
+      const table = block.querySelector('.rc-table');
+      rmRoster.classes[cls].forEach(stu => {
+        const row = document.createElement('div');
+        const editing = rmEditing && rmEditing.cls === cls && rmEditing.seat === stu.seat;
+        if(editing){
+          row.className = 'rm-row rm-edit';
+          row.innerHTML = `<div class="rm-fields">
+              <input type="text" class="rm-seat-in" inputmode="numeric" value="${escapeHtml(stu.seat)}" aria-label="座號">
+              <input type="text" class="rm-name-in" value="${escapeHtml(stu.name || '')}" placeholder="姓名（可不填）" aria-label="姓名">
+            </div>
+            <div class="rm-actions">
+              <button type="button" class="rm-btn" data-act="cancel">取消</button>
+              <button type="button" class="rm-btn primary" data-act="save">儲存</button>
+            </div>`;
+          row.querySelector('[data-act=cancel]').addEventListener('click', () => { rmEditing = null; renderRosterManager(); });
+          row.querySelector('[data-act=save]').addEventListener('click', async () => {
+            const newSeat = row.querySelector('.rm-seat-in').value.trim();
+            const newName = row.querySelector('.rm-name-in').value.trim();
+            if(!newSeat){ toast('座號不能空白'); return; }
+            if(newSeat !== stu.seat && rmRoster.classes[cls].some(x => x.seat === newSeat)){ toast(`${cls} 已經有 ${newSeat} 號了`); return; }
+            if(newSeat !== stu.seat) updateTodaySeat(rmRoster, cls, stu.seat, newSeat);
+            stu.seat = newSeat;
+            stu.name = newName;
+            sortBySeat(rmRoster.classes[cls]);
+            rmEditing = null;
+            await saveRosterManager();
+            renderRosterManager();
+            toast('已儲存');
+          });
+        }else{
+          row.className = 'rm-row';
+          row.innerHTML = `<div class="rc-seat">${escapeHtml(stu.seat)}</div>
+            <div class="rc-name">${escapeHtml(stu.name || '（未填姓名）')}</div>
+            <div class="rm-actions">
+              <button type="button" class="rm-btn" data-act="edit" aria-label="修改 ${escapeHtml(stu.name || stu.seat + '號')}">✎ 修改</button>
+              <button type="button" class="rm-btn danger" data-act="del" aria-label="刪除 ${escapeHtml(stu.name || stu.seat + '號')}">✕</button>
+            </div>`;
+          row.querySelector('[data-act=edit]').addEventListener('click', () => { rmEditing = { cls, seat: stu.seat }; renderRosterManager(); });
+          row.querySelector('[data-act=del]').addEventListener('click', async () => {
+            const label = stu.name ? `${cls} ${stu.seat}號 ${stu.name}` : `${cls} ${stu.seat}號`;
+            if(!window.confirm(`確定要從名單中刪除「${label}」嗎？\n\n這個動作無法復原（例如學生休學時使用）。`)) return;
+            updateTodaySeat(rmRoster, cls, stu.seat, null);
+            rmRoster.classes[cls] = rmRoster.classes[cls].filter(x => x !== stu);
+            if(!rmRoster.classes[cls].length) delete rmRoster.classes[cls];
+            await saveRosterManager();
+            renderRosterManager();
+            toast('已刪除該名學生');
+          });
+        }
+        table.appendChild(row);
+      });
+      body.appendChild(block);
+    });
+  }
+
+  $('openRosterBtn').addEventListener('click', openRosterManager);
+  $('rmCourseSelect').addEventListener('change', e => loadRosterForManager(e.target.value));
+  $('backFromRosterBtn').addEventListener('click', () => showScreen('settings'));
+
+  $('rmSaveNameBtn').addEventListener('click', async () => {
+    if(!rmRoster) return;
+    const name = $('rmCourseName').value.trim();
+    if(!name){ toast('課程名稱不能空白'); return; }
+    rmRoster.name = name;
+    await saveRosterManager();
+    const opt = $('rmCourseSelect').querySelector(`option[value="${rmCourseId}"]`);
+    if(opt) opt.textContent = name;
+    toast('課程名稱已更新');
+  });
+
+  $('rmAddBtn').addEventListener('click', async () => {
+    if(!rmRoster){ toast('請先選擇課程'); return; }
+    const cls = $('rmAddClass').value.trim();
+    const seat = $('rmAddSeat').value.trim();
+    const name = $('rmAddName').value.trim();
+    if(!cls || !seat){ toast('請填寫班級和座號'); return; }
+    const list = rmRoster.classes[cls] || (rmRoster.classes[cls] = []);
+    if(list.some(x => x.seat === seat)){ toast(`${cls} 已經有 ${seat} 號了`); return; }
+    list.push({ seat, name });
+    sortBySeat(list);
+    await saveRosterManager();
+    $('rmAddSeat').value = '';
+    $('rmAddName').value = '';
+    renderRosterManager();
+    toast(`已新增 ${cls} ${seat}號${name ? ' ' + name : ''}`);
   });
 
   function updateSummary(){
@@ -1776,7 +1939,10 @@ if ('serviceWorker' in navigator) {
       toast(nowEnabled ? '訊息開頭文字已開啟' : '訊息開頭文字已關閉');
     });
   }
-  $('backFromSettingsBtn').addEventListener('click', ()=>{ showScreen(currentRoster ? 'attend' : 'home'); });
+  $('backFromSettingsBtn').addEventListener('click', ()=>{
+    if(currentRoster){ renderAttendance(); showScreen('attend'); }
+    else { renderHome(); showScreen('home'); }
+  });
   $('saveSettingsBtn').addEventListener('click', saveSettings);
   $('openAdvancedSyncBtn').addEventListener('click', async ()=>{
     buildGoogleGuideCode();
@@ -1884,7 +2050,7 @@ if ('serviceWorker' in navigator) {
     const sheetUrl=(await getSetting(GOOGLE_SHEET_KEY,'')).trim();
     const webAppUrl=(await getSetting(GOOGLE_LOG_KEY,'')).trim();
     const ready=!!(sheetUrl && webAppUrl);
-    note.textContent=ready ? '✓ 已設定 Google：每一節點名送出時都會自動記錄。' : 'Google 試算表未設定；仍可正常點名與產生訊息。';
+    note.textContent=ready ? '✓ 已設定 Google：產生訊息時會自動記錄兩節的點名。' : 'Google 試算表未設定；仍可正常點名與產生訊息。';
     note.classList.toggle('ready',ready);
     note.classList.toggle('off',!ready);
   }
@@ -2168,94 +2334,13 @@ if ('serviceWorker' in navigator) {
   function showSkippedResultScreen(){
     applySkippedResult();
     setResultStampText('已產生 · 待送出');
-    resultPeriodSelection = null;
-    renderResultPeriodPicker();
     showScreen('result');
   }
 
   function showNormalResultScreen(msg){
     applyNormalResult(msg);
     setResultStampText('已產生 · 待送出');
-    resultPeriodSelection = null;
-    renderResultPeriodPicker();
     showScreen('result');
-  }
-
-  // ---------- 結果畫面的節次勾選：送出前直接勾「這兩次點名到底是第幾節」 ----------
-  // 兩次點名的內容（誰缺席）不變，只是重新標上節次：節次較前的那筆 → 勾選中較小的節次，較後的那筆 → 較大的節次。
-  // 例如原本記成第4、5節，勾成第5、6節後，訊息就會變成第5節、第6節，缺席內容跟著原本的順序走。
-  const RESULT_PERIOD_MAX = 8;
-  let resultPeriodSelection = null; // null = 依照 lastCompletedSessions 目前的節次；否則為老師正在勾選、還沒勾滿兩節的節次陣列
-
-  function currentResultPeriods(){
-    if(!lastCompletedSessions) return [];
-    const set = new Set([lastCompletedSessions.first.period, lastCompletedSessions.second.period].filter(p => p));
-    return [...set].sort((a,b) => a-b);
-  }
-
-  function renderResultPeriodPicker(){
-    const box = $('resultPeriodPick');
-    const row = $('resultPeriodChips');
-    const hint = $('resultPeriodHint');
-    if(!box || !row) return;
-    if(!lastCompletedSessions){ box.hidden = true; return; }
-    box.hidden = false;
-    const selected = resultPeriodSelection || currentResultPeriods();
-    row.innerHTML = '';
-    for(let p = 1; p <= RESULT_PERIOD_MAX; p++){
-      const on = selected.includes(p);
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'rpp-chip' + (on ? ' on' : '');
-      b.textContent = `${on ? '✓' : ''}${p}`;
-      b.setAttribute('aria-label', `第${p}節`);
-      b.setAttribute('aria-pressed', on ? 'true' : 'false');
-      b.addEventListener('click', () => toggleResultPeriod(p));
-      row.appendChild(b);
-    }
-    const ok = isConsecutivePair(selected);
-    hint.className = 'rpp-hint' + (ok ? '' : ' warn');
-    hint.textContent = ok
-      ? `目前是${periodLabel(selected[0])}、${periodLabel(selected[1])}；要改就直接點選相鄰的兩節，兩筆紀錄會依節次先後一起搬過去`
-      : periodPairProblem(selected);
-    // 還沒勾成「連續的兩節」時，先把傳送／複製鎖起來，避免送出節次錯誤的訊息。
-    const sendBtn = document.querySelector('#lineShareLink .line-send-btn');
-    $('lineShareLink').style.pointerEvents = ok ? '' : 'none';
-    if(sendBtn) sendBtn.disabled = !ok;
-    $('copyBtn').disabled = !ok;
-  }
-
-  async function toggleResultPeriod(p){
-    if(!lastCompletedSessions) return;
-    let selected = [...(resultPeriodSelection || currentResultPeriods())];
-    if(selected.includes(p)){
-      selected = selected.filter(x => x !== p);
-    }else{
-      // 不限制勾選數量：可以先勾新的、再取消舊的，順序隨意；勾成連續的兩節時才套用。
-      selected.push(p);
-    }
-    selected.sort((a,b) => a-b);
-    resultPeriodSelection = selected;
-    if(isConsecutivePair(selected)) await applyResultPeriods(selected[0], selected[1]);
-    renderResultPeriodPicker();
-  }
-
-  // 把兩節重新標成新的節次並重新產生訊息；同時更新課程設定的節次，
-  // 之後按「返回修改點名」時，表格亮起來的就是新的兩節，已經畫的圈也照順序跟過去。
-  async function applyResultPeriods(newFirst, newSecond){
-    const s = lastCompletedSessions;
-    resultPeriodSelection = null;
-    if(s.first.period === newFirst && s.second.period === newSecond) return;
-    await saveCoursePeriods(currentCourseId, [newFirst, newSecond]);
-    lastCompletedSessions = {
-      date: s.date,
-      first: { period: newFirst, records: s.first.records },
-      second: { period: newSecond, records: s.second.records }
-    };
-    const {skip, msg} = await computeResultForMode(appMode, lastCompletedSessions.first, lastCompletedSessions.second);
-    if(skip) applySkippedResult(); else applyNormalResult(msg);
-    setResultStampText('已修改 · 待送出');
-    toast(`已改為${periodLabel(newFirst)}、${periodLabel(newSecond)}`);
   }
 
   // 依「目前模式」重新算出這兩節該顯示的內容（是否省略、訊息文字），
