@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>跨群/本土語點名</title>
+<title>跨群／本土語／社團 點名幫手</title>
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#173B31">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -74,28 +74,10 @@
     display:flex;gap:6px;align-items:center;flex-shrink:0;
   }
 
-  /* 左上角：上面一行小標「點名模式」，下面是膠囊形的二選一切換。
-     軌道是半透明白色長條，選中的選項是深藍實心膠囊＋白字，沒選中的是深藍字，一看就知道可以切換。 */
-  header.top .mode-switch{display:flex;align-items:center;min-width:0;flex-shrink:1}
-  .mode-track{
-    display:inline-flex;align-items:center;gap:2px;flex-shrink:0;
-    padding:3px;border-radius:999px;
-    background:rgba(255,255,255,.5);
-    box-shadow:inset 0 1px 3px rgba(18,58,90,.22);
-  }
-  .mode-btn{
-    background:transparent;color:var(--navy);
-    border:none;border-radius:999px;
-    padding:6px 13px;font-size:14px;font-weight:900;font-family:inherit;letter-spacing:.5px;line-height:1.15;
-    cursor:pointer;white-space:nowrap;opacity:.7;flex-shrink:0;
-    transition:background .2s ease,color .2s ease,box-shadow .2s ease,opacity .2s ease;
-  }
-  .mode-btn:not(.active):hover{opacity:1;background:rgba(255,255,255,.55)}
-  .mode-btn.active{
-    background:var(--navy);color:var(--white);opacity:1;
-    box-shadow:0 2px 4px rgba(18,58,90,.3);
-  }
-  .mode-btn:active{transform:scale(.97)}
+  /* 左上角：App 名稱（上面小字是適用的課程種類，下面大字是名稱） */
+  header.top .app-title{display:flex;flex-direction:column;gap:1px;min-width:0}
+  header.top .app-title .at-sub{font-size:12px;font-weight:900;letter-spacing:1px;opacity:.75;white-space:nowrap}
+  header.top .app-title .at-main{font-size:21px;font-weight:900;letter-spacing:2px;line-height:1.15;white-space:nowrap}
 
   .icon-btn{
     background:var(--white);color:var(--navy);
@@ -122,6 +104,13 @@
     cursor:pointer;box-shadow:0 3px 0 rgba(18,58,90,.10);
   }
   .course-card .name{font-size:16px;font-weight:900;color:var(--navy)}
+  .course-card .cc-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+  .course-card .cc-tag{
+    font-size:11px;font-weight:900;padding:3px 9px;border-radius:999px;
+    background:var(--white);border:1.5px solid var(--navy);color:var(--navy);
+  }
+  .course-card .cc-tag.type-club{background:var(--yellow-soft)}
+  .course-card .cc-tag.warn{border-color:var(--red);color:var(--red);background:var(--red-soft)}
   .course-card .meta{font-size:11px;color:var(--muted);margin-top:3px}
   .course-card .go{color:var(--navy);font-size:22px;font-weight:900}
   .course-card .del{
@@ -245,7 +234,13 @@
     border-radius:16px;padding:11px 14px;margin:0 0 10px;
     box-shadow:0 3px 0 rgba(18,58,90,.10);
   }
-  .summary-bar .ci-name{font-size:19px;font-weight:900;color:var(--navy);line-height:1.3}
+  .summary-bar .ci-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .summary-bar .ci-name{font-size:19px;font-weight:900;color:var(--navy);line-height:1.3;min-width:0}
+  .summary-bar .type-select{
+    width:auto;flex:none;margin:0;padding:6px 10px;border-radius:999px;
+    border:2px solid var(--navy);background:var(--white);color:var(--navy);
+    font-size:13px;font-weight:900;cursor:pointer;
+  }
   .summary-bar .ci-meta{
     display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
     margin-top:4px;font-size:12px;color:var(--muted);
@@ -409,6 +404,7 @@
   .rm-add-btn{margin-top:8px}
   .rm-name-row{display:flex;gap:8px;align-items:center;margin-top:8px}
   .rm-name-row input{margin:0;flex:1;min-width:0}
+  .rm-del-course{width:100%;margin-top:10px;height:38px}
 
 
   .student-chip.edit-mode{cursor:default}
@@ -571,6 +567,10 @@
     padding:5px 13px;font-size:12px;font-weight:800;font-family:inherit;
     cursor:pointer;
   }
+  .prefix-row{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    margin-top:8px;font-size:13px;font-weight:800;color:var(--navy);
+  }
   .prefix-toggle-btn.off{background:var(--line);color:var(--muted);border-color:var(--line)}
   #messagePrefixInput:disabled{background:var(--line);color:var(--muted);opacity:.7}
   .settings-divider{height:1px;background:var(--line);margin:14px 0}
@@ -590,7 +590,6 @@
     .wrap{padding:10px 10px 6px}
     header.top{min-height:64px;border-radius:16px;padding:10px 12px;gap:6px}
     header.top .brand{font-size:17px}
-    .mode-btn{font-size:13px;padding:6px 11px}
     header.top .header-actions{gap:4px}
     .icon-btn{padding:7px 8px}
     .icon-btn.icon-only{padding:7px 7px;font-size:14px}
@@ -603,15 +602,16 @@
   }
   @media(max-width:400px){
     header.top{padding:9px 9px;gap:4px}
-    .mode-btn{font-size:12px;padding:6px 9px}
+    header.top .app-title .at-sub{font-size:11px;letter-spacing:.5px}
+    header.top .app-title .at-main{font-size:18px;letter-spacing:1px}
     header.top .header-actions{gap:3px}
     .icon-btn{padding:6px 7px;font-size:11px}
     .icon-btn.icon-only{padding:6px 6px;font-size:13px}
   }
   @media(max-width:330px){
     header.top{padding:8px 7px;gap:3px}
-    .mode-btn{font-size:11px;padding:5px 7px}
-    .mode-track{padding:2px}
+    header.top .app-title .at-sub{font-size:10px;letter-spacing:0}
+    header.top .app-title .at-main{font-size:16px}
     .icon-btn{padding:5px 5px;font-size:10px}
     .icon-btn.icon-only{padding:5px 5px;font-size:12px}
   }
@@ -629,12 +629,7 @@ if ('serviceWorker' in navigator) {
 <div class="wrap">
 
   <header class="top">
-    <div class="brand mode-switch" id="modeSwitch">
-      <div class="mode-track" role="group" aria-label="切換點名模式">
-        <button type="button" class="mode-btn active" id="modeBtnCampus" data-mode="campus" aria-pressed="true">跨群/本土語</button>
-        <button type="button" class="mode-btn" id="modeBtnClub" data-mode="club" aria-pressed="false">社團</button>
-      </div>
-    </div>
+    <div class="brand app-title"><span class="at-sub">跨群／本土語／社團</span><span class="at-main">點名幫手</span></div>
     <div class="header-actions"><button class="icon-btn" id="settingsBtn">設定</button><button class="icon-btn home-btn" id="homeBtn"><svg class="home-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 11.2 12 3.5l9 7.7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 9.6V20h4.6v-5.6h3.8V20h4.6V9.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/></svg>課程列表</button></div>
   </header>
 
@@ -699,18 +694,27 @@ if ('serviceWorker' in navigator) {
     </div>
 
     <div class="settings-card">
-      <div class="settings-title-row">
-        <div class="settings-title">訊息開頭文字</div>
-        <button type="button" class="prefix-toggle-btn" id="prefixToggleBtn">已開啟</button>
-      </div>
-      <div class="settings-sub">送出最終點名訊息時，會自動加在整段訊息最前面，可依需要自行修改或清空；社團點名時，建議關閉、或更改為其他想加的文字，比如說社團上課的地點。</div>
+      <div class="settings-title">訊息開頭文字</div>
+      <div class="settings-sub">產生訊息時，會加在整段訊息最前面，可依需要自行修改或清空。跨群／本土語課程、社團課程可以分別決定要不要加。</div>
       <input type="text" id="messagePrefixInput" placeholder="例如：@程程" />
+      <div class="prefix-row"><span>跨群／本土語課程</span><button type="button" class="prefix-toggle-btn" id="prefixToggleCampus">已開啟</button></div>
+      <div class="prefix-row"><span>社團課程</span><button type="button" class="prefix-toggle-btn" id="prefixToggleClub">已關閉</button></div>
     </div>
 
     <div class="settings-card">
       <div class="settings-title">名單管理</div>
-      <div class="settings-sub">新增、修改、刪除學生（例如轉入、休學、座號或姓名打錯），也可以修改課程名稱。</div>
+      <div class="settings-sub">新增、修改、刪除學生（例如轉入、休學、座號或姓名打錯），也可以修改課程名稱或刪除整門課程。</div>
       <button type="button" class="primary-btn ghost small-btn" id="openRosterBtn" style="margin-top:10px">前往名單管理 →</button>
+    </div>
+
+    <div class="settings-card">
+      <div class="settings-title">備份與還原</div>
+      <div class="settings-sub">課程名單、節次和設定都只存在這台裝置的瀏覽器裡。換手機、換瀏覽器或清除瀏覽器資料前，先匯出備份檔；到新裝置按「匯入備份檔」就能全部還原。</div>
+      <div class="row2" style="margin-top:10px">
+        <button type="button" class="primary-btn ghost small-btn" id="exportBackupBtn">匯出備份檔</button>
+        <button type="button" class="primary-btn ghost small-btn" id="importBackupBtn">匯入備份檔</button>
+      </div>
+      <input type="file" id="importBackupInput" accept=".json,application/json" hidden />
     </div>
 
     <div class="settings-card">
@@ -731,7 +735,7 @@ if ('serviceWorker' in navigator) {
   <section class="screen" id="screen-roster">
     <div class="course-header">
       <div class="title">名單管理</div>
-      <div class="sub">新增、修改、刪除學生，改好會立刻存檔，點名畫面也會跟著更新。</div>
+      <div class="sub">新增、修改、刪除學生或整門課程，改好會立刻存檔，點名畫面也會跟著更新。</div>
     </div>
 
     <div class="settings-card">
@@ -741,6 +745,7 @@ if ('serviceWorker' in navigator) {
         <input type="text" id="rmCourseName" placeholder="課程名稱" />
         <button type="button" class="rm-btn primary" id="rmSaveNameBtn">改名</button>
       </div>
+      <button type="button" class="rm-btn danger rm-del-course" id="rmDeleteCourseBtn">刪除這門課程</button>
     </div>
 
     <div class="settings-card">
@@ -778,7 +783,7 @@ if ('serviceWorker' in navigator) {
 
       <div class="guide-step">
         <div class="guide-num">1</div>
-        <div><b>用「私人 Google 帳號」在電腦上開一份新的空白試算表</b><div class="guide-text">到 <a href="https://sheets.google.com" target="_blank" rel="noopener">sheets.google.com</a> 開一份空白試算表，當作點名紀錄本。之後每次點名會在右邊新增一欄，不會覆蓋以前的紀錄。一定要從這份試算表裡面開 Apps Script（下一步），不要另外跑去 script.google.com 開一個獨立專案——獨立專案抓不到「目前是哪一份試算表」，程式會直接執行失敗。</div></div>
+        <div><b>用「私人 Google 帳號」在電腦上開一份新的空白試算表</b><div class="guide-text">到 <a href="https://sheets.google.com" target="_blank" rel="noopener">sheets.google.com</a> 開一份空白試算表，當作點名紀錄本。之後每一節會在右邊新增一欄；同一天、同一節重新送出時，會直接更新那一欄，不會重複。一定要從這份試算表裡面開 Apps Script（下一步），不要另外跑去 script.google.com 開一個獨立專案——獨立專案抓不到「目前是哪一份試算表」，程式會直接執行失敗。</div></div>
       </div>
 
       <label class="field-label">① Google 試算表網址</label>
@@ -874,7 +879,13 @@ if ('serviceWorker' in navigator) {
   <!-- ATTENDANCE -->
   <section class="screen" id="screen-attend">
     <div class="summary-bar">
-      <div class="ci-name" id="attendCourseName">—</div>
+      <div class="ci-top">
+        <div class="ci-name" id="attendCourseName">—</div>
+        <select id="courseTypeSelect" class="type-select" aria-label="課程種類">
+          <option value="campus">跨群／本土語</option>
+          <option value="club">社團</option>
+        </select>
+      </div>
       <div class="ci-meta">
         <span>共 <b id="totalCount">0</b> 人</span>
         <span class="ab" id="absentSummary">—</span>
@@ -935,7 +946,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '2.1.0';
+  const APP_VERSION = '2.2.0';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -1037,6 +1048,32 @@ if ('serviceWorker' in navigator) {
     }
   }
 
+  // 讀出／整批寫回整個資料庫（備份與還原用）
+  async function storageDumpAll(){
+    const db = await openDB();
+    return await new Promise((resolve, reject) => {
+      const out = {};
+      const req = db.transaction(STORE, 'readonly').objectStore(STORE).openCursor();
+      req.onsuccess = () => {
+        const c = req.result;
+        if(c){ out[c.key] = c.value; c.continue(); } else resolve(out);
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function storageReplaceAll(data){
+    const db = await openDB();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      const st = tx.objectStore(STORE);
+      st.clear();
+      Object.keys(data).forEach(k => st.put(data[k], k));
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
   async function getIndex(){
     try{
       const v = await storageGet('course-index');
@@ -1079,32 +1116,20 @@ if ('serviceWorker' in navigator) {
     list.slice().reverse().forEach(item => {
       const card = document.createElement('div');
       card.className = 'course-card';
+      const preset = getCoursePreset(item);
+      const type = getCourseType(item);
       card.innerHTML = `
         <div style="flex:1; min-width:0;">
           <div class="name">${escapeHtml(item.name)}</div>
           <div class="meta">${item.classCount} 個班級・共 ${item.studentCount} 人</div>
-          <div class="cp-box"></div>
+          <div class="cc-tags">
+            <span class="cc-tag type-${type}">${courseTypeLabel(type)}</span>
+            ${preset ? `<span class="cc-tag">${periodLabel(preset[0])}、${periodLabel(preset[1])}</span>` : '<span class="cc-tag warn">尚未設定節次</span>'}
+          </div>
         </div>
-        <button type="button" class="del" data-id="${item.id}">刪除</button>
         <div class="go">›</div>
       `;
-      card.addEventListener('click', (e) => {
-        if(e.target.closest('.del') || e.target.closest('.cp-box')) return;
-        openCourse(item.id);
-      });
-      renderCoursePeriodBox(card.querySelector('.cp-box'), item);
-      card.querySelector('.del').addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const ok = window.confirm(`確定要刪除課程「${item.name}」的名單嗎？\n\n刪除後將無法在此裝置上復原。`);
-        if(!ok) return;
-        const deleted = await deleteRoster(item.id);
-        if(deleted === false){ toast('刪除失敗，請再試一次'); return; }
-        const idx = await getIndex();
-        await setIndex(idx.filter(c => c.id !== item.id));
-        await renderHome();
-        toast('課程已刪除');
-      });
+      card.addEventListener('click', () => openCourse(item.id));
       container.appendChild(card);
     });
   }
@@ -1147,34 +1172,14 @@ if ('serviceWorker' in navigator) {
     return updated;
   }
 
-  function renderCoursePeriodBox(box, item){
-    const selected = Array.isArray(item.presetPeriods) ? [...item.presetPeriods].sort((a,b) => a-b) : [];
-    let html = '<div class="cp-chips">';
-    for(let p = 1; p <= 8; p++){
-      const on = selected.includes(p);
-      html += `<button type="button" class="cp-chip${on ? ' on' : ''}" data-p="${p}" aria-label="第${p}節" aria-pressed="${on}">${on ? '✓' : ''}${p}</button>`;
-    }
-    html += '</div>';
-    html += isConsecutivePair(selected)
-      ? `<div class="cp-hint">上課節次：${periodLabel(selected[0])}、${periodLabel(selected[1])}</div>`
-      : `<div class="cp-hint warn">${periodPairProblem(selected)}，才能開始點名</div>`;
-    box.innerHTML = html;
-    box.querySelectorAll('.cp-chip').forEach(b => b.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      // 可以自由點選、不限數量；勾成相鄰的兩節時才算設定完成。
-      const p = Number(b.dataset.p);
-      const next = selected.includes(p) ? selected.filter(x => x !== p) : [...selected, p];
-      const updated = await saveCoursePeriods(item.id, next);
-      if(updated){ Object.assign(item, updated); renderCoursePeriodBox(box, item); }
-    }));
-  }
-
   async function openCourse(id){
     const roster = await getRoster(id);
     if(!roster){ toast('讀取名單失敗'); return; }
     currentCourseId = id;
     currentRoster = roster;
-    currentCoursePreset = getCoursePreset((await getIndex()).find(c => c.id === id));
+    const entry = (await getIndex()).find(c => c.id === id);
+    currentCoursePreset = getCoursePreset(entry);
+    appMode = getCourseType(entry); // 這門課是跨群／本土語還是社團，決定訊息格式
     lastCompletedSessions = null;
     periodPanelOpen = false;
     panelSelection = null;
@@ -1192,43 +1197,26 @@ if ('serviceWorker' in navigator) {
   $('homeBtn').addEventListener('click', () => { renderHome(); showScreen('home'); });
   $('newCourseBtn').addEventListener('click', () => { initUploadScreen(); showScreen('upload'); });
 
-  // ---------- 跨群/本土語 ⇄ 社團 模式切換 ----------
-  // 只切換「模式狀態」與畫面上的按鈕外觀／設定頁的訊息開頭開關；
-  // 跨群/本土語本身的點名方式、邏輯、送出的文字訊息格式完全不受影響、照原本規則。
-  function applyModeSwitchUI(mode){
-    const campusBtn = $('modeBtnCampus');
-    const clubBtn = $('modeBtnClub');
-    if(campusBtn){ campusBtn.classList.toggle('active', mode !== 'club'); campusBtn.setAttribute('aria-pressed', String(mode !== 'club')); }
-    if(clubBtn){ clubBtn.classList.toggle('active', mode === 'club'); clubBtn.setAttribute('aria-pressed', String(mode === 'club')); }
-  }
+  // ---------- 課程種類：跨群／本土語 或 社團（每門課各自記住） ----------
+  // 跨群／本土語：每班兩節都列出；社團：只列有缺席的班級，全員到齊時不產生訊息、訊息開頭預設關閉。
+  let defaultCourseType = 'campus'; // 還沒設定種類的課程，沿用舊版「全 App 共用模式」最後選的那一個
 
-  async function setAppMode(mode){
-    if(mode !== 'club') mode = 'campus';
-    appMode = mode;
-    applyModeSwitchUI(mode);
-    await storageSet(APP_MODE_KEY, mode);
-    // 如果設定頁正開著，讓「訊息開頭文字」開關立刻切換成這個模式各自記住的狀態。
-    if($('screen-settings') && $('screen-settings').classList.contains('active')){
-      await refreshPrefixToggleForMode();
-    }
-    // 如果正停在「已產生訊息」的結果畫面，代表老師是點名完之後才發現模式選錯了，
-    // 這時候在跨群/本土語跟社團之間來回切換，直接用剛剛同一份出缺席紀錄、
-    // 依照新模式重新產生一次訊息內容，不用回去重點名；並把印章文字改成「已修改」提醒這是重新產生過的版本。
-    if(lastCompletedSessions && $('screen-result') && $('screen-result').classList.contains('active')){
-      const {skip, msg} = await computeResultForMode(appMode, lastCompletedSessions.first, lastCompletedSessions.second);
-      if(skip) showSkippedResultScreen(); else showNormalResultScreen(msg);
-      setResultStampText('已修改 · 待送出');
-      toast('已切換模式，訊息已依新模式重新產生');
-    }
+  function getCourseType(item){
+    return (item && (item.courseType === 'club' || item.courseType === 'campus')) ? item.courseType : defaultCourseType;
   }
+  function courseTypeLabel(t){ return t === 'club' ? '社團' : '跨群／本土語'; }
 
-  if($('modeBtnCampus')) $('modeBtnCampus').addEventListener('click', () => setAppMode('campus'));
-  if($('modeBtnClub')) $('modeBtnClub').addEventListener('click', () => setAppMode('club'));
+  $('courseTypeSelect').addEventListener('change', async (e) => {
+    if(!currentCourseId) return;
+    appMode = e.target.value === 'club' ? 'club' : 'campus';
+    await updateCourseIndexEntry(currentCourseId, { courseType: appMode });
+    toast(`這門課已設為「${courseTypeLabel(appMode)}」`);
+  });
 
   async function initAppMode(){
     const savedMode = await getSetting(APP_MODE_KEY, 'campus');
-    appMode = (savedMode === 'club') ? 'club' : 'campus';
-    applyModeSwitchUI(appMode);
+    defaultCourseType = (savedMode === 'club') ? 'club' : 'campus';
+    appMode = defaultCourseType;
   }
 
   // ---------- upload screen ----------
@@ -1465,6 +1453,7 @@ if ('serviceWorker' in navigator) {
     if(classScrollHandler) window.removeEventListener('scroll', classScrollHandler);
     if(classResizeHandler) window.removeEventListener('resize', classResizeHandler);
     $('attendCourseName').textContent = currentRoster.name;
+    $('courseTypeSelect').value = appMode;
     renderAttendPeriodPanel();
     updateGenBtn();
 
@@ -1774,6 +1763,21 @@ if ('serviceWorker' in navigator) {
     toast('課程名稱已更新');
   });
 
+  $('rmDeleteCourseBtn').addEventListener('click', async () => {
+    if(!rmRoster) return;
+    if(!window.confirm(`確定要刪除課程「${rmRoster.name}」嗎？\n\n名單和今天的點名紀錄都會一起刪除，刪除後無法在此裝置上復原。`)) return;
+    const id = rmCourseId;
+    const deleted = await deleteRoster(id);
+    if(deleted === false){ toast('刪除失敗，請再試一次'); return; }
+    const idx = await getIndex();
+    await setIndex(idx.filter(c => c.id !== id));
+    if(id === currentCourseId){
+      currentCourseId = null; currentRoster = null; currentCoursePreset = null; lastCompletedSessions = null;
+    }
+    toast('課程已刪除');
+    await openRosterManager(); // 重新整理課程下拉選單
+  });
+
   $('rmAddBtn').addEventListener('click', async () => {
     if(!rmRoster){ toast('請先選擇課程'); return; }
     const cls = $('rmAddClass').value.trim();
@@ -1869,7 +1873,7 @@ if ('serviceWorker' in navigator) {
       document.body.appendChild(script);
     });
   }
-  const GOOGLE_APPS_SCRIPT_CODE = "/**\n * 跨群選修點名｜Google Apps Script\n *\n * 用途：讓 index.html 把點名結果寫進指定的 Google 試算表。\n * Web App 以「執行身分：我」部署後，網頁把試算表網址與點名資料 POST 過來。\n *\n * 試算表格式：\n * A 欄：班級\n * B 欄：座號\n * C 欄：姓名\n * D 欄開始：每次點名一個新欄，第一列寫「日期｜第X節」\n * 例如：D1 = 2026/09/06｜第3節\n *       D2:Dn = 出席／未出席\n */\n\nfunction doGet() {\n  return ContentService\n    .createTextOutput('跨群選修點名 Google 紀錄服務正常運作')\n    .setMimeType(ContentService.MimeType.TEXT);\n}\n\nfunction doPost(e) {\n  const lock = LockService.getScriptLock();\n  lock.waitLock(30000);\n  try {\n    if (!e || !e.postData || !e.postData.contents) {\n      return jsonOutput({ok:false, message:'沒有收到資料'});\n    }\n\n    const data = JSON.parse(e.postData.contents);\n    const sheetUrl = String(data.sheetUrl || '').trim();\n    if (!sheetUrl) return jsonOutput({ok:false, message:'缺少 Google 試算表網址'});\n\n    const ss = SpreadsheetApp.openByUrl(sheetUrl);\n    const sheet = ss.getSheets()[0];\n\n    const rows = Array.isArray(data.rows) ? data.rows : [];\n    if (!rows.length) return jsonOutput({ok:false, message:'沒有學生資料'});\n\n    const date = String(data.date || '').trim() || Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy/MM/dd');\n    const period = String(data.period || '').trim() || '非上課時段';\n    const periodLabel = period === '非上課時段' ? period : '第' + period + '節';\n    const header = date + '｜' + periodLabel;\n\n    // 確保前三欄標題存在。\n    if (sheet.getLastRow() === 0) {\n      sheet.getRange(1, 1, 1, 3).setValues([['班級', '座號', '姓名']]);\n    } else {\n      const first = sheet.getRange(1, 1, 1, 3).getValues()[0];\n      if (!first[0] && !first[1] && !first[2]) {\n        sheet.getRange(1, 1, 1, 3).setValues([['班級', '座號', '姓名']]);\n      }\n    }\n\n    // 每次點名都新增一欄，不覆蓋既有紀錄。\n    const newCol = Math.max(sheet.getLastColumn() + 1, 4);\n    sheet.getRange(1, newCol).setValue(header);\n\n    // 讀取既有學生資料，依「班級 + 座號」找學生所在列。\n    const lastRow = Math.max(sheet.getLastRow(), 2);\n    const existing = lastRow >= 2 ? sheet.getRange(2, 1, lastRow - 1, 3).getValues() : [];\n    const rowMap = new Map();\n    existing.forEach((r, i) => {\n      const key = makeKey(r[0], r[1]);\n      if (key) rowMap.set(key, i + 2);\n    });\n\n    // 若新名單出現原本沒有的學生，就加到最下面。\n    const newStudents = [];\n    rows.forEach(item => {\n      const key = makeKey(item.className, item.seat);\n      if (key && !rowMap.has(key)) {\n        newStudents.push([\n          String(item.className || ''),\n          String(item.seat || ''),\n          String(item.name || '')\n        ]);\n      }\n    });\n\n    if (newStudents.length) {\n      const startRow = Math.max(sheet.getLastRow() + 1, 2);\n      sheet.getRange(startRow, 1, newStudents.length, 3).setValues(newStudents);\n      newStudents.forEach((r, i) => {\n        const key = makeKey(r[0], r[1]);\n        rowMap.set(key, startRow + i);\n      });\n    }\n\n    // 寫入本次點名狀態。\n    rows.forEach(item => {\n      const key = makeKey(item.className, item.seat);\n      if (!key) return;\n      const row = rowMap.get(key);\n      if (!row) return;\n      sheet.getRange(row, newCol).setValue(String(item.status || ''));\n    });\n\n    // 簡單格式化，讓期末查看比較清楚。\n    sheet.getRange(1, 1, 1, newCol).setFontWeight('bold');\n    sheet.getRange(1, newCol).setWrap(true);\n    sheet.setFrozenRows(1);\n    sheet.setFrozenColumns(3);\n    sheet.autoResizeColumns(1, 3);\n\n    return jsonOutput({ok:true, message:'已新增一欄點名紀錄', column:newCol, header:header});\n  } catch (err) {\n    return jsonOutput({ok:false, message:String(err && err.message ? err.message : err)});\n  } finally {\n    lock.releaseLock();\n  }\n}\n\nfunction makeKey(cls, seat) {\n  const c = String(cls || '').trim();\n  const s = String(seat || '').trim();\n  return c && s ? c + '|' + s : '';\n}\n\nfunction jsonOutput(obj) {\n  return ContentService\n    .createTextOutput(JSON.stringify(obj))\n    .setMimeType(ContentService.MimeType.JSON);\n}\n";
+  const GOOGLE_APPS_SCRIPT_CODE = "/**\n * 跨群選修點名｜Google Apps Script\n *\n * 用途：讓 index.html 把點名結果寫進指定的 Google 試算表。\n * Web App 以「執行身分：我」部署後，網頁把試算表網址與點名資料 POST 過來。\n *\n * 試算表格式：\n * A 欄：班級\n * B 欄：座號\n * C 欄：姓名\n * D 欄開始：每一節一欄，第一列寫「日期｜第X節」（同一天同一節重新送出會覆蓋那一欄）\n * 例如：D1 = 2026/09/06｜第3節\n *       D2:Dn = 出席／未出席\n */\n\nfunction doGet() {\n  return ContentService\n    .createTextOutput('跨群選修點名 Google 紀錄服務正常運作')\n    .setMimeType(ContentService.MimeType.TEXT);\n}\n\nfunction doPost(e) {\n  const lock = LockService.getScriptLock();\n  lock.waitLock(30000);\n  try {\n    if (!e || !e.postData || !e.postData.contents) {\n      return jsonOutput({ok:false, message:'沒有收到資料'});\n    }\n\n    const data = JSON.parse(e.postData.contents);\n    const sheetUrl = String(data.sheetUrl || '').trim();\n    if (!sheetUrl) return jsonOutput({ok:false, message:'缺少 Google 試算表網址'});\n\n    const ss = SpreadsheetApp.openByUrl(sheetUrl);\n    const sheet = ss.getSheets()[0];\n\n    const rows = Array.isArray(data.rows) ? data.rows : [];\n    if (!rows.length) return jsonOutput({ok:false, message:'沒有學生資料'});\n\n    const date = String(data.date || '').trim() || Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy/MM/dd');\n    const period = String(data.period || '').trim() || '非上課時段';\n    const periodLabel = period === '非上課時段' ? period : '第' + period + '節';\n    const header = date + '｜' + periodLabel;\n\n    // 確保前三欄標題存在。\n    if (sheet.getLastRow() === 0) {\n      sheet.getRange(1, 1, 1, 3).setValues([['班級', '座號', '姓名']]);\n    } else {\n      const first = sheet.getRange(1, 1, 1, 3).getValues()[0];\n      if (!first[0] && !first[1] && !first[2]) {\n        sheet.getRange(1, 1, 1, 3).setValues([['班級', '座號', '姓名']]);\n      }\n    }\n\n    // 同一天、同一節已經有一欄的話（例如送出後又回去修改、重新產生訊息），直接覆蓋那一欄；沒有才在最右邊新增一欄。\n    const lastCol = sheet.getLastColumn();\n    let newCol = 0;\n    if (lastCol >= 4) {\n      const headers = sheet.getRange(1, 4, 1, lastCol - 3).getDisplayValues()[0];\n      const pos = headers.indexOf(header);\n      if (pos >= 0) newCol = pos + 4;\n    }\n    if (!newCol) {\n      newCol = Math.max(lastCol + 1, 4);\n      sheet.getRange(1, newCol).setValue(header);\n    }\n\n    // 讀取既有學生資料，依「班級 + 座號」找學生所在列。\n    const lastRow = Math.max(sheet.getLastRow(), 2);\n    const existing = lastRow >= 2 ? sheet.getRange(2, 1, lastRow - 1, 3).getValues() : [];\n    const rowMap = new Map();\n    existing.forEach((r, i) => {\n      const key = makeKey(r[0], r[1]);\n      if (key) rowMap.set(key, i + 2);\n    });\n\n    // 若新名單出現原本沒有的學生，就加到最下面。\n    const newStudents = [];\n    rows.forEach(item => {\n      const key = makeKey(item.className, item.seat);\n      if (key && !rowMap.has(key)) {\n        newStudents.push([\n          String(item.className || ''),\n          String(item.seat || ''),\n          String(item.name || '')\n        ]);\n      }\n    });\n\n    if (newStudents.length) {\n      const startRow = Math.max(sheet.getLastRow() + 1, 2);\n      sheet.getRange(startRow, 1, newStudents.length, 3).setValues(newStudents);\n      newStudents.forEach((r, i) => {\n        const key = makeKey(r[0], r[1]);\n        rowMap.set(key, startRow + i);\n      });\n    }\n\n    // 寫入本次點名狀態。\n    rows.forEach(item => {\n      const key = makeKey(item.className, item.seat);\n      if (!key) return;\n      const row = rowMap.get(key);\n      if (!row) return;\n      sheet.getRange(row, newCol).setValue(String(item.status || ''));\n    });\n\n    // 簡單格式化，讓期末查看比較清楚。\n    sheet.getRange(1, 1, 1, newCol).setFontWeight('bold');\n    sheet.getRange(1, newCol).setWrap(true);\n    sheet.setFrozenRows(1);\n    sheet.setFrozenColumns(3);\n    sheet.autoResizeColumns(1, 3);\n\n    return jsonOutput({ok:true, message:'已寫入點名紀錄', column:newCol, header:header});\n  } catch (err) {\n    return jsonOutput({ok:false, message:String(err && err.message ? err.message : err)});\n  } finally {\n    lock.releaseLock();\n  }\n}\n\nfunction makeKey(cls, seat) {\n  const c = String(cls || '').trim();\n  const s = String(seat || '').trim();\n  return c && s ? c + '|' + s : '';\n}\n\nfunction jsonOutput(obj) {\n  return ContentService\n    .createTextOutput(JSON.stringify(obj))\n    .setMimeType(ContentService.MimeType.JSON);\n}\n";
 
   const DRIVE_APPS_SCRIPT_CODE = "/**\n * 課程名單雲端硬碟讀取服務｜Google Apps Script\n *\n * 用途：讓點名 App 讀取你指定的 Google 雲端硬碟資料夾裡的課程名單檔案，\n * 在「新增課程」畫面用下拉選單直接選課程，不用每次手動上傳檔案。\n *\n * 這是一支「獨立」的 Apps Script 專案（跟「Google 試算表同步」用的那一支\n * 是分開的兩個部署，各自有各自的網址）。部署方式：\n *\n * 1. 用你的私人 Google 帳號到 script.google.com，點「新增專案」\n *    （這次不需要從某一份試算表裡面開，直接開一個獨立專案就可以）。\n * 2. 把這個檔案的內容整段貼進去，取代原本的內容。\n * 3. 如果你的資料夾裡「只有 Google 試算表、沒有 .xlsx 檔案」，可以跳過這一步；\n *    如果資料夾裡「有 .xlsx 檔案」，需要多加一個服務才能讀取：\n *    左側選單「服務」旁的 ＋ 號 → 選「Drive API」→ 版本選「v3」→ 按「加入」。\n * 4. 按「部署」→「新增部署作業」→ 類型選「網頁應用程式」→\n *    「具有存取權的使用者」選「所有人」→ 部署 → 依需要完成帳號授權。\n * 5. 複製部署後的網址，貼到 App 設定頁「課程名單雲端硬碟」的\n *    「雲端硬碟讀取服務網址」欄位。\n *\n * 支援的檔案格式：\n * - Google 試算表（推薦，讀取最穩定、不需要額外設定）\n * - .xlsx 檔案（會先自動轉成暫存的 Google 試算表讀取，讀完立刻把暫存檔丟進垃圾桶；\n *   需要完成上面第 3 步的 Drive API 進階服務設定）\n *\n * 名單檔案內容格式：跟本機上傳完全相同——第一列是標題列，\n * 需包含「班級」「座號」欄位，姓名欄位可選填。\n *\n * 【關於暫存檔案】讀取 .xlsx 檔案時，會先在你的雲端硬碟「我的雲端硬碟」根目錄暫時\n * 建立一份名稱開頭是 __attendance_temp_convert__ 的 Google 試算表副本，讀完內容後\n * 會立刻自動丟進垃圾桶。如果你之前用的是舊版程式碼（用 Drive.Files.delete 刪暫存檔，\n * 這個方法其實不存在、會靜默失敗），這些暫存檔會一直留著清不掉——把這裡的新版程式碼\n * 貼上重新部署後，之後讀取就不會再累積；已經留下來的舊檔案，可以用最下面的\n * cleanupTempFiles() 一次清掉，或是在 App 的「進階同步設定」畫面按「清除雲端硬碟暫存檔案」。\n *\n * 【首頁廣告開關】App 首頁最下面有一小塊工商推薦，開或關由這支服務統一控制——\n * 你按一下連結，全部使用者（包括已經加到手機主畫面的）下次打開 App 就會照你設定的\n * 狀態顯示或隱藏，不需要請大家重新安裝。設定方式：\n * 1. 把下面 AD_TOGGLE_SECRET 的值改成只有你自己知道的一串英數字（不要用預設值）。\n * 2. 改好後重新「部署」一次（管理部署作業 → 編輯 → 版本選新版本 → 部署），\n *    網址通常不會變，不用重新貼到 App 設定裡。\n * 3. 之後開廣告，用手機瀏覽器打開（建議加入書籤）：\n *    你的部署網址?action=setAdConfig&secret=你的密語&on=1\n *    關廣告則把 on=1 改成 on=0。\n */\n\nconst XLSX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';\nconst TEMP_FILE_PREFIX = '__attendance_temp_convert__';\nconst AD_TOGGLE_SECRET = 'CHANGE_ME_TO_YOUR_OWN_SECRET';\n\nfunction doGet(e) {\n  const p = (e && e.parameter) ? e.parameter : {};\n  const callback = String(p.callback || '').replace(/[^a-zA-Z0-9_$.]/g, '');\n\n  let result;\n  try {\n    if (p.action === 'listFolder') {\n      result = listFolder(String(p.folderUrl || p.folderId || '').trim());\n    } else if (p.action === 'readFile') {\n      result = readFile(String(p.fileId || '').trim(), String(p.mimeType || '').trim());\n    } else if (p.action === 'cleanupTempFiles') {\n      result = cleanupTempFiles();\n    } else if (p.action === 'getAdConfig') {\n      result = getAdConfig();\n    } else if (p.action === 'setAdConfig') {\n      result = setAdConfig(String(p.secret || ''), String(p.on || ''));\n    } else {\n      result = { ok: true, message: '課程名單雲端硬碟讀取服務正常運作' };\n    }\n  } catch (err) {\n    result = { ok: false, message: String(err && err.message ? err.message : err) };\n  }\n\n  const text = JSON.stringify(result);\n  if (callback) {\n    return ContentService\n      .createTextOutput(callback + '(' + text + ');')\n      .setMimeType(ContentService.MimeType.JAVASCRIPT);\n  }\n  return ContentService.createTextOutput(text).setMimeType(ContentService.MimeType.JSON);\n}\n\n// 從網址或直接貼的 ID 裡取出雲端硬碟資料夾的 ID。\nfunction extractDriveId(input) {\n  const s = String(input || '').trim();\n  const m = s.match(/[-\\w]{20,}/);\n  return m ? m[0] : s;\n}\n\n// 列出資料夾裡的課程名單檔案（Google 試算表 + .xlsx）。\nfunction listFolder(folderUrlOrId) {\n  const folderId = extractDriveId(folderUrlOrId);\n  if (!folderId) return { ok: false, message: '缺少雲端硬碟資料夾網址' };\n\n  const folder = DriveApp.getFolderById(folderId);\n  const files = [];\n\n  const sheetIter = folder.getFilesByType(MimeType.GOOGLE_SHEETS);\n  while (sheetIter.hasNext()) {\n    const f = sheetIter.next();\n    files.push({ id: f.getId(), name: f.getName(), mimeType: MimeType.GOOGLE_SHEETS });\n  }\n\n  const xlsxIter = folder.getFilesByType(XLSX_MIME_TYPE);\n  while (xlsxIter.hasNext()) {\n    const f = xlsxIter.next();\n    files.push({ id: f.getId(), name: f.getName(), mimeType: XLSX_MIME_TYPE });\n  }\n\n  files.sort(function (a, b) { return a.name.localeCompare(b.name, 'zh-Hant'); });\n  return { ok: true, folderName: folder.getName(), files: files };\n}\n\n// 讀取單一檔案的內容，回傳跟本機上傳解析出來一樣的「整張表格」資料（二維陣列）。\nfunction readFile(fileId, mimeType) {\n  if (!fileId) return { ok: false, message: '缺少檔案 ID' };\n\n  let ss;\n  let tempFileId = null;\n  try {\n    if (mimeType === XLSX_MIME_TYPE) {\n      // .xlsx 檔案：先轉成暫存的 Google 試算表才能讀取內容，讀完立刻丟進垃圾桶。\n      const blob = DriveApp.getFileById(fileId).getBlob();\n      const converted = Drive.Files.create(\n        { name: TEMP_FILE_PREFIX + fileId, mimeType: MimeType.GOOGLE_SHEETS },\n        blob\n      );\n      tempFileId = converted.id;\n      ss = SpreadsheetApp.openById(converted.id);\n    } else {\n      ss = SpreadsheetApp.openById(fileId);\n    }\n\n    const sheet = ss.getSheets()[0];\n    const values = sheet.getDataRange().getValues();\n    return { ok: true, rows: values };\n  } catch (err) {\n    if (String(err).indexOf('Drive is not defined') !== -1) {\n      return { ok: false, message: '讀取 .xlsx 檔案需要先啟用「Drive API」進階服務，請參考程式最上面的說明完成設定。' };\n    }\n    throw err;\n  } finally {\n    if (tempFileId) {\n      // 用 DriveApp（不需要另外啟用進階服務）把暫存檔丟進垃圾桶，比較不容易失敗；\n      // 之前用 Drive.Files.delete(...) 這個方法其實不存在（應該是 Drive.Files.remove），\n      // 呼叫下去會直接丟例外，被下面的 catch 默默吃掉，暫存檔才會一直沒被清掉、越堆越多。\n      try { DriveApp.getFileById(tempFileId).setTrashed(true); } catch (e2) { /* 刪不掉暫存檔也沒關係，不影響本次讀取結果 */ }\n    }\n  }\n}\n\n// 一次清掉之前（用舊版程式碼）留下來、清不掉的暫存轉檔檔案。\n// 可以透過 App 的「進階同步設定」畫面按鈕呼叫，也可以直接在 Apps Script 編輯器手動執行這個函式。\nfunction cleanupTempFiles() {\n  const iter = DriveApp.searchFiles(\n    \"title contains '\" + TEMP_FILE_PREFIX + \"' and trashed = false\"\n  );\n  let count = 0;\n  while (iter.hasNext()) {\n    const f = iter.next();\n    try {\n      f.setTrashed(true);\n      count++;\n    } catch (e) { /* 單一檔案清不掉就跳過，不中斷整體清理 */ }\n  }\n  return { ok: true, message: '已把 ' + count + ' 個暫存檔案丟進垃圾桶（雲端硬碟的「垃圾桶」裡還會留 30 天，之後才會永久刪除）。', count: count };\n}\n\n// 讀取目前首頁廣告的開關狀態，供所有使用者的 App 查詢（不需要密語，純讀取）。\nfunction getAdConfig() {\n  const props = PropertiesService.getScriptProperties();\n  const on = props.getProperty('AD_ON') === '1';\n  return { ok: true, adOn: on };\n}\n\n// 老師用來切換廣告開關的動作，需要通關密語才能改，避免被別人亂改。\nfunction setAdConfig(secret, onParam) {\n  if (!AD_TOGGLE_SECRET || AD_TOGGLE_SECRET === 'CHANGE_ME_TO_YOUR_OWN_SECRET') {\n    return { ok: false, message: '請先把程式最上面的 AD_TOGGLE_SECRET 改成你自己的密語，再重新部署一次。' };\n  }\n  if (secret !== AD_TOGGLE_SECRET) {\n    return { ok: false, message: '密語不正確，沒有權限切換廣告開關。' };\n  }\n  const on = (onParam === '1' || onParam === 'true');\n  PropertiesService.getScriptProperties().setProperty('AD_ON', on ? '1' : '0');\n  return { ok: true, message: '廣告已' + (on ? '開啟' : '關閉') + '，使用者下次打開 App 時就會套用新狀態。', adOn: on };\n}\n";
 
@@ -1896,19 +1900,16 @@ if ('serviceWorker' in navigator) {
     updateGoogleNote();
   }
 
-  function applyPrefixToggleUI(enabled){
-    const btn = $('prefixToggleBtn');
-    const input = $('messagePrefixInput');
-    if(!btn || !input) return;
-    input.disabled = !enabled;
+  function applyPrefixToggleUI(btn, enabled){
+    if(!btn) return;
     btn.textContent = enabled ? '已開啟' : '已關閉';
     btn.classList.toggle('off', !enabled);
   }
 
-  // 依目前模式（跨群/本土語 或 社團）讀出各自記住的「訊息開頭文字」開關狀態並套用到畫面。
+  // 讀出跨群／本土語、社團各自記住的「訊息開頭文字」開關狀態並套用到畫面。
   async function refreshPrefixToggleForMode(){
-    const prefixEnabled = await getPrefixEnabledForMode(appMode);
-    applyPrefixToggleUI(prefixEnabled !== false);
+    applyPrefixToggleUI($('prefixToggleCampus'), (await getPrefixEnabledForMode('campus')) !== false);
+    applyPrefixToggleUI($('prefixToggleClub'), (await getPrefixEnabledForMode('club')) !== false);
   }
 
   async function saveSettings(){
@@ -1931,14 +1932,70 @@ if ('serviceWorker' in navigator) {
 
   // 「訊息開頭文字」開關：關閉後輸入框會鎖住（但保留原本打的文字，之後重新開啟不用再打一次），
   // 送出點名訊息時就不會再加這段開頭文字；點一下立刻存檔，不用等按「儲存設定」。
-  if($('prefixToggleBtn')){
-    $('prefixToggleBtn').addEventListener('click', async ()=>{
-      const nowEnabled = $('prefixToggleBtn').classList.contains('off');
-      applyPrefixToggleUI(nowEnabled);
-      await storageSet(prefixEnabledKeyForMode(appMode), nowEnabled);
-      toast(nowEnabled ? '訊息開頭文字已開啟' : '訊息開頭文字已關閉');
+  [['campus','prefixToggleCampus'], ['club','prefixToggleClub']].forEach(([mode, btnId]) => {
+    $(btnId).addEventListener('click', async () => {
+      const nowEnabled = $(btnId).classList.contains('off');
+      applyPrefixToggleUI($(btnId), nowEnabled);
+      await storageSet(prefixEnabledKeyForMode(mode), nowEnabled);
+      toast(`${courseTypeLabel(mode)}課程：訊息開頭文字已${nowEnabled ? '開啟' : '關閉'}`);
     });
+  });
+  // ---------- 備份與還原 ----------
+  const BACKUP_APP_ID = 'attendance-ledger';
+
+  async function exportBackup(){
+    const data = await storageDumpAll();
+    delete data[AD_CACHE_KEY]; // 廣告開關快取不需要備份
+    const payload = { app: BACKUP_APP_ID, version: APP_VERSION, exportedAt: new Date().toISOString(), data };
+    const filename = `點名幫手備份_${taipeiDateStr().replace(/\//g, '')}.json`;
+    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+    // 手機上優先用「分享」，可以直接存到檔案 App、雲端硬碟或傳到 LINE；電腦上直接下載。
+    const touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    if(touch && navigator.canShare){
+      const file = new File([blob], filename, { type: 'application/json' });
+      if(navigator.canShare({ files: [file] })){
+        try{
+          await navigator.share({ files: [file], title: filename });
+          toast('備份檔已匯出');
+          return;
+        }catch(e){
+          if(e && e.name === 'AbortError') return; // 老師自己取消分享
+        }
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    toast('備份檔已下載');
   }
+
+  async function importBackupFile(file){
+    let payload;
+    try{ payload = JSON.parse(await file.text()); }catch(e){ toast('讀不到備份檔內容，請確認選的是匯出的 .json 檔'); return; }
+    if(!payload || payload.app !== BACKUP_APP_ID || !payload.data || typeof payload.data !== 'object'){
+      toast('這不是點名幫手的備份檔');
+      return;
+    }
+    let courses = 0;
+    try{ courses = JSON.parse(payload.data['course-index'] || '[]').length; }catch(e){}
+    const when = payload.exportedAt ? new Date(payload.exportedAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '不明';
+    const ok = window.confirm(`備份檔裡有 ${courses} 門課程（匯出時間：${when}）。\n\n匯入後會「取代」這台裝置目前所有的課程與設定，確定要匯入嗎？`);
+    if(!ok) return;
+    await storageReplaceAll(payload.data);
+    toast('已匯入備份，重新載入中…');
+    setTimeout(() => location.reload(), 900);
+  }
+
+  $('exportBackupBtn').addEventListener('click', exportBackup);
+  $('importBackupBtn').addEventListener('click', () => $('importBackupInput').click());
+  $('importBackupInput').addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if(file) await importBackupFile(file);
+  });
+
   $('backFromSettingsBtn').addEventListener('click', ()=>{
     if(currentRoster){ renderAttendance(); showScreen('attend'); }
     else { renderHome(); showScreen('home'); }
@@ -2431,7 +2488,7 @@ if ('serviceWorker' in navigator) {
   buildGoogleGuideCode();
   buildDriveGuideCode();
   (async () => {
-    await initAppMode(); // 要先讀出模式，設定頁裡「訊息開頭文字」開關才能一開始就顯示正確的模式
+    await initAppMode(); // 先讀出舊版的共用模式，當作還沒設定種類的課程的預設值
     await loadSettings();
   })();
   updateGoogleNote();
