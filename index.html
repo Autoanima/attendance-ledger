@@ -877,7 +877,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '1.2.0';
+  const APP_VERSION = '1.2.1';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -1127,6 +1127,7 @@ if ('serviceWorker' in navigator) {
   function nextPeriodAfter(period){
     const preset = currentCoursePreset;
     if(preset && period === preset[0]) return preset[1];
+    if(preset && period === preset[1]) return preset[0]; // 先點了後面那節，接著就是回頭補前面那節
     return Math.min(8, (period || 0) + 1);
   }
 
@@ -2260,7 +2261,7 @@ if ('serviceWorker' in navigator) {
   }
 
   // ---------- 結果畫面的節次勾選：送出前直接勾「這兩次點名到底是第幾節」 ----------
-  // 兩次點名的內容（誰缺席）不變，只是重新標上節次：先點的那次 → 勾選中較小的節次，後點的那次 → 較大的節次。
+  // 兩次點名的內容（誰缺席）不變，只是重新標上節次：節次較前的那筆 → 勾選中較小的節次，較後的那筆 → 較大的節次。
   // 例如原本記成第4、5節，勾成第5、6節後，訊息就會變成第5節、第6節，缺席內容跟著原本的順序走。
   const RESULT_PERIOD_MAX = 8;
   let resultPeriodSelection = null; // null = 依照 lastCompletedSessions 目前的節次；否則為老師正在勾選、還沒勾滿兩節的節次陣列
@@ -2294,7 +2295,7 @@ if ('serviceWorker' in navigator) {
     const ok = isConsecutivePair(selected);
     hint.className = 'rpp-hint' + (ok ? '' : ' warn');
     hint.textContent = ok
-      ? `先點的那次 → ${periodLabel(selected[0])}；後點的那次 → ${periodLabel(selected[1])}`
+      ? `目前是${periodLabel(selected[0])}、${periodLabel(selected[1])}；要改就直接點選相鄰的兩節，兩筆紀錄會依節次先後一起搬過去`
       : periodPairProblem(selected);
     // 還沒勾成「連續的兩節」時，先把傳送／複製鎖起來，避免送出節次錯誤的訊息。
     const sendBtn = document.querySelector('#lineShareLink .line-send-btn');
@@ -2516,12 +2517,12 @@ if ('serviceWorker' in navigator) {
     const alreadyStartedToday = pending && pending.date === today;
 
     // 雙節課的兩次點名一定是連續的兩節（例如第5、6節），不會是同一節、也不會跳節。
-    // 兩次都有明確節次、卻不是「第一次的下一節」時直接擋下來，請老師調整節次。
-    if(alreadyStartedToday && period && pending.period && period !== pending.period + 1){
-      const expected = pending.period + 1;
+    // 點名順序不限：先點第5節、再回頭補第4節也可以，只要最後兩節相鄰就好。
+    if(alreadyStartedToday && period && pending.period && Math.abs(period - pending.period) !== 1){
+      const options = [pending.period - 1, pending.period + 1].filter(p => p >= 1 && p <= 8).map(periodLabel);
       window.alert(
         `第一次點名是${periodLabel(pending.period)}，這次卻是${periodLabel(period)}，兩節不連續，無法送出。\n\n` +
-        (expected <= 8 ? `請把下方節次調成${periodLabel(expected)}再送出。\n` : '') +
+        `請把下方節次調成${options.join('或')}再送出。\n` +
         `如果其實是第一次點名的節次記錯了，先照上面送出，到確認畫面再直接勾選正確的兩節即可。`
       );
       return;
@@ -2553,13 +2554,12 @@ if ('serviceWorker' in navigator) {
         const googleResult = await recordToGoogle(period);
         saveDraftForPeriod(period);
         markSubmitted(period, secondRecords);
-        const secondArg2 = { period, records: secondRecords };
-        const {skip: skipMessage, msg} = await computeResultForMode(appMode, pending, secondArg2);
-        lastCompletedSessions = {
-          date: today,
-          first: { period: pending.period, records: pending.records },
-          second: { period, records: secondRecords }
-        };
+        // 兩節依節次先後排好（例如先點第5節、後補第4節，訊息仍是第4節在前），跟點名的先後順序無關。
+        let earlier = { period: pending.period, records: pending.records };
+        let later = { period, records: secondRecords };
+        if(earlier.period && later.period && later.period < earlier.period) [earlier, later] = [later, earlier];
+        const {skip: skipMessage, msg} = await computeResultForMode(appMode, earlier, later);
+        lastCompletedSessions = { date: today, first: earlier, second: later };
         currentRoster.pendingSession = null;
         manualPeriod = null;
         await setRoster(currentCourseId, currentRoster);
