@@ -121,6 +121,23 @@
     background:var(--red-soft);border:1px solid #E5A19B;color:var(--red);
     border-radius:8px;font-size:11px;font-weight:800;padding:5px 7px;
   }
+  /* 課程卡片上的「上課節次」設定：自動偵測 ⇄ 固定節次 */
+  .course-card .cp-box{margin-top:9px;cursor:default}
+  .course-card .cp-seg{display:inline-flex;border:2px solid var(--navy);border-radius:9px;overflow:hidden}
+  .course-card .cp-seg button{
+    border:none;background:var(--white);color:var(--navy);font-family:inherit;
+    font-size:12px;font-weight:800;padding:5px 10px;cursor:pointer;
+  }
+  .course-card .cp-seg button + button{border-left:2px solid var(--navy)}
+  .course-card .cp-seg button.on{background:var(--navy);color:var(--white)}
+  .course-card .cp-chips{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px;margin-top:7px;max-width:320px}
+  .course-card .cp-chip{
+    height:30px;border-radius:7px;border:2px solid var(--navy);background:var(--white);
+    color:var(--navy);font-family:inherit;font-size:12px;font-weight:900;padding:0;cursor:pointer;
+  }
+  .course-card .cp-chip.on{background:var(--red);border-color:var(--red);color:var(--white)}
+  .course-card .cp-hint{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .course-card .cp-hint.warn{color:var(--red);font-weight:800}
 
   .empty-note{
     border:2px dashed #82B9CB;border-radius:17px;
@@ -815,7 +832,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '1.0.3';
+  const APP_VERSION = '1.1.0';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -843,6 +860,7 @@ if ('serviceWorker' in navigator) {
   }
 
   let currentCourseId = null;
+  let currentCoursePreset = null; // 目前課程設定的固定節次 [a, b]；null = 自動偵測
   let currentRoster = null; // { name, classes: { className: [{seat,name}] }, pendingSession }
   let parsedUpload = null;  // classes object staged from file, before save
   let pendingCourseName = '';
@@ -966,14 +984,16 @@ if ('serviceWorker' in navigator) {
         <div style="flex:1; min-width:0;">
           <div class="name">${escapeHtml(item.name)}</div>
           <div class="meta">${item.classCount} 個班級・共 ${item.studentCount} 人</div>
+          <div class="cp-box"></div>
         </div>
         <button type="button" class="del" data-id="${item.id}">刪除</button>
         <div class="go">›</div>
       `;
       card.addEventListener('click', (e) => {
-        if(e.target.closest('.del')) return;
+        if(e.target.closest('.del') || e.target.closest('.cp-box')) return;
         openCourse(item.id);
       });
+      renderCoursePeriodBox(card.querySelector('.cp-box'), item);
       card.querySelector('.del').addEventListener('click', async (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -990,6 +1010,68 @@ if ('serviceWorker' in navigator) {
     });
   }
 
+  // ---------- 每門課的「上課節次」：自動偵測（依目前時間）或固定節次（老師在課程卡片上勾好的兩節） ----------
+  // 存在課程索引的項目裡：periodMode = 'auto' | 'fixed'，presetPeriods = [較小節次, 較大節次]
+  function getCoursePreset(item){
+    if(!item || item.periodMode !== 'fixed') return null;
+    const ps = Array.isArray(item.presetPeriods) ? item.presetPeriods : [];
+    return ps.length === 2 ? [...ps].sort((a,b) => a-b) : null; // 還沒勾滿兩節就先當作自動偵測
+  }
+
+  async function updateCourseIndexEntry(id, patch){
+    const idx = await getIndex();
+    const pos = idx.findIndex(c => c.id === id);
+    if(pos < 0) return null;
+    Object.assign(idx[pos], patch);
+    await setIndex(idx);
+    return idx[pos];
+  }
+
+  function renderCoursePeriodBox(box, item){
+    const fixed = item.periodMode === 'fixed';
+    const selected = Array.isArray(item.presetPeriods) ? [...item.presetPeriods].sort((a,b) => a-b) : [];
+    let html = `<div class="cp-seg">
+        <button type="button" data-mode="auto" class="${fixed ? '' : 'on'}">⏱ 自動偵測</button>
+        <button type="button" data-mode="fixed" class="${fixed ? 'on' : ''}">📌 固定節次</button>
+      </div>`;
+    if(fixed){
+      html += '<div class="cp-chips">';
+      for(let p = 1; p <= 8; p++){
+        const on = selected.includes(p);
+        html += `<button type="button" class="cp-chip${on ? ' on' : ''}" data-p="${p}" aria-label="第${p}節" aria-pressed="${on}">${on ? '✓' : ''}${p}</button>`;
+      }
+      html += '</div>';
+      const ok = selected.length === 2;
+      html += ok
+        ? `<div class="cp-hint">點名時直接套用：先點${periodLabel(selected[0])}、再點${periodLabel(selected[1])}</div>`
+        : `<div class="cp-hint warn">請勾選剛好兩節${selected.length > 2 ? `（目前 ${selected.length} 節，請取消 ${selected.length - 2} 節）` : ''}；勾好前暫時依目前時間自動偵測</div>`;
+    }else{
+      html += '<div class="cp-hint">依照「設定」裡的上課時間，自動判斷目前是第幾節</div>';
+    }
+    box.innerHTML = html;
+    box.querySelectorAll('.cp-seg button').forEach(b => b.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const updated = await updateCourseIndexEntry(item.id, { periodMode: b.dataset.mode });
+      if(updated){ Object.assign(item, updated); renderCoursePeriodBox(box, item); }
+    }));
+    box.querySelectorAll('.cp-chip').forEach(b => b.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      // 可以自由點選、不限數量；剛好兩節時才會在點名時套用。
+      const p = Number(b.dataset.p);
+      let next = selected.includes(p) ? selected.filter(x => x !== p) : [...selected, p];
+      next.sort((a,b) => a-b);
+      const updated = await updateCourseIndexEntry(item.id, { presetPeriods: next });
+      if(updated){ Object.assign(item, updated); renderCoursePeriodBox(box, item); }
+    }));
+  }
+
+  // 固定節次模式下，第一次點名送出後要跳去的節次：剛點完第一節固定節次 → 第二節固定節次；其他情況照舊往後一節。
+  function nextPeriodAfter(period){
+    const preset = currentCoursePreset;
+    if(preset && period === preset[0]) return preset[1];
+    return Math.min(8, (period || 0) + 1);
+  }
+
   async function openCourse(id){
     const roster = await getRoster(id);
     if(!roster){ toast('讀取名單失敗'); return; }
@@ -997,6 +1079,7 @@ if ('serviceWorker' in navigator) {
     currentRoster = roster;
     rosterEditMode = false;
     manualPeriod = null;
+    currentCoursePreset = getCoursePreset((await getIndex()).find(c => c.id === id));
     lastCompletedSessions = null;
     editingPair = null;
     await checkDayRollover(); // 如果距離上次點名已經跨到新的一天，先把舊的暫存資料清乾淨
@@ -1004,6 +1087,11 @@ if ('serviceWorker' in navigator) {
     Object.values(currentRoster.classes).forEach(students => {
       students.forEach(s => { s.absent = false; });
     });
+    if(currentCoursePreset){
+      const pending = currentRoster.pendingSession;
+      const started = pending && pending.date === taipeiDateStr();
+      manualPeriod = started ? nextPeriodAfter(pending.period) : currentCoursePreset[0];
+    }
     // 如果今天已經對目前這個節次輸入過紀錄（例如中途切出去又回來），直接帶入，避免看起來像資料不見了。
     const auto = await getCurrentPeriod();
     loadPeriodForDisplay(currentPickerValue(auto) || null);
@@ -1585,7 +1673,9 @@ if ('serviceWorker' in navigator) {
     if(!clock || !periodEl) return;
     clock.textContent = formatTaipeiTime();
     const p = await getCurrentPeriod();
-    periodEl.textContent = p ? `（自動偵測：第${p}節，僅供參考）` : '（自動偵測：非上課時段，僅供參考）';
+    periodEl.textContent = currentCoursePreset
+      ? `（本課程固定：第${currentCoursePreset[0]}、${currentCoursePreset[1]}節）`
+      : (p ? `（自動偵測：第${p}節，僅供參考）` : '（自動偵測：非上課時段，僅供參考）');
   }
 
   async function updateCurrentPeriod(){
@@ -1957,7 +2047,7 @@ if ('serviceWorker' in navigator) {
     lastSeenDate = today;
     lastCompletedSessions = null;
     editingPair = null;
-    manualPeriod = null;
+    manualPeriod = currentCoursePreset ? currentCoursePreset[0] : null; // 固定節次的課程，新的一天從第一個固定節次開始
     if(currentRoster){
       currentRoster.pendingSession = null;
       currentRoster.periodDrafts = null;
@@ -2319,7 +2409,7 @@ if ('serviceWorker' in navigator) {
         saveDraftForPeriod(period);
         // 第一次點名送出後，直接把節次調整器往前推一節（接下來幾乎都是點下一節的名），
         // 如果這個節次之前已經輸入過紀錄（例如老師剛剛自己切換節次核對過），就帶入那份紀錄。
-        const nextPeriodValue = Math.min(8, (period || 0) + 1);
+        const nextPeriodValue = nextPeriodAfter(period);
         manualPeriod = nextPeriodValue;
         loadPeriodForDisplay(nextPeriodValue || null);
         await setRoster(currentCourseId, currentRoster);
