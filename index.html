@@ -568,6 +568,22 @@
     padding:5px 13px;font-size:12px;font-weight:800;font-family:inherit;
     cursor:pointer;
   }
+  /* 設定頁「課程種類」說明 */
+  .type-help{
+    margin-top:10px;padding:10px 12px;border-radius:12px;
+    background:var(--white);border:1.5px solid var(--line);
+  }
+  .type-help .th-head{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:900;color:var(--navy)}
+  .type-help .cc-tag-like{
+    font-size:11px;font-weight:900;padding:3px 9px;border-radius:999px;
+    background:var(--white);border:1.5px solid var(--navy);color:var(--navy);white-space:nowrap;
+  }
+  .type-help .cc-tag-like.club{background:var(--yellow-soft)}
+  .type-help ul{margin:6px 0 0;padding-left:18px;font-size:12px;line-height:1.7;color:var(--ink)}
+  .type-help .th-sample{
+    margin:8px 0 0;padding:8px 10px;border-radius:9px;background:var(--blue-panel);
+    font-family:inherit;font-size:12px;line-height:1.6;color:var(--ink);white-space:pre-wrap;
+  }
   .font-scale-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
   .fs-btn{
     height:44px;border-radius:11px;border:2px solid var(--navy);background:var(--white);color:var(--navy);
@@ -706,6 +722,42 @@ if ('serviceWorker' in navigator) {
         <button type="button" class="fs-btn" data-scale="1"><span style="font-size:14px">標準</span></button>
         <button type="button" class="fs-btn" data-scale="1.1"><span style="font-size:16px">大</span></button>
         <button type="button" class="fs-btn" data-scale="1.2"><span style="font-size:18px">特大</span></button>
+      </div>
+    </div>
+
+    <div class="settings-card">
+      <div class="settings-title">課程種類：跨群／本土語、社團有什麼不同？</div>
+      <div class="settings-sub">每門課都要選一種，在<b>點名畫面課程名稱右邊的下拉選單</b>切換，每門課會各自記住，首頁卡片上也會顯示。新增的課程預設是「跨群／本土語」。兩種的點名方式、Google 試算表紀錄完全一樣，<b>差別只在產生的 LINE 訊息</b>：</div>
+
+      <div class="type-help">
+        <div class="th-head"><span class="cc-tag-like">跨群／本土語</span>完整回報每一班</div>
+        <ul>
+          <li>每個班級都會列出，兩節都寫，<b>全員到齊也會寫「全員到齊」</b>。</li>
+          <li>適合要讓各班導師、教學組知道每一班兩節出缺席狀況的課程。</li>
+          <li>訊息最前面加上下方「跨群／本土語課程」填的開頭文字（例如 @程程）。</li>
+        </ul>
+        <pre class="th-sample">@程程
+影像處理實務
+2026/10/02
+訊二甲
+　第4節 缺席12號
+　第5節 全員到齊
+餐二乙
+　第4節 全員到齊
+　第5節 全員到齊</pre>
+      </div>
+
+      <div class="type-help club">
+        <div class="th-head"><span class="cc-tag-like club">社團</span>只回報有缺席的</div>
+        <ul>
+          <li>只列出<b>有學生缺席</b>的班級和節次，全員到齊的班級直接省略，訊息比較短。</li>
+          <li>如果所有班級兩節都全員到齊，<b>不會產生訊息</b>，畫面會告訴你這次不需要傳。</li>
+          <li>訊息最前面加上下方「社團課程」填的開頭文字（預設空白，例如可以填社團教室）。</li>
+        </ul>
+        <pre class="th-sample">皮革手作社
+2026/10/02
+訊二甲
+　第6節 缺席12號</pre>
       </div>
     </div>
 
@@ -963,7 +1015,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '2.3.0';
+  const APP_VERSION = '2.3.1';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
