@@ -74,34 +74,34 @@
     display:flex;gap:6px;align-items:center;flex-shrink:0;
   }
 
-  /* 跨群/本土語 ⇄ 社團 模式切換：取代原本純文字標題，維持差不多的排版與字重。 */
+  /* 左上角：上面一行小標「點名模式」，下面是膠囊形的二選一切換。
+     軌道是半透明白色長條，選中的選項是深藍實心膠囊＋白字，沒選中的是深藍字，一看就知道可以切換。 */
   header.top .mode-switch{
-    display:flex;align-items:center;gap:4px;min-width:0;flex-shrink:1;
+    display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;flex-shrink:1;
   }
-  /* 做成「分段切換」的樣子：兩個選項放在同一條凹下去的軌道裡，選中的那個是白色凸起的滑塊，
-     沒選中的維持清楚可讀、看得出來可以點，讓老師一眼就知道這裡可以切換。 */
+  header.top .mode-caption{
+    font-size:11px;font-weight:900;color:var(--navy);opacity:.72;letter-spacing:2px;
+    line-height:1;padding-left:6px;
+  }
   .mode-track{
     display:inline-flex;align-items:center;gap:2px;flex-shrink:0;
-    padding:3px;border-radius:12px;
-    background:rgba(18,58,90,.12);border:2px solid var(--navy);
-    box-shadow:inset 0 2px 3px rgba(18,58,90,.25);
+    padding:3px;border-radius:999px;
+    background:rgba(255,255,255,.5);
+    box-shadow:inset 0 1px 3px rgba(18,58,90,.22);
   }
   .mode-btn{
     background:transparent;color:var(--navy);
-    border:2px solid transparent;border-radius:9px;
-    padding:3px 8px;font-size:15px;font-weight:900;font-family:inherit;letter-spacing:.5px;
-    cursor:pointer;white-space:nowrap;opacity:.78;flex-shrink:0;
-    transition:background .18s ease,box-shadow .18s ease,opacity .18s ease;
+    border:none;border-radius:999px;
+    padding:6px 13px;font-size:14px;font-weight:900;font-family:inherit;letter-spacing:.5px;line-height:1.15;
+    cursor:pointer;white-space:nowrap;opacity:.7;flex-shrink:0;
+    transition:background .2s ease,color .2s ease,box-shadow .2s ease,opacity .2s ease;
   }
-  .mode-btn:not(.active):hover{opacity:.9;background:rgba(255,255,255,.35)}
+  .mode-btn:not(.active):hover{opacity:1;background:rgba(255,255,255,.55)}
   .mode-btn.active{
-    background:var(--white);border-color:var(--navy);opacity:1;
-    box-shadow:0 2px 0 rgba(18,58,90,.25);
+    background:var(--navy);color:var(--white);opacity:1;
+    box-shadow:0 2px 4px rgba(18,58,90,.3);
   }
-  .mode-btn:active{transform:translateY(1px)}
-  header.top .mode-suffix{
-    font-size:16px;font-weight:900;color:var(--navy);flex-shrink:0;margin-left:1px;
-  }
+  .mode-btn:active{transform:scale(.97)}
 
   .icon-btn{
     background:var(--white);color:var(--navy);
@@ -552,9 +552,7 @@
     .wrap{padding:10px 10px 6px}
     header.top{min-height:64px;border-radius:16px;padding:10px 12px;gap:6px}
     header.top .brand{font-size:17px}
-    .mode-btn{font-size:13px;padding:3px 6px;border-radius:8px}
-    .mode-track{padding:2px;border-radius:11px}
-    header.top .mode-suffix{font-size:13px}
+    .mode-btn{font-size:13px;padding:6px 11px}
     header.top .header-actions{gap:4px}
     .icon-btn{padding:7px 8px}
     .icon-btn.icon-only{padding:7px 7px;font-size:14px}
@@ -567,18 +565,16 @@
   }
   @media(max-width:400px){
     header.top{padding:9px 9px;gap:4px}
-    .mode-btn{font-size:12px;padding:3px 5px}
-    .mode-track{gap:1px}
-    header.top .mode-suffix{font-size:12px}
+    .mode-btn{font-size:12px;padding:6px 9px}
+    header.top .mode-caption{font-size:10px;letter-spacing:1.5px}
     header.top .header-actions{gap:3px}
     .icon-btn{padding:6px 7px;font-size:11px}
     .icon-btn.icon-only{padding:6px 6px;font-size:13px}
   }
   @media(max-width:330px){
     header.top{padding:8px 7px;gap:3px}
-    .mode-btn{font-size:11px;padding:2px 4px;border-width:1.5px}
-    .mode-track{padding:2px;border-width:1.5px}
-    header.top .mode-suffix{font-size:11px}
+    .mode-btn{font-size:11px;padding:5px 7px}
+    .mode-track{padding:2px}
     .icon-btn{padding:5px 5px;font-size:10px}
     .icon-btn.icon-only{padding:5px 5px;font-size:12px}
   }
@@ -597,11 +593,11 @@ if ('serviceWorker' in navigator) {
 
   <header class="top">
     <div class="brand mode-switch" id="modeSwitch">
+      <span class="mode-caption">點名模式</span>
       <div class="mode-track" role="group" aria-label="切換點名模式">
         <button type="button" class="mode-btn active" id="modeBtnCampus" data-mode="campus" aria-pressed="true">跨群/本土語</button>
         <button type="button" class="mode-btn" id="modeBtnClub" data-mode="club" aria-pressed="false">社團</button>
       </div>
-      <span class="mode-suffix">點名</span>
     </div>
     <div class="header-actions"><button class="icon-btn icon-only" id="refreshAppBtn" title="按這裡可以取得最新版本" aria-label="重新整理，取得最新版本">🔄</button><button class="icon-btn" id="settingsBtn">設定</button><button class="icon-btn home-btn" id="homeBtn"><svg class="home-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 11.2 12 3.5l9 7.7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 9.6V20h4.6v-5.6h3.8V20h4.6V9.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/></svg>課程列表</button></div>
   </header>
@@ -883,7 +879,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '1.2.2';
+  const APP_VERSION = '1.2.3';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
