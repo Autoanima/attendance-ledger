@@ -326,6 +326,32 @@
   .student-chip.absent .seat::after{content:"×";font-size:22px}
   .student-chip.absent .nm{color:#98453E;text-decoration:line-through}
 
+  /* 每位學生右側的「今天第1～8節」狀態格：出席寫「出席」、曠課畫紅圈、沒資料的節次灰色。
+     手機上排成 4×2，寬一點的螢幕排成一排 8 格。左上角小數字是第幾節。 */
+  .period-strip{
+    flex:none;display:grid;grid-template-columns:repeat(4,38px);gap:3px;margin-left:auto;
+  }
+  .period-strip .ps-cell{
+    position:relative;height:24px;border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    border:1.5px solid var(--line);background:var(--white);
+    font-size:11px;font-weight:800;color:var(--navy);
+  }
+  .period-strip .ps-cell .ps-no{
+    position:absolute;top:0;left:3px;font-size:8px;font-weight:900;line-height:1.1;opacity:.6;
+  }
+  .period-strip .ps-cell.empty{background:#E3E8EC;border-color:#D3DADF;color:#9AA7B1}
+  .period-strip .ps-cell.present{background:#EEF7F3;border-color:#A9D3C4}
+  .period-strip .ps-cell.absent{background:var(--white);border-color:#E0A09A}
+  .period-strip .ps-cell .ps-ring{
+    width:15px;height:15px;border-radius:50%;border:2.5px solid var(--red);box-sizing:border-box;
+  }
+  .period-strip .ps-cell.current{box-shadow:0 0 0 2px var(--navy);border-color:var(--navy)}
+  .student-chip.edit-mode .period-strip{display:none}
+  @media(min-width:560px){
+    .period-strip{grid-template-columns:repeat(8,38px)}
+  }
+
   .edit-roster-toggle.active{background:var(--red);color:var(--white);border-color:var(--navy)}
   .student-chip.edit-mode{cursor:default}
   .student-chip.edit-mode:active{transform:none}
@@ -851,7 +877,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '1.1.4';
+  const APP_VERSION = '1.2.0';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -1429,11 +1455,15 @@ if ('serviceWorker' in navigator) {
         currentRoster.classes[cls].forEach(stu => {
           const chip = document.createElement('div');
           chip.className = 'student-chip' + (stu.absent ? ' absent' : '') + (rosterEditMode ? ' edit-mode' : '');
-          chip.innerHTML = `<span class="seat">${escapeHtml(stu.seat)}</span><span class="nm">${escapeHtml(stu.name || '座號'+stu.seat)}</span><button type="button" class="del-student" aria-label="刪除這位學生">✕</button>`;
+          chip.innerHTML = `<span class="seat">${escapeHtml(stu.seat)}</span><span class="nm">${escapeHtml(stu.name || '座號'+stu.seat)}</span><div class="period-strip" aria-hidden="true"></div><button type="button" class="del-student" aria-label="刪除這位學生">✕</button>`;
+          const strip = chip.querySelector('.period-strip');
+          chip._refreshStrip = () => renderPeriodStrip(strip, cls, stu);
+          chip._refreshStrip();
           chip.addEventListener('click', () => {
             if(rosterEditMode) return;
             stu.absent = !stu.absent;
             chip.classList.toggle('absent', stu.absent);
+            chip._refreshStrip();
             updateSummary();
             if(currentCourseId && currentRoster) setRoster(currentCourseId, currentRoster);
           });
@@ -2062,6 +2092,48 @@ if ('serviceWorker' in navigator) {
     return null;
   }
 
+  // ---------- 學生列右側的「今天各節狀態格」 ----------
+  // 只採用「真的按過送出」的節次（存在 currentRoster.submittedPeriods = { date, records: { 節次: {班級: [缺席座號]} } }），
+  // 再加上目前正在登記的節次（直接看畫面上的即時狀態）。只用 －／＋ 翻過去、沒有送出的節次一律算「還沒填」，顯示灰色。
+  let stripCurrentPeriod = null; // 目前節次調整器上的節次（null = 非上課時段），由 refreshPeriodPicker 更新
+
+  function ensureSubmittedToday(){
+    const today = taipeiDateStr();
+    if(!currentRoster.submittedPeriods || currentRoster.submittedPeriods.date !== today){
+      currentRoster.submittedPeriods = { date: today, records: {} };
+    }
+    return currentRoster.submittedPeriods;
+  }
+
+  function markSubmitted(period, records){
+    if(!period) return;
+    ensureSubmittedToday().records[String(period)] = records;
+  }
+
+  function renderPeriodStrip(strip, cls, stu){
+    if(!strip || !currentRoster) return;
+    const today = taipeiDateStr();
+    const sub = currentRoster.submittedPeriods;
+    const subRecords = (sub && sub.date === today) ? sub.records : {};
+    let html = '';
+    for(let p = 1; p <= 8; p++){
+      let state = 'empty';
+      if(p === stripCurrentPeriod){
+        state = stu.absent ? 'absent' : 'present';
+      }else if(subRecords[String(p)]){
+        const seats = subRecords[String(p)][cls] || [];
+        state = seats.includes(stu.seat) ? 'absent' : 'present';
+      }
+      const inner = state === 'absent' ? '<span class="ps-ring"></span>' : (state === 'present' ? '出席' : '');
+      html += `<div class="ps-cell ${state}${p === stripCurrentPeriod ? ' current' : ''}"><span class="ps-no">${p}</span>${inner}</div>`;
+    }
+    strip.innerHTML = html;
+  }
+
+  function refreshAllPeriodStrips(){
+    document.querySelectorAll('#classContainer .student-chip').forEach(chip => { if(chip._refreshStrip) chip._refreshStrip(); });
+  }
+
   // 把畫面切換去顯示某個節次：有紀錄就帶入，沒有就顯示全員出席（代表這節還沒點過名）。
   function loadPeriodForDisplay(period){
     const records = getRecordsForPeriod(period);
@@ -2083,6 +2155,7 @@ if ('serviceWorker' in navigator) {
     if(currentRoster){
       currentRoster.pendingSession = null;
       currentRoster.periodDrafts = null;
+      currentRoster.submittedPeriods = null;
       resetAttendanceToPresent();
       if(currentCourseId) await setRoster(currentCourseId, currentRoster);
       if($('screen-attend').classList.contains('active')) renderAttendance();
@@ -2257,6 +2330,11 @@ if ('serviceWorker' in navigator) {
     delete drafts.records[draftKey(s.second.period)];
     drafts.records[draftKey(newFirst)] = firstRecords;
     drafts.records[draftKey(newSecond)] = secondRecords;
+    const submitted = ensureSubmittedToday();
+    delete submitted.records[String(s.first.period)];
+    delete submitted.records[String(s.second.period)];
+    markSubmitted(newFirst, firstRecords);
+    markSubmitted(newSecond, secondRecords);
     lastCompletedSessions = {
       date: s.date,
       first: { period: newFirst, records: firstRecords },
@@ -2290,6 +2368,10 @@ if ('serviceWorker' in navigator) {
     const auto = await getCurrentPeriod();
     const val = currentPickerValue(auto);
     valueEl.textContent = periodLabel(val || null);
+    if(stripCurrentPeriod !== (val || null)){
+      stripCurrentPeriod = val || null;
+      refreshAllPeriodStrips();
+    }
   }
 
   // 切換節次調整器時：先把目前畫面上（正在輸入、還沒送出）的狀態存成這個節次的草稿，
@@ -2388,6 +2470,7 @@ if ('serviceWorker' in navigator) {
         const records = snapshotAbsences();
         const googleResult = await recordToGoogle(period);
         saveDraftForPeriod(period);
+        markSubmitted(period, records);
 
         let firstPeriod, firstRecords, secondPeriod, secondRecords;
         if(period === editingPair.secondPeriod && period !== editingPair.firstPeriod){
@@ -2452,6 +2535,7 @@ if ('serviceWorker' in navigator) {
         const records = snapshotAbsences();
         const googleResult = await recordToGoogle(period);
         currentRoster.pendingSession = { date: today, period, records };
+        markSubmitted(period, records);
         saveDraftForPeriod(period);
         // 第一次點名送出後，直接把節次調整器往前推一節（接下來幾乎都是點下一節的名），
         // 如果這個節次之前已經輸入過紀錄（例如老師剛剛自己切換節次核對過），就帶入那份紀錄。
@@ -2468,6 +2552,7 @@ if ('serviceWorker' in navigator) {
         const secondRecords = snapshotAbsences();
         const googleResult = await recordToGoogle(period);
         saveDraftForPeriod(period);
+        markSubmitted(period, secondRecords);
         const secondArg2 = { period, records: secondRecords };
         const {skip: skipMessage, msg} = await computeResultForMode(appMode, pending, secondArg2);
         lastCompletedSessions = {
