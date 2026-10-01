@@ -326,11 +326,12 @@
   .student-chip.absent .seat::after{content:"×";font-size:22px}
   .student-chip.absent .nm{color:#98453E;text-decoration:line-through}
 
-  /* 每位學生右側的「今天第1～8節」狀態格：出席寫「出席」、曠課畫紅圈、沒資料的節次灰色。
-     手機上排成 4×2，寬一點的螢幕排成一排 8 格。左上角小數字是第幾節。 */
-  .period-strip{
-    flex:none;display:grid;grid-template-columns:repeat(4,38px);gap:3px;margin-left:auto;
-  }
+  /* 每位學生右側的「今天第1～8節」狀態格：出席寫「出席」、曠課畫紅圈、沒資料的節次灰底再劃一條斜線。
+     分成左右兩塊：左邊上午第1～4節、右邊下午第5～8節。手機上每塊 2×2，寬一點的螢幕每塊排成一排 4 格。
+     左上角小數字是第幾節。 */
+  .period-strip{flex:none;display:flex;gap:7px;margin-left:auto}
+  .period-strip .ps-group{display:grid;grid-template-columns:repeat(2,38px);gap:3px}
+  .period-strip .ps-group + .ps-group{padding-left:7px;border-left:2px dashed #B7CCD6}
   .period-strip .ps-cell{
     position:relative;height:24px;border-radius:6px;
     display:flex;align-items:center;justify-content:center;
@@ -340,7 +341,10 @@
   .period-strip .ps-cell .ps-no{
     position:absolute;top:0;left:3px;font-size:8px;font-weight:900;line-height:1.1;opacity:.6;
   }
-  .period-strip .ps-cell.empty{background:#E3E8EC;border-color:#D3DADF;color:#9AA7B1}
+  .period-strip .ps-cell.empty{
+    border-color:#D3DADF;color:#9AA7B1;
+    background:linear-gradient(to top right,transparent calc(50% - .8px),#A3AFB9 calc(50% - .8px),#A3AFB9 calc(50% + .8px),transparent calc(50% + .8px)),#E3E8EC;
+  }
   .period-strip .ps-cell.present{background:#EEF7F3;border-color:#A9D3C4}
   .period-strip .ps-cell.absent{background:var(--white);border-color:#E0A09A}
   .period-strip .ps-cell .ps-ring{
@@ -349,7 +353,9 @@
   .period-strip .ps-cell.current{box-shadow:0 0 0 2px var(--navy);border-color:var(--navy)}
   .student-chip.edit-mode .period-strip{display:none}
   @media(min-width:560px){
-    .period-strip{grid-template-columns:repeat(8,38px)}
+    .period-strip{gap:10px}
+    .period-strip .ps-group + .ps-group{padding-left:10px}
+    .period-strip .ps-group{grid-template-columns:repeat(4,38px)}
   }
 
   .edit-roster-toggle.active{background:var(--red);color:var(--white);border-color:var(--navy)}
@@ -877,7 +883,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '1.2.1';
+  const APP_VERSION = '1.2.2';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -2118,6 +2124,8 @@ if ('serviceWorker' in navigator) {
     const subRecords = (sub && sub.date === today) ? sub.records : {};
     let html = '';
     for(let p = 1; p <= 8; p++){
+      if(p === 1) html += '<div class="ps-group">';      // 左：上午第1～4節
+      if(p === 5) html += '</div><div class="ps-group">'; // 右：下午第5～8節
       let state = 'empty';
       if(p === stripCurrentPeriod){
         state = stu.absent ? 'absent' : 'present';
@@ -2128,6 +2136,7 @@ if ('serviceWorker' in navigator) {
       const inner = state === 'absent' ? '<span class="ps-ring"></span>' : (state === 'present' ? '出席' : '');
       html += `<div class="ps-cell ${state}${p === stripCurrentPeriod ? ' current' : ''}"><span class="ps-no">${p}</span>${inner}</div>`;
     }
+    html += '</div>';
     strip.innerHTML = html;
   }
 
