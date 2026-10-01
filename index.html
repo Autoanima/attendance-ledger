@@ -815,7 +815,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '1.0.2';
+  const APP_VERSION = '1.0.3';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -2100,7 +2100,9 @@ if ('serviceWorker' in navigator) {
     hint.className = 'rpp-hint' + (ok ? '' : ' warn');
     hint.textContent = ok
       ? `先點的那次 → ${periodLabel(selected[0])}；後點的那次 → ${periodLabel(selected[1])}`
-      : `請勾選剛好兩節（目前勾了 ${selected.length} 節），勾好後訊息會自動更新`;
+      : selected.length > 2
+        ? `目前勾了 ${selected.length} 節，請再取消 ${selected.length - 2} 節（剛好兩節才能送出）`
+        : `請勾選剛好兩節（目前勾了 ${selected.length} 節），勾好後訊息會自動更新`;
     // 還沒勾滿兩節時，先把傳送／複製鎖起來，避免送出節次不完整的訊息。
     const sendBtn = document.querySelector('#lineShareLink .line-send-btn');
     $('lineShareLink').style.pointerEvents = ok ? '' : 'none';
@@ -2114,7 +2116,7 @@ if ('serviceWorker' in navigator) {
     if(selected.includes(p)){
       selected = selected.filter(x => x !== p);
     }else{
-      if(selected.length >= 2){ toast('最多勾選兩節，請先取消其中一節'); return; }
+      // 不限制勾選數量：可以先勾新的、再取消舊的，順序隨意；勾到剛好兩節時才套用。
       selected.push(p);
     }
     selected.sort((a,b) => a-b);
