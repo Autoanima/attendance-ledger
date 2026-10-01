@@ -347,6 +347,7 @@
   .period-picker .ppk-btn:active{transform:scale(.94)}
 
   .sticky-actions{
+    -webkit-transform:translateZ(0);transform:translateZ(0); /* 讓 iPhone Safari 把底部固定區當成獨立圖層整塊重畫，避免文字只畫一半 */
     position:sticky;bottom:0;padding:11px 0 4px;margin-top:11px;
     background:linear-gradient(to top,var(--blue-bg) 72%,transparent)
   }
@@ -832,7 +833,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '1.1.0';
+  const APP_VERSION = '1.1.1';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -2287,6 +2288,16 @@ if ('serviceWorker' in navigator) {
     await switchPickerPeriod(Math.min(8, currentPickerValue(auto) + 1));
   });
 
+  // iPhone Safari 的錯誤：底部固定區（sticky）裡的按鈕換文字後，常常只重畫「舊文字」那一小塊，
+  // 例如從「處理中…」換成長文字，畫面只剩中間「次點名並」四個字。換完文字後強制按鈕整個重新排版、重畫一次。
+  function setGenBtnText(btn, text){
+    if(btn.textContent === text) return;
+    btn.textContent = text;
+    btn.style.display = 'none';
+    void btn.offsetHeight;
+    btn.style.display = '';
+  }
+
   // 判斷目前點名進度，更新畫面上的提示文字（僅供提醒，不會鎖住按鈕）。
   async function refreshSessionUI(){
     const bar = $('sessionStatusBar');
@@ -2303,7 +2314,7 @@ if ('serviceWorker' in navigator) {
       bar.hidden = false;
       bar.className = 'session-status ready';
       bar.textContent = `📝 修改模式：目前畫面是${periodLabel(viewingPeriod)}的紀錄，改好之後直接送出，會馬上用兩節最新的內容重新產生訊息。`;
-      btn.textContent = '完成修改並重新產生訊息';
+      setGenBtnText(btn, '完成修改並重新產生訊息');
       btn.disabled = false;
       return;
     }
@@ -2312,7 +2323,7 @@ if ('serviceWorker' in navigator) {
 
     if(!pending || pending.date !== today){
       bar.hidden = true;
-      btn.textContent = '完成本節點名';
+      setGenBtnText(btn, '完成本節點名');
       btn.disabled = false;
       return;
     }
@@ -2326,7 +2337,7 @@ if ('serviceWorker' in navigator) {
       bar.className = 'session-status ready';
       bar.textContent = `🔔 已可以進行第二次點名，請確認下方節次無誤，完成點名後按下方按鈕送出這兩節課的紀錄。`;
     }
-    btn.textContent = '完成第二次點名並送出紀錄';
+    setGenBtnText(btn, '完成第二次點名並送出紀錄');
     btn.disabled = false;
   }
 
@@ -2343,7 +2354,7 @@ if ('serviceWorker' in navigator) {
       // 按下送出時：這節用畫面上最新輸入的內容，另一節用目前已知最新的內容（可能是原本沒動過的，
       // 也可能是老師剛剛已經切過去改過的），兩節湊齊後直接重新產生訊息，不會要求老師再點一次名。
       btn.disabled = true;
-      btn.textContent = '處理中…';
+      setGenBtnText(btn, '處理中…');
       try{
         const records = snapshotAbsences();
         const googleResult = await recordToGoogle(period);
@@ -2399,7 +2410,7 @@ if ('serviceWorker' in navigator) {
     }
 
     btn.disabled = true;
-    btn.textContent = '處理中…';
+    setGenBtnText(btn, '處理中…');
     try{
       if(!alreadyStartedToday){
         // ---- 第一節：先記錄下來，重置畫面準備點第二次 ----
