@@ -8,7 +8,7 @@
  * A 欄：班級
  * B 欄：座號
  * C 欄：姓名
- * D 欄開始：每次點名一個新欄，第一列寫「日期｜第X節」
+ * D 欄開始：每一節一欄，第一列寫「日期｜第X節」（同一天同一節重新送出會覆蓋那一欄）
  * 例如：D1 = 2026/09/06｜第3節
  *       D2:Dn = 出席／未出席
  */
@@ -69,9 +69,18 @@ function doPost(e) {
       }
     }
 
-    // 每次點名都新增一欄，不覆蓋既有紀錄。
-    const newCol = Math.max(sheet.getLastColumn() + 1, 4);
-    sheet.getRange(1, newCol).setValue(header);
+    // 同一天、同一節已經有一欄的話（例如送出後又回去修改、重新產生訊息），直接覆蓋那一欄；沒有才在最右邊新增一欄。
+    const lastCol = sheet.getLastColumn();
+    let newCol = 0;
+    if (lastCol >= 4) {
+      const headers = sheet.getRange(1, 4, 1, lastCol - 3).getDisplayValues()[0];
+      const pos = headers.indexOf(header);
+      if (pos >= 0) newCol = pos + 4;
+    }
+    if (!newCol) {
+      newCol = Math.max(lastCol + 1, 4);
+      sheet.getRange(1, newCol).setValue(header);
+    }
 
     // 讀取既有學生資料，依「班級 + 座號」找學生所在列。
     const lastRow = Math.max(sheet.getLastRow(), 2);
@@ -120,7 +129,7 @@ function doPost(e) {
     sheet.setFrozenColumns(3);
     sheet.autoResizeColumns(1, 3);
 
-    return jsonOutput({ok:true, message:'已新增一欄點名紀錄', column:newCol, header:header});
+    return jsonOutput({ok:true, message:'已寫入點名紀錄', column:newCol, header:header});
   } catch (err) {
     return jsonOutput({ok:false, message:String(err && err.message ? err.message : err)});
   } finally {
