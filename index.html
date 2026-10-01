@@ -326,37 +326,75 @@
   .student-chip.absent .seat::after{content:"×";font-size:22px}
   .student-chip.absent .nm{color:#98453E;text-decoration:line-through}
 
-  /* 每位學生右側的「今天第1～8節」狀態格：出席寫「出席」、曠課畫紅圈、沒資料的節次灰底再劃一條斜線。
-     分成左右兩塊：左邊上午第1～4節、右邊下午第5～8節。手機上每塊 2×2，寬一點的螢幕每塊排成一排 4 格。
-     左上角小數字是第幾節。 */
-  .period-strip{flex:none;display:flex;gap:7px;margin-left:auto}
-  .period-strip .ps-group{display:grid;grid-template-columns:repeat(2,38px);gap:3px}
-  .period-strip .ps-group + .ps-group{padding-left:7px;border-left:2px dashed #B7CCD6}
-  .period-strip .ps-cell{
-    position:relative;height:24px;border-radius:6px;
+  /* ---------- 點名表格：左邊座號、姓名，上面是第1～8節的分頁 ----------
+     課程設定的那兩節是亮起來的寬欄，可以點格子畫圈（＝缺席）；其他節次是灰色窄欄、劃斜線、不能點。 */
+  .rc-table{
+    --rc-on-w:48px;--rc-off-w:18px;
+    display:flex;flex-direction:column;background:var(--white);border:2px solid var(--line);border-radius:12px;
+  }
+  .rc-row{
+    display:grid;grid-template-columns:28px minmax(0,1fr) var(--rc-cols);gap:2px;align-items:center;
+    padding:4px 4px;border-top:1px solid var(--line);min-height:46px;
+  }
+  .rc-row:first-child{border-top:none}
+  .rc-row.edit{grid-template-columns:28px minmax(0,1fr) auto;gap:8px}
+  .rc-head{
+    min-height:34px;background:#EEF5F8;border-radius:10px 10px 0 0;
+    position:sticky;top:var(--rc-sticky-top,0px);z-index:5;
+  }
+  .rc-hseat,.rc-hname{font-size:11px;font-weight:900;color:var(--muted);white-space:nowrap}
+  .rc-hseat{text-align:center}
+  .rc-hname{padding-left:6px}
+  .rc-tab{
+    height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:900;white-space:nowrap;
+  }
+  .rc-tab.on{background:var(--navy);color:var(--white);font-size:12px;box-shadow:0 2px 0 rgba(18,58,90,.2)}
+  .rc-tab.off{background:#E3E8EC;color:#A3AFB9}
+  .rc-seat{
+    width:28px;height:28px;border-radius:8px;flex:none;
     display:flex;align-items:center;justify-content:center;
-    border:1.5px solid var(--line);background:var(--white);
-    font-size:11px;font-weight:800;color:var(--navy);
+    background:var(--yellow);border:2px solid var(--navy);color:var(--navy);
+    font-size:13px;font-weight:900;
   }
-  .period-strip .ps-cell .ps-no{
-    position:absolute;top:0;left:3px;font-size:8px;font-weight:900;line-height:1.1;opacity:.6;
-  }
-  .period-strip .ps-cell.empty{
-    border-color:#D3DADF;color:#9AA7B1;
+  .rc-name{font-size:16px;font-weight:800;color:var(--ink);line-height:1.2;padding-left:6px;word-break:break-all}
+  .rc-row.has-absent .rc-seat{background:var(--red);border-color:var(--red);color:var(--white)}
+  .rc-row.has-absent .rc-name{color:#98453E}
+  .rc-cell{height:36px;border-radius:8px;padding:0;display:flex;align-items:center;justify-content:center;font-family:inherit}
+  .rc-cell.off{
+    border:1.5px solid #D3DADF;
     background:linear-gradient(to top right,transparent calc(50% - .8px),#A3AFB9 calc(50% - .8px),#A3AFB9 calc(50% + .8px),transparent calc(50% + .8px)),#E3E8EC;
   }
-  .period-strip .ps-cell.present{background:#EEF7F3;border-color:#A9D3C4}
-  .period-strip .ps-cell.absent{background:var(--white);border-color:#E0A09A}
-  .period-strip .ps-cell .ps-ring{
-    width:15px;height:15px;border-radius:50%;border:2.5px solid var(--red);box-sizing:border-box;
+  .rc-cell.on{
+    border:2px solid #A9D3C4;background:#EEF7F3;color:#3E7D68;
+    font-size:12px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;
   }
-  .period-strip .ps-cell.current{box-shadow:0 0 0 2px var(--navy);border-color:var(--navy)}
-  .student-chip.edit-mode .period-strip{display:none}
+  .rc-cell.on:active{transform:scale(.95)}
+  .rc-cell.on.absent{border-color:var(--red);background:var(--red-soft)}
+  .rc-ring{width:22px;height:22px;border-radius:50%;border:3px solid var(--red);box-sizing:border-box}
+  .rc-del{
+    width:36px;height:36px;border-radius:9px;border:2px solid var(--red);background:var(--red-soft);color:var(--red);
+    font-size:18px;font-weight:900;font-family:inherit;cursor:pointer;
+  }
   @media(min-width:560px){
-    .period-strip{gap:10px}
-    .period-strip .ps-group + .ps-group{padding-left:10px}
-    .period-strip .ps-group{grid-template-columns:repeat(4,38px)}
+    .rc-table{--rc-on-w:76px;--rc-off-w:30px}
+    .rc-row{gap:4px;padding:5px 8px}
+    .rc-name{font-size:18px}
   }
+
+  /* 紅色「目前班級」列右邊的節次按鈕：顯示本課程是第幾節，點一下可以更改 */
+  .period-edit-btn{
+    background:var(--white);color:var(--navy);border:2px solid var(--navy);border-radius:999px;
+    padding:4px 11px;font-size:12px;font-weight:900;font-family:inherit;cursor:pointer;white-space:nowrap;
+  }
+  .period-edit-btn.warn{background:var(--yellow)}
+  .attend-period-panel{margin:0 0 10px}
+  .attend-period-panel .rpp-actions{display:flex;justify-content:center;margin-top:8px}
+  .attend-period-panel .rpp-done{
+    background:var(--navy);color:var(--white);border:none;border-radius:999px;
+    padding:6px 18px;font-size:12px;font-weight:900;font-family:inherit;cursor:pointer;
+  }
+  .summary-bar .ab b{color:var(--red)}
 
   .edit-roster-toggle.active{background:var(--red);color:var(--white);border-color:var(--navy)}
   .student-chip.edit-mode{cursor:default}
@@ -393,7 +431,7 @@
 
   .sticky-actions{
     -webkit-transform:translateZ(0);transform:translateZ(0); /* 讓 iPhone Safari 把底部固定區當成獨立圖層整塊重畫，避免文字只畫一半 */
-    position:sticky;bottom:0;padding:11px 0 4px;margin-top:11px;
+    position:sticky;bottom:0;z-index:30;padding:11px 0 4px;margin-top:11px;
     background:linear-gradient(to top,var(--blue-bg) 72%,transparent)
   }
 
@@ -521,20 +559,6 @@
   }
   .prefix-toggle-btn.off{background:var(--line);color:var(--muted);border-color:var(--line)}
   #messagePrefixInput:disabled{background:var(--line);color:var(--muted);opacity:.7}
-  .period-row{
-    display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:6px;
-    margin-top:8px;
-  }
-  .period-row .pname{font-size:14px;font-weight:900;color:var(--navy);white-space:nowrap}
-  .period-row .psep{color:var(--navy);font-weight:900;text-align:center}
-  /* iOS 的時間欄位有內建最小寬度，會把格子撐破、超出卡片；這裡取消原生外觀並允許縮小，讓兩個時間欄位平均放進卡片裡。 */
-  .period-row input[type=time]{
-    -webkit-appearance:none;appearance:none;box-sizing:border-box;
-    width:100%;min-width:0;max-width:100%;height:40px;padding:6px 4px;border-radius:9px;border:2px solid var(--line);
-    background:var(--white);color:var(--ink);font-family:inherit;font-size:14px;font-weight:700;text-align:center;
-  }
-  .period-row input[type=time]::-webkit-date-and-time-value{text-align:center;margin:0}
-  .period-row input[type=time]:focus{outline:none;border-color:var(--turq)}
   .settings-divider{height:1px;background:var(--line);margin:14px 0}
   .version-tag{
     text-align:center;font-size:11px;color:var(--muted);opacity:.55;
@@ -599,7 +623,7 @@ if ('serviceWorker' in navigator) {
         <button type="button" class="mode-btn" id="modeBtnClub" data-mode="club" aria-pressed="false">社團</button>
       </div>
     </div>
-    <div class="header-actions"><button class="icon-btn icon-only" id="refreshAppBtn" title="按這裡可以取得最新版本" aria-label="重新整理，取得最新版本">🔄</button><button class="icon-btn" id="settingsBtn">設定</button><button class="icon-btn home-btn" id="homeBtn"><svg class="home-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 11.2 12 3.5l9 7.7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 9.6V20h4.6v-5.6h3.8V20h4.6V9.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/></svg>課程列表</button></div>
+    <div class="header-actions"><button class="icon-btn" id="settingsBtn">設定</button><button class="icon-btn home-btn" id="homeBtn"><svg class="home-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 11.2 12 3.5l9 7.7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 9.6V20h4.6v-5.6h3.8V20h4.6V9.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/></svg>課程列表</button></div>
   </header>
 
   <!-- HOME -->
@@ -675,12 +699,6 @@ if ('serviceWorker' in navigator) {
       <div class="settings-title">進階同步設定</div>
       <div class="settings-sub">Google 試算表同步、課程名單雲端硬碟——這兩項設定好一次之後就不太需要再調整。</div>
       <button type="button" class="primary-btn ghost small-btn" id="openAdvancedSyncBtn" style="margin-top:10px">前往進階同步設定 →</button>
-    </div>
-
-    <div class="settings-card">
-      <div class="settings-title">上課節次時間</div>
-      <div class="settings-sub">程式會依現在時間，自動判斷目前是第 1～8 節。若目前時間不在任何區間，會顯示「非上課時段」。</div>
-      <div id="periodSettings"></div>
     </div>
 
     <div class="stack">
@@ -807,35 +825,29 @@ if ('serviceWorker' in navigator) {
         <div class="title" id="attendCourseName">—</div>
         <button type="button" class="icon-btn edit-roster-toggle" id="editRosterBtn">休學簡易刪除</button>
       </div>
-      <div class="sub" id="attendSub">點擊學生標記為未出席，預設為全員出席；每節課都要各別點名一次，兩節點完才會送出紀錄</div>
+      <div class="sub" id="attendSub">點選亮起來的節次格子就會畫圈（＝缺席），再點一次取消；預設全員出席。兩節都確認好，按最下面的按鈕一次送出。</div>
     </div>
     <div class="summary-bar">
       <span>共 <b id="totalCount">0</b> 人</span>
-      <span>未出席 <b id="absentCount" style="color:var(--ink-red-soft)">0</b> 人</span>
+      <span class="ab" id="absentSummary">—</span>
     </div>
     <div class="current-class-bar" id="currentClassBar" aria-live="polite">
       <div class="current-class-main">
         <span class="label">目前班級</span>
         <span class="value" id="currentClassName">—</span>
       </div>
-      <div class="current-class-meta">
-        <span class="time" id="liveClock">--:--</span>
-        <span class="period" id="livePeriod">（自動偵測：第?節）</span>
-      </div>
+      <button type="button" class="period-edit-btn" id="periodEditBtn">設定節次</button>
     </div>
-    <div class="session-status" id="sessionStatusBar" hidden></div>
+    <div class="attend-period-panel result-period-pick" id="attendPeriodPanel" hidden>
+      <div class="rpp-label">本課程是第幾節？請勾選相鄰的兩節</div>
+      <div class="rpp-row" id="attendPeriodChips"></div>
+      <div class="rpp-hint" id="attendPeriodHint"></div>
+      <div class="rpp-actions"><button type="button" class="rpp-done" id="attendPeriodDone">完成</button></div>
+    </div>
     <div id="classContainer" aria-label="依班級整合的學生名單"></div>
 
     <div class="sticky-actions stack">
-      <div class="period-picker">
-        <span class="ppk-label">✅ 送出前最後確認：本次登記節次</span>
-        <div class="ppk-row">
-          <button type="button" class="ppk-btn" id="periodPrevBtn" aria-label="往前一節">－</button>
-          <span class="ppk-value" id="periodPickerValue">—</span>
-          <button type="button" class="ppk-btn" id="periodNextBtn" aria-label="往後一節">＋</button>
-        </div>
-      </div>
-      <button class="primary-btn" id="genMsgBtn">完成本節點名</button>
+      <button class="primary-btn" id="genMsgBtn">完成點名，產生訊息</button>
       <div class="auto-google-note" id="autoGoogleNote">已設定 Google 時，每節點名都會自動記錄。</div>
     </div>
   </section>
@@ -879,7 +891,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '1.2.3';
+  const APP_VERSION = '2.0.0';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -907,15 +919,12 @@ if ('serviceWorker' in navigator) {
   }
 
   let currentCourseId = null;
-  let currentCoursePreset = null; // 目前課程設定的固定節次 [a, b]；null = 自動偵測
-  let currentRoster = null; // { name, classes: { className: [{seat,name}] }, pendingSession }
+  let currentCoursePreset = null; // 目前課程設定的兩節 [較前, 較後]；null = 還沒設定
+  let currentRoster = null; // { name, classes: { className: [{seat,name}] }, today: { date, absent: [{班級:[座號]}, {班級:[座號]}] } }
   let parsedUpload = null;  // classes object staged from file, before save
   let pendingCourseName = '';
   let rosterEditMode = false;
-  let manualPeriod = null; // null = 跟隨自動偵測的節次；0~8 = 老師手動調整過的節次（0代表「非上課時段」）
-  let lastCompletedSessions = null; // 最近一次「完成兩節點名」時，兩節各自的節次與缺席紀錄，供「返回修改點名」還原用
-  let editingPair = null; // 從結果畫面按「返回修改點名」後，記錄這兩節原本各自是第幾節；
-                          // 修改模式下，不管老師先改哪一節、只改其中一節，按送出都會直接用「這節的最新內容 + 另一節目前已知的內容」重新產生訊息。
+  let lastCompletedSessions = null; // 最近一次產生訊息時，兩節各自的節次與缺席紀錄（結果畫面改節次、切換模式時使用）
   let lastSeenDate = null; // 用來偵測「跨到新的一天」，避免舊資料留到下次點名
   let appMode = 'campus'; // 'campus' = 跨群/本土語（維持原本規則）；'club' = 社團（訊息開頭預設關閉、全員到齊時不產生訊息）
 
@@ -1057,13 +1066,13 @@ if ('serviceWorker' in navigator) {
     });
   }
 
-  // ---------- 每門課的「上課節次」：自動偵測（依目前時間）或固定節次（老師在課程卡片上勾好的兩節） ----------
-  // 存在課程索引的項目裡：periodMode = 'auto' | 'fixed'，presetPeriods = [較小節次, 較大節次]
+  // ---------- 每門課的「上課節次」：老師自己勾選的相鄰兩節（例如第4、5節） ----------
+  // 存在課程索引的項目裡：presetPeriods = [較小節次, 較大節次]
   function getCoursePreset(item){
-    if(!item || item.periodMode !== 'fixed') return null;
+    if(!item) return null;
     const ps = Array.isArray(item.presetPeriods) ? item.presetPeriods : [];
     const sorted = [...ps].sort((a,b) => a-b);
-    return isConsecutivePair(sorted) ? sorted : null; // 還沒勾成連續的兩節就先當作自動偵測
+    return isConsecutivePair(sorted) ? sorted : null; // 還沒勾成相鄰的兩節就當作「還沒設定」
   }
 
   // 雙節課的兩節一定是連續的（例如第5、6節），不會跳節。傳入已排序的節次陣列。
@@ -1073,9 +1082,9 @@ if ('serviceWorker' in navigator) {
 
   // 節次勾選不合規定時，要顯示給老師看的提示文字。
   function periodPairProblem(sorted){
-    if(sorted.length > 2) return `目前勾了 ${sorted.length} 節，請再取消 ${sorted.length - 2} 節（要勾連續的兩節）`;
-    if(sorted.length === 2) return `${periodLabel(sorted[0])}和${periodLabel(sorted[1])}不是連續的兩節，請改勾相鄰的兩節`;
-    return `請勾選連續的兩節（目前勾了 ${sorted.length} 節）`;
+    if(sorted.length > 2) return `目前勾了 ${sorted.length} 節，請再取消 ${sorted.length - 2} 節（要勾相鄰的兩節）`;
+    if(sorted.length === 2) return `${periodLabel(sorted[0])}和${periodLabel(sorted[1])}不是相鄰的兩節，請改勾相鄰的兩節`;
+    return `請勾選相鄰的兩節（目前勾了 ${sorted.length} 節）`;
   }
 
   async function updateCourseIndexEntry(id, patch){
@@ -1087,50 +1096,34 @@ if ('serviceWorker' in navigator) {
     return idx[pos];
   }
 
-  function renderCoursePeriodBox(box, item){
-    const fixed = item.periodMode === 'fixed';
-    const selected = Array.isArray(item.presetPeriods) ? [...item.presetPeriods].sort((a,b) => a-b) : [];
-    let html = `<div class="cp-seg">
-        <button type="button" data-mode="auto" class="${fixed ? '' : 'on'}">⏱ 自動偵測</button>
-        <button type="button" data-mode="fixed" class="${fixed ? 'on' : ''}">📌 固定節次</button>
-      </div>`;
-    if(fixed){
-      html += '<div class="cp-chips">';
-      for(let p = 1; p <= 8; p++){
-        const on = selected.includes(p);
-        html += `<button type="button" class="cp-chip${on ? ' on' : ''}" data-p="${p}" aria-label="第${p}節" aria-pressed="${on}">${on ? '✓' : ''}${p}</button>`;
-      }
-      html += '</div>';
-      const ok = isConsecutivePair(selected);
-      html += ok
-        ? `<div class="cp-hint">點名時直接套用：先點${periodLabel(selected[0])}、再點${periodLabel(selected[1])}</div>`
-        : `<div class="cp-hint warn">${periodPairProblem(selected)}；勾好前暫時依目前時間自動偵測</div>`;
-    }else{
-      html += '<div class="cp-hint">依照「設定」裡的上課時間，自動判斷目前是第幾節</div>';
-    }
-    box.innerHTML = html;
-    box.querySelectorAll('.cp-seg button').forEach(b => b.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const updated = await updateCourseIndexEntry(item.id, { periodMode: b.dataset.mode });
-      if(updated){ Object.assign(item, updated); renderCoursePeriodBox(box, item); }
-    }));
-    box.querySelectorAll('.cp-chip').forEach(b => b.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      // 可以自由點選、不限數量；剛好兩節時才會在點名時套用。
-      const p = Number(b.dataset.p);
-      let next = selected.includes(p) ? selected.filter(x => x !== p) : [...selected, p];
-      next.sort((a,b) => a-b);
-      const updated = await updateCourseIndexEntry(item.id, { presetPeriods: next });
-      if(updated){ Object.assign(item, updated); renderCoursePeriodBox(box, item); }
-    }));
+  // 把勾選中的節次存進課程設定；勾成相鄰的兩節時，如果正開著這門課，也同步更新點名表格用的節次。
+  async function saveCoursePeriods(id, list){
+    const sorted = [...list].sort((a,b) => a-b);
+    const updated = await updateCourseIndexEntry(id, { presetPeriods: sorted });
+    if(id === currentCourseId) currentCoursePreset = getCoursePreset(updated);
+    return updated;
   }
 
-  // 固定節次模式下，第一次點名送出後要跳去的節次：剛點完第一節固定節次 → 第二節固定節次；其他情況照舊往後一節。
-  function nextPeriodAfter(period){
-    const preset = currentCoursePreset;
-    if(preset && period === preset[0]) return preset[1];
-    if(preset && period === preset[1]) return preset[0]; // 先點了後面那節，接著就是回頭補前面那節
-    return Math.min(8, (period || 0) + 1);
+  function renderCoursePeriodBox(box, item){
+    const selected = Array.isArray(item.presetPeriods) ? [...item.presetPeriods].sort((a,b) => a-b) : [];
+    let html = '<div class="cp-chips">';
+    for(let p = 1; p <= 8; p++){
+      const on = selected.includes(p);
+      html += `<button type="button" class="cp-chip${on ? ' on' : ''}" data-p="${p}" aria-label="第${p}節" aria-pressed="${on}">${on ? '✓' : ''}${p}</button>`;
+    }
+    html += '</div>';
+    html += isConsecutivePair(selected)
+      ? `<div class="cp-hint">上課節次：${periodLabel(selected[0])}、${periodLabel(selected[1])}</div>`
+      : `<div class="cp-hint warn">${periodPairProblem(selected)}，才能開始點名</div>`;
+    box.innerHTML = html;
+    box.querySelectorAll('.cp-chip').forEach(b => b.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      // 可以自由點選、不限數量；勾成相鄰的兩節時才算設定完成。
+      const p = Number(b.dataset.p);
+      const next = selected.includes(p) ? selected.filter(x => x !== p) : [...selected, p];
+      const updated = await saveCoursePeriods(item.id, next);
+      if(updated){ Object.assign(item, updated); renderCoursePeriodBox(box, item); }
+    }));
   }
 
   async function openCourse(id){
@@ -1139,23 +1132,17 @@ if ('serviceWorker' in navigator) {
     currentCourseId = id;
     currentRoster = roster;
     rosterEditMode = false;
-    manualPeriod = null;
     currentCoursePreset = getCoursePreset((await getIndex()).find(c => c.id === id));
     lastCompletedSessions = null;
-    editingPair = null;
+    periodPanelOpen = false;
+    panelSelection = null;
+    // 清掉舊版本（一節一節分開點名）留下的暫存欄位，避免資料越存越多
+    delete currentRoster.pendingSession;
+    delete currentRoster.periodDrafts;
+    delete currentRoster.submittedPeriods;
+    Object.values(currentRoster.classes).forEach(list => list.forEach(s => { delete s.absent; }));
     await checkDayRollover(); // 如果距離上次點名已經跨到新的一天，先把舊的暫存資料清乾淨
-    // reset attendance state: everyone present by default
-    Object.values(currentRoster.classes).forEach(students => {
-      students.forEach(s => { s.absent = false; });
-    });
-    if(currentCoursePreset){
-      const pending = currentRoster.pendingSession;
-      const started = pending && pending.date === taipeiDateStr();
-      manualPeriod = started ? nextPeriodAfter(pending.period) : currentCoursePreset[0];
-    }
-    // 如果今天已經對目前這個節次輸入過紀錄（例如中途切出去又回來），直接帶入，避免看起來像資料不見了。
-    const auto = await getCurrentPeriod();
-    loadPeriodForDisplay(currentPickerValue(auto) || null);
+    ensureToday();
     renderAttendance();
     showScreen('attend');
   }
@@ -1436,12 +1423,16 @@ if ('serviceWorker' in navigator) {
     if(classScrollHandler) window.removeEventListener('scroll', classScrollHandler);
     if(classResizeHandler) window.removeEventListener('resize', classResizeHandler);
     $('attendCourseName').textContent = currentRoster.name;
-    updateLiveClock();
-    refreshSessionUI();
+    renderAttendPeriodPanel();
+    updateGenBtn();
 
     const editBtn = $('editRosterBtn');
     editBtn.textContent = rosterEditMode ? '完成編輯' : '休學簡易刪除';
     editBtn.classList.toggle('active', rosterEditMode);
+
+    const preset = currentCoursePreset;
+    // 亮起來的兩節是寬欄（方便點），其他節次是窄欄
+    const colTpl = Array.from({length:8}, (_, i) => (preset && preset.includes(i+1)) ? 'var(--rc-on-w)' : 'var(--rc-off-w)').join(' ');
 
     const container = $('classContainer');
     container.innerHTML = '';
@@ -1451,33 +1442,74 @@ if ('serviceWorker' in navigator) {
         const block = document.createElement('div');
         block.className = 'class-block';
         block.dataset.className = cls;
-        block.innerHTML = `<div class="class-title">${escapeHtml(cls)}<div class="dash"></div></div>
-          <div class="student-grid"></div>`;
-        const grid = block.querySelector('.student-grid');
+        block.innerHTML = `<div class="class-title">${escapeHtml(cls)}<div class="dash"></div></div><div class="rc-table"></div>`;
+        const table = block.querySelector('.rc-table');
+        table.style.setProperty('--rc-cols', colTpl);
+
+        if(!rosterEditMode){
+          const head = document.createElement('div');
+          head.className = 'rc-row rc-head';
+          let h = '<div class="rc-hseat">座號</div><div class="rc-hname">姓名</div>';
+          for(let p = 1; p <= 8; p++){
+            const on = slotOfPeriod(p) >= 0;
+            h += `<div class="rc-tab ${on ? 'on' : 'off'}">${on ? `第${p}節` : p}</div>`;
+          }
+          head.innerHTML = h;
+          table.appendChild(head);
+        }
 
         currentRoster.classes[cls].forEach(stu => {
-          const chip = document.createElement('div');
-          chip.className = 'student-chip' + (stu.absent ? ' absent' : '') + (rosterEditMode ? ' edit-mode' : '');
-          chip.innerHTML = `<span class="seat">${escapeHtml(stu.seat)}</span><span class="nm">${escapeHtml(stu.name || '座號'+stu.seat)}</span><div class="period-strip" aria-hidden="true"></div><button type="button" class="del-student" aria-label="刪除這位學生">✕</button>`;
-          const strip = chip.querySelector('.period-strip');
-          chip._refreshStrip = () => renderPeriodStrip(strip, cls, stu);
-          chip._refreshStrip();
-          chip.addEventListener('click', () => {
-            if(rosterEditMode) return;
-            stu.absent = !stu.absent;
-            chip.classList.toggle('absent', stu.absent);
-            chip._refreshStrip();
-            updateSummary();
-            if(currentCourseId && currentRoster) setRoster(currentCourseId, currentRoster);
-          });
-          chip.querySelector('.del-student').addEventListener('click', (e) => {
-            e.stopPropagation();
-            const label = stu.name ? `${cls} ${stu.seat}號 ${stu.name}` : `${cls} ${stu.seat}號`;
-            const ok = window.confirm(`確定要從名單中刪除「${label}」嗎？\n\n這個動作無法復原（例如學生休學時使用）。`);
-            if(!ok) return;
-            removeStudent(cls, stu.seat);
-          });
-          grid.appendChild(chip);
+          const row = document.createElement('div');
+          row.className = 'rc-row' + (rosterEditMode ? ' edit' : '');
+          const name = stu.name || '座號' + stu.seat;
+          row.innerHTML = `<div class="rc-seat">${escapeHtml(stu.seat)}</div><div class="rc-name">${escapeHtml(name)}</div>`;
+
+          if(rosterEditMode){
+            const del = document.createElement('button');
+            del.type = 'button';
+            del.className = 'rc-del';
+            del.textContent = '✕';
+            del.setAttribute('aria-label', `刪除 ${name}`);
+            del.addEventListener('click', () => {
+              const label = stu.name ? `${cls} ${stu.seat}號 ${stu.name}` : `${cls} ${stu.seat}號`;
+              const ok = window.confirm(`確定要從名單中刪除「${label}」嗎？\n\n這個動作無法復原（例如學生休學時使用）。`);
+              if(!ok) return;
+              removeStudent(cls, stu.seat);
+            });
+            row.appendChild(del);
+          }else{
+            const refreshRowMark = () => row.classList.toggle('has-absent', isAbsentIn(0, cls, stu.seat) || isAbsentIn(1, cls, stu.seat));
+            for(let p = 1; p <= 8; p++){
+              const slot = slotOfPeriod(p);
+              if(slot < 0){
+                const off = document.createElement('div');
+                off.className = 'rc-cell off';
+                off.setAttribute('aria-hidden', 'true');
+                row.appendChild(off);
+                continue;
+              }
+              const cell = document.createElement('button');
+              cell.type = 'button';
+              const paint = () => {
+                const absent = isAbsentIn(slot, cls, stu.seat);
+                cell.className = 'rc-cell on' + (absent ? ' absent' : '');
+                cell.innerHTML = absent ? '<span class="rc-ring"></span>' : '出席';
+                cell.setAttribute('aria-label', `${name} 第${p}節 ${absent ? '缺席' : '出席'}`);
+                cell.setAttribute('aria-pressed', absent ? 'true' : 'false');
+              };
+              paint();
+              cell.addEventListener('click', () => {
+                toggleAbsent(slot, cls, stu.seat);
+                paint();
+                refreshRowMark();
+                updateSummary();
+                if(currentCourseId && currentRoster) setRoster(currentCourseId, currentRoster);
+              });
+              row.appendChild(cell);
+            }
+            refreshRowMark();
+          }
+          table.appendChild(row);
         });
         container.appendChild(block);
       });
@@ -1488,6 +1520,8 @@ if ('serviceWorker' in navigator) {
     function refreshCurrentClass(){
       if(!blocks.length) return;
       const bar = $('currentClassBar');
+      // 表格的節次標題列要黏在紅色「目前班級」列的正下方
+      document.documentElement.style.setProperty('--rc-sticky-top', (bar.offsetHeight + 2) + 'px');
       const barBottom = bar.getBoundingClientRect().bottom + 8;
       let current = blocks[0];
 
@@ -1505,10 +1539,73 @@ if ('serviceWorker' in navigator) {
       classResizeHandler = refreshCurrentClass;
       window.addEventListener('resize', classResizeHandler);
       refreshCurrentClass();
+      requestAnimationFrame(refreshCurrentClass); // 剛打開課程時畫面還沒顯示，等顯示後再算一次「目前班級」
     }
 
     updateSummary();
   }
+
+  // ---------- 點名畫面上的「本課程節次」設定 ----------
+  let periodPanelOpen = false;
+  let panelSelection = null; // 老師正在勾、還沒勾成相鄰兩節的節次陣列；null = 依照課程設定
+
+  function renderAttendPeriodPanel(){
+    const btn = $('periodEditBtn');
+    const panel = $('attendPeriodPanel');
+    const preset = currentCoursePreset;
+    btn.textContent = preset ? `${periodLabel(preset[0])}、${periodLabel(preset[1])} ✎` : '設定節次 ✎';
+    btn.classList.toggle('warn', !preset);
+    const open = periodPanelOpen || !preset;
+    panel.hidden = !open;
+    if(!open) return;
+    const selected = panelSelection || (preset ? [...preset] : []);
+    const row = $('attendPeriodChips');
+    row.innerHTML = '';
+    for(let p = 1; p <= 8; p++){
+      const on = selected.includes(p);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'rpp-chip' + (on ? ' on' : '');
+      b.textContent = `${on ? '✓' : ''}${p}`;
+      b.setAttribute('aria-label', `第${p}節`);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.addEventListener('click', () => toggleAttendPeriod(p));
+      row.appendChild(b);
+    }
+    const ok = isConsecutivePair(selected);
+    const hint = $('attendPeriodHint');
+    hint.className = 'rpp-hint' + (ok ? '' : ' warn');
+    hint.textContent = ok
+      ? `目前是${periodLabel(selected[0])}、${periodLabel(selected[1])}；改節次時，已經畫的圈會照順序一起搬過去`
+      : periodPairProblem(selected);
+    $('attendPeriodDone').hidden = !ok;
+  }
+
+  async function toggleAttendPeriod(p){
+    let selected = [...(panelSelection || currentCoursePreset || [])];
+    selected = selected.includes(p) ? selected.filter(x => x !== p) : [...selected, p];
+    selected.sort((a,b) => a-b);
+    if(isConsecutivePair(selected)){
+      panelSelection = null;
+      await saveCoursePeriods(currentCourseId, selected);
+      renderAttendance(); // 表格欄位跟著新節次重畫
+    }else{
+      panelSelection = selected;
+      renderAttendPeriodPanel();
+    }
+  }
+
+  $('periodEditBtn').addEventListener('click', () => {
+    if(!currentCoursePreset) return; // 還沒設定節次時面板本來就開著
+    periodPanelOpen = !periodPanelOpen;
+    panelSelection = null;
+    renderAttendPeriodPanel();
+  });
+  $('attendPeriodDone').addEventListener('click', () => {
+    periodPanelOpen = false;
+    panelSelection = null;
+    renderAttendPeriodPanel();
+  });
 
   async function removeStudent(cls, seat){
     if(!currentRoster || !currentRoster.classes[cls]) return;
@@ -1532,13 +1629,13 @@ if ('serviceWorker' in navigator) {
   });
 
   function updateSummary(){
-    let total=0, absent=0;
-    Object.values(currentRoster.classes).forEach(list => {
-      total += list.length;
-      absent += list.filter(s=>s.absent).length;
-    });
+    let total = 0;
+    Object.values(currentRoster.classes).forEach(list => { total += list.length; });
     $('totalCount').textContent = total;
-    $('absentCount').textContent = absent;
+    const el = $('absentSummary');
+    if(!currentCoursePreset){ el.textContent = '尚未設定節次'; return; }
+    const count = slot => Object.values(slotRecords(slot)).reduce((n, l) => n + l.length, 0);
+    el.innerHTML = `${periodLabel(currentCoursePreset[0])}缺 <b>${count(0)}</b> 人・${periodLabel(currentCoursePreset[1])}缺 <b>${count(1)}</b> 人`;
   }
 
 
@@ -1549,7 +1646,6 @@ if ('serviceWorker' in navigator) {
   const DRIVE_LOG_KEY = 'drive-log-url';
   const DEFAULT_DRIVE_FOLDER_URL = 'https://drive.google.com/drive/folders/1hCLx-IBTBdEbXhGz4NiXZmIcyr89WR53';
   const DEFAULT_DRIVE_LOG_URL = 'https://script.google.com/macros/s/AKfycbxNZpJtEQam_3LI2DQlIMm5bIE6YuLqpFiGu25cRZqRWU-CrUvI_6wJ_dxccAP6LUpisQ/exec';
-  const PERIODS_KEY = 'attendance-periods';
   const MESSAGE_PREFIX_KEY = 'message-prefix';
   const DEFAULT_MESSAGE_PREFIX = '@程程';
   // 「訊息開頭文字」的開關，跨群/本土語跟社團模式分開記憶，互不影響：
@@ -1610,35 +1706,11 @@ if ('serviceWorker' in navigator) {
       document.body.appendChild(script);
     });
   }
-  const DEFAULT_PERIODS = [
-    ['08:05','08:55'],
-    ['09:10','10:00'],
-    ['10:10','11:00'],
-    ['11:10','12:00'],
-    ['13:00','13:50'],
-    ['14:00','14:50'],
-    ['15:05','15:55'],
-    ['16:05','16:55']
-  ];
-
   const GOOGLE_APPS_SCRIPT_CODE = "/**\n * 跨群選修點名｜Google Apps Script\n *\n * 用途：讓 index.html 把點名結果寫進指定的 Google 試算表。\n * Web App 以「執行身分：我」部署後，網頁把試算表網址與點名資料 POST 過來。\n *\n * 試算表格式：\n * A 欄：班級\n * B 欄：座號\n * C 欄：姓名\n * D 欄開始：每次點名一個新欄，第一列寫「日期｜第X節」\n * 例如：D1 = 2026/09/06｜第3節\n *       D2:Dn = 出席／未出席\n */\n\nfunction doGet() {\n  return ContentService\n    .createTextOutput('跨群選修點名 Google 紀錄服務正常運作')\n    .setMimeType(ContentService.MimeType.TEXT);\n}\n\nfunction doPost(e) {\n  const lock = LockService.getScriptLock();\n  lock.waitLock(30000);\n  try {\n    if (!e || !e.postData || !e.postData.contents) {\n      return jsonOutput({ok:false, message:'沒有收到資料'});\n    }\n\n    const data = JSON.parse(e.postData.contents);\n    const sheetUrl = String(data.sheetUrl || '').trim();\n    if (!sheetUrl) return jsonOutput({ok:false, message:'缺少 Google 試算表網址'});\n\n    const ss = SpreadsheetApp.openByUrl(sheetUrl);\n    const sheet = ss.getSheets()[0];\n\n    const rows = Array.isArray(data.rows) ? data.rows : [];\n    if (!rows.length) return jsonOutput({ok:false, message:'沒有學生資料'});\n\n    const date = String(data.date || '').trim() || Utilities.formatDate(new Date(), 'Asia/Taipei', 'yyyy/MM/dd');\n    const period = String(data.period || '').trim() || '非上課時段';\n    const periodLabel = period === '非上課時段' ? period : '第' + period + '節';\n    const header = date + '｜' + periodLabel;\n\n    // 確保前三欄標題存在。\n    if (sheet.getLastRow() === 0) {\n      sheet.getRange(1, 1, 1, 3).setValues([['班級', '座號', '姓名']]);\n    } else {\n      const first = sheet.getRange(1, 1, 1, 3).getValues()[0];\n      if (!first[0] && !first[1] && !first[2]) {\n        sheet.getRange(1, 1, 1, 3).setValues([['班級', '座號', '姓名']]);\n      }\n    }\n\n    // 每次點名都新增一欄，不覆蓋既有紀錄。\n    const newCol = Math.max(sheet.getLastColumn() + 1, 4);\n    sheet.getRange(1, newCol).setValue(header);\n\n    // 讀取既有學生資料，依「班級 + 座號」找學生所在列。\n    const lastRow = Math.max(sheet.getLastRow(), 2);\n    const existing = lastRow >= 2 ? sheet.getRange(2, 1, lastRow - 1, 3).getValues() : [];\n    const rowMap = new Map();\n    existing.forEach((r, i) => {\n      const key = makeKey(r[0], r[1]);\n      if (key) rowMap.set(key, i + 2);\n    });\n\n    // 若新名單出現原本沒有的學生，就加到最下面。\n    const newStudents = [];\n    rows.forEach(item => {\n      const key = makeKey(item.className, item.seat);\n      if (key && !rowMap.has(key)) {\n        newStudents.push([\n          String(item.className || ''),\n          String(item.seat || ''),\n          String(item.name || '')\n        ]);\n      }\n    });\n\n    if (newStudents.length) {\n      const startRow = Math.max(sheet.getLastRow() + 1, 2);\n      sheet.getRange(startRow, 1, newStudents.length, 3).setValues(newStudents);\n      newStudents.forEach((r, i) => {\n        const key = makeKey(r[0], r[1]);\n        rowMap.set(key, startRow + i);\n      });\n    }\n\n    // 寫入本次點名狀態。\n    rows.forEach(item => {\n      const key = makeKey(item.className, item.seat);\n      if (!key) return;\n      const row = rowMap.get(key);\n      if (!row) return;\n      sheet.getRange(row, newCol).setValue(String(item.status || ''));\n    });\n\n    // 簡單格式化，讓期末查看比較清楚。\n    sheet.getRange(1, 1, 1, newCol).setFontWeight('bold');\n    sheet.getRange(1, newCol).setWrap(true);\n    sheet.setFrozenRows(1);\n    sheet.setFrozenColumns(3);\n    sheet.autoResizeColumns(1, 3);\n\n    return jsonOutput({ok:true, message:'已新增一欄點名紀錄', column:newCol, header:header});\n  } catch (err) {\n    return jsonOutput({ok:false, message:String(err && err.message ? err.message : err)});\n  } finally {\n    lock.releaseLock();\n  }\n}\n\nfunction makeKey(cls, seat) {\n  const c = String(cls || '').trim();\n  const s = String(seat || '').trim();\n  return c && s ? c + '|' + s : '';\n}\n\nfunction jsonOutput(obj) {\n  return ContentService\n    .createTextOutput(JSON.stringify(obj))\n    .setMimeType(ContentService.MimeType.JSON);\n}\n";
 
   const DRIVE_APPS_SCRIPT_CODE = "/**\n * 課程名單雲端硬碟讀取服務｜Google Apps Script\n *\n * 用途：讓點名 App 讀取你指定的 Google 雲端硬碟資料夾裡的課程名單檔案，\n * 在「新增課程」畫面用下拉選單直接選課程，不用每次手動上傳檔案。\n *\n * 這是一支「獨立」的 Apps Script 專案（跟「Google 試算表同步」用的那一支\n * 是分開的兩個部署，各自有各自的網址）。部署方式：\n *\n * 1. 用你的私人 Google 帳號到 script.google.com，點「新增專案」\n *    （這次不需要從某一份試算表裡面開，直接開一個獨立專案就可以）。\n * 2. 把這個檔案的內容整段貼進去，取代原本的內容。\n * 3. 如果你的資料夾裡「只有 Google 試算表、沒有 .xlsx 檔案」，可以跳過這一步；\n *    如果資料夾裡「有 .xlsx 檔案」，需要多加一個服務才能讀取：\n *    左側選單「服務」旁的 ＋ 號 → 選「Drive API」→ 版本選「v3」→ 按「加入」。\n * 4. 按「部署」→「新增部署作業」→ 類型選「網頁應用程式」→\n *    「具有存取權的使用者」選「所有人」→ 部署 → 依需要完成帳號授權。\n * 5. 複製部署後的網址，貼到 App 設定頁「課程名單雲端硬碟」的\n *    「雲端硬碟讀取服務網址」欄位。\n *\n * 支援的檔案格式：\n * - Google 試算表（推薦，讀取最穩定、不需要額外設定）\n * - .xlsx 檔案（會先自動轉成暫存的 Google 試算表讀取，讀完立刻把暫存檔丟進垃圾桶；\n *   需要完成上面第 3 步的 Drive API 進階服務設定）\n *\n * 名單檔案內容格式：跟本機上傳完全相同——第一列是標題列，\n * 需包含「班級」「座號」欄位，姓名欄位可選填。\n *\n * 【關於暫存檔案】讀取 .xlsx 檔案時，會先在你的雲端硬碟「我的雲端硬碟」根目錄暫時\n * 建立一份名稱開頭是 __attendance_temp_convert__ 的 Google 試算表副本，讀完內容後\n * 會立刻自動丟進垃圾桶。如果你之前用的是舊版程式碼（用 Drive.Files.delete 刪暫存檔，\n * 這個方法其實不存在、會靜默失敗），這些暫存檔會一直留著清不掉——把這裡的新版程式碼\n * 貼上重新部署後，之後讀取就不會再累積；已經留下來的舊檔案，可以用最下面的\n * cleanupTempFiles() 一次清掉，或是在 App 的「進階同步設定」畫面按「清除雲端硬碟暫存檔案」。\n *\n * 【首頁廣告開關】App 首頁最下面有一小塊工商推薦，開或關由這支服務統一控制——\n * 你按一下連結，全部使用者（包括已經加到手機主畫面的）下次打開 App 就會照你設定的\n * 狀態顯示或隱藏，不需要請大家重新安裝。設定方式：\n * 1. 把下面 AD_TOGGLE_SECRET 的值改成只有你自己知道的一串英數字（不要用預設值）。\n * 2. 改好後重新「部署」一次（管理部署作業 → 編輯 → 版本選新版本 → 部署），\n *    網址通常不會變，不用重新貼到 App 設定裡。\n * 3. 之後開廣告，用手機瀏覽器打開（建議加入書籤）：\n *    你的部署網址?action=setAdConfig&secret=你的密語&on=1\n *    關廣告則把 on=1 改成 on=0。\n */\n\nconst XLSX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';\nconst TEMP_FILE_PREFIX = '__attendance_temp_convert__';\nconst AD_TOGGLE_SECRET = 'CHANGE_ME_TO_YOUR_OWN_SECRET';\n\nfunction doGet(e) {\n  const p = (e && e.parameter) ? e.parameter : {};\n  const callback = String(p.callback || '').replace(/[^a-zA-Z0-9_$.]/g, '');\n\n  let result;\n  try {\n    if (p.action === 'listFolder') {\n      result = listFolder(String(p.folderUrl || p.folderId || '').trim());\n    } else if (p.action === 'readFile') {\n      result = readFile(String(p.fileId || '').trim(), String(p.mimeType || '').trim());\n    } else if (p.action === 'cleanupTempFiles') {\n      result = cleanupTempFiles();\n    } else if (p.action === 'getAdConfig') {\n      result = getAdConfig();\n    } else if (p.action === 'setAdConfig') {\n      result = setAdConfig(String(p.secret || ''), String(p.on || ''));\n    } else {\n      result = { ok: true, message: '課程名單雲端硬碟讀取服務正常運作' };\n    }\n  } catch (err) {\n    result = { ok: false, message: String(err && err.message ? err.message : err) };\n  }\n\n  const text = JSON.stringify(result);\n  if (callback) {\n    return ContentService\n      .createTextOutput(callback + '(' + text + ');')\n      .setMimeType(ContentService.MimeType.JAVASCRIPT);\n  }\n  return ContentService.createTextOutput(text).setMimeType(ContentService.MimeType.JSON);\n}\n\n// 從網址或直接貼的 ID 裡取出雲端硬碟資料夾的 ID。\nfunction extractDriveId(input) {\n  const s = String(input || '').trim();\n  const m = s.match(/[-\\w]{20,}/);\n  return m ? m[0] : s;\n}\n\n// 列出資料夾裡的課程名單檔案（Google 試算表 + .xlsx）。\nfunction listFolder(folderUrlOrId) {\n  const folderId = extractDriveId(folderUrlOrId);\n  if (!folderId) return { ok: false, message: '缺少雲端硬碟資料夾網址' };\n\n  const folder = DriveApp.getFolderById(folderId);\n  const files = [];\n\n  const sheetIter = folder.getFilesByType(MimeType.GOOGLE_SHEETS);\n  while (sheetIter.hasNext()) {\n    const f = sheetIter.next();\n    files.push({ id: f.getId(), name: f.getName(), mimeType: MimeType.GOOGLE_SHEETS });\n  }\n\n  const xlsxIter = folder.getFilesByType(XLSX_MIME_TYPE);\n  while (xlsxIter.hasNext()) {\n    const f = xlsxIter.next();\n    files.push({ id: f.getId(), name: f.getName(), mimeType: XLSX_MIME_TYPE });\n  }\n\n  files.sort(function (a, b) { return a.name.localeCompare(b.name, 'zh-Hant'); });\n  return { ok: true, folderName: folder.getName(), files: files };\n}\n\n// 讀取單一檔案的內容，回傳跟本機上傳解析出來一樣的「整張表格」資料（二維陣列）。\nfunction readFile(fileId, mimeType) {\n  if (!fileId) return { ok: false, message: '缺少檔案 ID' };\n\n  let ss;\n  let tempFileId = null;\n  try {\n    if (mimeType === XLSX_MIME_TYPE) {\n      // .xlsx 檔案：先轉成暫存的 Google 試算表才能讀取內容，讀完立刻丟進垃圾桶。\n      const blob = DriveApp.getFileById(fileId).getBlob();\n      const converted = Drive.Files.create(\n        { name: TEMP_FILE_PREFIX + fileId, mimeType: MimeType.GOOGLE_SHEETS },\n        blob\n      );\n      tempFileId = converted.id;\n      ss = SpreadsheetApp.openById(converted.id);\n    } else {\n      ss = SpreadsheetApp.openById(fileId);\n    }\n\n    const sheet = ss.getSheets()[0];\n    const values = sheet.getDataRange().getValues();\n    return { ok: true, rows: values };\n  } catch (err) {\n    if (String(err).indexOf('Drive is not defined') !== -1) {\n      return { ok: false, message: '讀取 .xlsx 檔案需要先啟用「Drive API」進階服務，請參考程式最上面的說明完成設定。' };\n    }\n    throw err;\n  } finally {\n    if (tempFileId) {\n      // 用 DriveApp（不需要另外啟用進階服務）把暫存檔丟進垃圾桶，比較不容易失敗；\n      // 之前用 Drive.Files.delete(...) 這個方法其實不存在（應該是 Drive.Files.remove），\n      // 呼叫下去會直接丟例外，被下面的 catch 默默吃掉，暫存檔才會一直沒被清掉、越堆越多。\n      try { DriveApp.getFileById(tempFileId).setTrashed(true); } catch (e2) { /* 刪不掉暫存檔也沒關係，不影響本次讀取結果 */ }\n    }\n  }\n}\n\n// 一次清掉之前（用舊版程式碼）留下來、清不掉的暫存轉檔檔案。\n// 可以透過 App 的「進階同步設定」畫面按鈕呼叫，也可以直接在 Apps Script 編輯器手動執行這個函式。\nfunction cleanupTempFiles() {\n  const iter = DriveApp.searchFiles(\n    \"title contains '\" + TEMP_FILE_PREFIX + \"' and trashed = false\"\n  );\n  let count = 0;\n  while (iter.hasNext()) {\n    const f = iter.next();\n    try {\n      f.setTrashed(true);\n      count++;\n    } catch (e) { /* 單一檔案清不掉就跳過，不中斷整體清理 */ }\n  }\n  return { ok: true, message: '已把 ' + count + ' 個暫存檔案丟進垃圾桶（雲端硬碟的「垃圾桶」裡還會留 30 天，之後才會永久刪除）。', count: count };\n}\n\n// 讀取目前首頁廣告的開關狀態，供所有使用者的 App 查詢（不需要密語，純讀取）。\nfunction getAdConfig() {\n  const props = PropertiesService.getScriptProperties();\n  const on = props.getProperty('AD_ON') === '1';\n  return { ok: true, adOn: on };\n}\n\n// 老師用來切換廣告開關的動作，需要通關密語才能改，避免被別人亂改。\nfunction setAdConfig(secret, onParam) {\n  if (!AD_TOGGLE_SECRET || AD_TOGGLE_SECRET === 'CHANGE_ME_TO_YOUR_OWN_SECRET') {\n    return { ok: false, message: '請先把程式最上面的 AD_TOGGLE_SECRET 改成你自己的密語，再重新部署一次。' };\n  }\n  if (secret !== AD_TOGGLE_SECRET) {\n    return { ok: false, message: '密語不正確，沒有權限切換廣告開關。' };\n  }\n  const on = (onParam === '1' || onParam === 'true');\n  PropertiesService.getScriptProperties().setProperty('AD_ON', on ? '1' : '0');\n  return { ok: true, message: '廣告已' + (on ? '開啟' : '關閉') + '，使用者下次打開 App 時就會套用新狀態。', adOn: on };\n}\n";
 
   async function getSetting(key, fallback=''){ return (await storageGet(key)) ?? fallback; }
-
-  function buildPeriodSettings(){
-    const box = $('periodSettings');
-    box.innerHTML = '';
-    for(let i=0;i<8;i++){
-      const row=document.createElement('div'); row.className='period-row';
-      row.innerHTML=`<div class="pname">第 ${i+1} 節</div>
-        <input type="time" id="periodStart${i}" aria-label="第 ${i+1} 節開始時間">
-        <div class="psep">～</div>
-        <input type="time" id="periodEnd${i}" aria-label="第 ${i+1} 節結束時間">`;
-      box.appendChild(row);
-    }
-  }
 
   function buildGoogleGuideCode(){
     const box=$('appsScriptCode');
@@ -1651,12 +1723,6 @@ if ('serviceWorker' in navigator) {
   }
 
   async function loadSettings(){
-    const savedPeriods = await getSetting(PERIODS_KEY, null);
-    const periods = savedPeriods ? JSON.parse(savedPeriods) : DEFAULT_PERIODS;
-    periods.forEach((p,i)=>{
-      if($('periodStart'+i)) $('periodStart'+i).value=p[0]||'';
-      if($('periodEnd'+i)) $('periodEnd'+i).value=p[1]||'';
-    });
     $('googleSheetUrlInput').value = await getSetting(GOOGLE_SHEET_KEY,'');
     $('googleLogUrlInput').value = await getSetting(GOOGLE_LOG_KEY,'');
     $('driveFolderUrlInput').value = await getSetting(DRIVE_FOLDER_KEY, DEFAULT_DRIVE_FOLDER_URL);
@@ -1683,74 +1749,17 @@ if ('serviceWorker' in navigator) {
   }
 
   async function saveSettings(){
-    const periods=[];
-    for(let i=0;i<8;i++){
-      periods.push([$('periodStart'+i).value,$('periodEnd'+i).value]);
-    }
-    await storageSet(PERIODS_KEY, JSON.stringify(periods));
     await storageSet(GOOGLE_SHEET_KEY, $('googleSheetUrlInput').value.trim());
     await storageSet(GOOGLE_LOG_KEY, $('googleLogUrlInput').value.trim());
     await storageSet(DRIVE_FOLDER_KEY, $('driveFolderUrlInput').value.trim());
     await storageSet(DRIVE_LOG_KEY, $('driveLogUrlInput').value.trim());
     await storageSet(MESSAGE_PREFIX_KEY, $('messagePrefixInput').value);
     if($('adSecretInput')) await storageSet(AD_SECRET_KEY, $('adSecretInput').value);
-    updateCurrentPeriod();
     updateGoogleNote();
     toast('設定已儲存');
   }
 
-  async function getPeriods(){
-    const saved = await getSetting(PERIODS_KEY, null);
-    return saved ? JSON.parse(saved) : DEFAULT_PERIODS;
-  }
-
-  function hmToMinutes(hm){
-    if(!/^\d{2}:\d{2}$/.test(hm||'')) return null;
-    const [h,m]=hm.split(':').map(Number); return h*60+m;
-  }
-
-  function taipeiMinutesNow(){
-    const parts=new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
-    const h=Number(parts.find(x=>x.type==='hour')?.value||0);
-    const m=Number(parts.find(x=>x.type==='minute')?.value||0);
-    return h*60+m;
-  }
-
-  async function getCurrentPeriod(){
-    const periods=await getPeriods();
-    const minutes=taipeiMinutesNow();
-    for(let i=0;i<periods.length;i++){
-      const start=hmToMinutes(periods[i][0]), end=hmToMinutes(periods[i][1]);
-      if(start!==null && end!==null && start<=minutes && minutes<=end) return i+1;
-    }
-    return null;
-  }
-
-  function formatTaipeiTime(){
-    return new Intl.DateTimeFormat('zh-TW',{
-      timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false
-    }).format(new Date());
-  }
-
-  async function updateLiveClock(){
-    const clock = $('liveClock');
-    const periodEl = $('livePeriod');
-    if(!clock || !periodEl) return;
-    clock.textContent = formatTaipeiTime();
-    const p = await getCurrentPeriod();
-    periodEl.textContent = currentCoursePreset
-      ? `（本課程固定：第${currentCoursePreset[0]}、${currentCoursePreset[1]}節）`
-      : (p ? `（自動偵測：第${p}節，僅供參考）` : '（自動偵測：非上課時段，僅供參考）');
-  }
-
-  async function updateCurrentPeriod(){
-    await checkDayRollover();
-    await updateLiveClock();
-    if(currentRoster) await refreshSessionUI();
-  }
-
   $('settingsBtn').addEventListener('click', async ()=>{
-    buildPeriodSettings();
     buildGoogleGuideCode();
     buildDriveGuideCode();
     await loadSettings();
@@ -1767,28 +1776,7 @@ if ('serviceWorker' in navigator) {
       toast(nowEnabled ? '訊息開頭文字已開啟' : '訊息開頭文字已關閉');
     });
   }
-  // 手動「取得最新版本」：把服務工作者快取起來的舊版本清掉、確認新版本可以立刻生效，
-  // 再用不帶快取的方式重新整理，確保就算使用者一直沒關掉這個分頁，也一定能拿到最新程式碼。
-  // 重新整理後會用 sessionStorage 記一個標記，下面 init 區塊看到這個標記就跳出「已更新成最新版本」。
-  async function forceRefreshApp(){
-    try{
-      if('serviceWorker' in navigator){
-        const reg = await navigator.serviceWorker.getRegistration();
-        if(reg){ await reg.update(); }
-      }
-    }catch(e){ /* 檢查更新失敗也沒關係，下面還是會照樣重新整理 */ }
-    try{
-      if('caches' in window){
-        const keys = await caches.keys();
-        await Promise.all(keys.map(k => caches.delete(k)));
-      }
-    }catch(e){ /* 清快取失敗也沒關係，不影響接下來的重新整理 */ }
-    try{ sessionStorage.setItem('justRefreshedApp','1'); }catch(e){}
-    location.reload();
-  }
-  if($('refreshAppBtn')) $('refreshAppBtn').addEventListener('click', forceRefreshApp);
-
-  $('backFromSettingsBtn').addEventListener('click', ()=>{ updateCurrentPeriod(); showScreen(currentRoster ? 'attend' : 'home'); });
+  $('backFromSettingsBtn').addEventListener('click', ()=>{ showScreen(currentRoster ? 'attend' : 'home'); });
   $('saveSettingsBtn').addEventListener('click', saveSettings);
   $('openAdvancedSyncBtn').addEventListener('click', async ()=>{
     buildGoogleGuideCode();
@@ -1865,24 +1853,23 @@ if ('serviceWorker' in navigator) {
     return new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).replace(/\//g,'/');
   }
 
-  async function buildGooglePayload(periodOverride){
+  async function buildGooglePayload(period, records){
     const sheetUrl = (await getSetting(GOOGLE_SHEET_KEY,'')).trim();
-    const period = periodOverride !== undefined ? periodOverride : await getCurrentPeriod();
     const now = new Date();
     const dateStr = taipeiDateStr();
     const rows=[];
     Object.keys(currentRoster.classes).forEach(cls=>currentRoster.classes[cls].forEach(stu=>rows.push({
-      className:cls, seat:stu.seat, name:stu.name||'', status:stu.absent?'未出席':'出席'
+      className:cls, seat:stu.seat, name:stu.name||'', status:((records && records[cls]) || []).includes(stu.seat)?'未出席':'出席'
     })));
     return {sheetUrl, course:currentRoster.name, date:dateStr, period:period?String(period):'非上課時段', timestamp:now.toISOString(), rows};
   }
 
-  async function recordToGoogle(periodOverride){
+  async function recordToGoogle(period, records){
     const sheetUrl = (await getSetting(GOOGLE_SHEET_KEY,'')).trim();
     const webAppUrl = (await getSetting(GOOGLE_LOG_KEY,'')).trim();
     if(!sheetUrl || !webAppUrl) return {configured:false};
     try{
-      const payload=await buildGooglePayload(periodOverride);
+      const payload=await buildGooglePayload(period, records);
       await fetch(webAppUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
       return {configured:true, sent:true};
     }catch(e){
@@ -2041,128 +2028,57 @@ if ('serviceWorker' in navigator) {
   function periodLabel(p){ return p ? `第${p}節` : '非上課時段'; }
   function statusLabel(seats){ return (seats && seats.length) ? `缺席${seats.join('、')}號` : '全員到齊'; }
 
-  function snapshotAbsences(){
-    const records = {};
+  // ---------- 今天的點名紀錄（兩節） ----------
+  // currentRoster.today = { date, absent: [ {班級:[缺席座號]}, {班級:[缺席座號]} ] }
+  // absent[0] 是本課程較前面那節、absent[1] 是較後面那節；實際是第幾節一律看課程設定，
+  // 所以老師事後改節次（例如第4、5節改成第5、6節），已經畫的圈會照順序一起搬過去。
+  function ensureToday(){
+    const today = taipeiDateStr();
+    if(!currentRoster.today || currentRoster.today.date !== today){
+      currentRoster.today = { date: today, absent: [{}, {}] };
+    }
+    return currentRoster.today;
+  }
+
+  // 第 p 節是這門課的第幾個時段（0 或 1）；不是本課程的節次回傳 -1。
+  function slotOfPeriod(p){
+    return currentCoursePreset ? currentCoursePreset.indexOf(p) : -1;
+  }
+
+  function isAbsentIn(slot, cls, seat){
+    const list = ensureToday().absent[slot][cls];
+    return !!(list && list.includes(seat));
+  }
+
+  function toggleAbsent(slot, cls, seat){
+    const rec = ensureToday().absent[slot];
+    const list = rec[cls] || (rec[cls] = []);
+    const i = list.indexOf(seat);
+    if(i >= 0) list.splice(i, 1); else list.push(seat);
+  }
+
+  // 某個時段的缺席紀錄，依名單順序排好座號（已經刪掉的學生不會出現）。
+  function slotRecords(slot){
+    const rec = ensureToday().absent[slot];
+    const out = {};
     Object.keys(currentRoster.classes).forEach(cls => {
-      records[cls] = currentRoster.classes[cls].filter(s=>s.absent).map(s=>s.seat);
+      const absent = new Set(rec[cls] || []);
+      out[cls] = currentRoster.classes[cls].filter(s => absent.has(s.seat)).map(s => s.seat);
     });
-    return records;
-  }
-
-  function resetAttendanceToPresent(){
-    Object.values(currentRoster.classes).forEach(list => list.forEach(s => { s.absent = false; }));
-  }
-
-  // 依「班級 → 缺席座號陣列」的紀錄，還原目前畫面上每位學生的出席狀態（供返回修改時使用）。
-  function restoreRecords(records){
-    Object.keys(currentRoster.classes).forEach(cls => {
-      const absentSeats = new Set((records && records[cls]) || []);
-      currentRoster.classes[cls].forEach(s => { s.absent = absentSeats.has(s.seat); });
-    });
-  }
-
-  // ---------- 節次草稿：讓老師可以自由切換節次調整器，每個節次各自保留當時輸入的紀錄 ----------
-  // 存放在 currentRoster.periodDrafts = { date, records: { '<節次或none>': {班級: [缺席座號]} } }
-  function draftKey(period){ return period === null || period === undefined ? 'none' : String(period); }
-
-  function ensureDraftsToday(){
-    const today = taipeiDateStr();
-    if(!currentRoster.periodDrafts || currentRoster.periodDrafts.date !== today){
-      currentRoster.periodDrafts = { date: today, records: {} };
-    }
-    return currentRoster.periodDrafts;
-  }
-
-  function saveDraftForPeriod(period){
-    const drafts = ensureDraftsToday();
-    drafts.records[draftKey(period)] = snapshotAbsences();
-  }
-
-  // 找出某個節次「當初輸入過的紀錄」：優先看草稿，再看目前記錄中、已完成送出的第一節/第二節紀錄。
-  // 都找不到就回傳 null，代表這個節次還沒有人點過名，畫面上應該顯示全員出席。
-  function getRecordsForPeriod(period){
-    const today = taipeiDateStr();
-    const drafts = currentRoster.periodDrafts;
-    if(drafts && drafts.date === today && drafts.records[draftKey(period)]){
-      return drafts.records[draftKey(period)];
-    }
-    const pending = currentRoster.pendingSession;
-    if(pending && pending.date === today && pending.period === period) return pending.records;
-    if(lastCompletedSessions && lastCompletedSessions.date === today){
-      if(lastCompletedSessions.first.period === period) return lastCompletedSessions.first.records;
-      if(lastCompletedSessions.second.period === period) return lastCompletedSessions.second.records;
-    }
-    return null;
-  }
-
-  // ---------- 學生列右側的「今天各節狀態格」 ----------
-  // 只採用「真的按過送出」的節次（存在 currentRoster.submittedPeriods = { date, records: { 節次: {班級: [缺席座號]} } }），
-  // 再加上目前正在登記的節次（直接看畫面上的即時狀態）。只用 －／＋ 翻過去、沒有送出的節次一律算「還沒填」，顯示灰色。
-  let stripCurrentPeriod = null; // 目前節次調整器上的節次（null = 非上課時段），由 refreshPeriodPicker 更新
-
-  function ensureSubmittedToday(){
-    const today = taipeiDateStr();
-    if(!currentRoster.submittedPeriods || currentRoster.submittedPeriods.date !== today){
-      currentRoster.submittedPeriods = { date: today, records: {} };
-    }
-    return currentRoster.submittedPeriods;
-  }
-
-  function markSubmitted(period, records){
-    if(!period) return;
-    ensureSubmittedToday().records[String(period)] = records;
-  }
-
-  function renderPeriodStrip(strip, cls, stu){
-    if(!strip || !currentRoster) return;
-    const today = taipeiDateStr();
-    const sub = currentRoster.submittedPeriods;
-    const subRecords = (sub && sub.date === today) ? sub.records : {};
-    let html = '';
-    for(let p = 1; p <= 8; p++){
-      if(p === 1) html += '<div class="ps-group">';      // 左：上午第1～4節
-      if(p === 5) html += '</div><div class="ps-group">'; // 右：下午第5～8節
-      let state = 'empty';
-      if(p === stripCurrentPeriod){
-        state = stu.absent ? 'absent' : 'present';
-      }else if(subRecords[String(p)]){
-        const seats = subRecords[String(p)][cls] || [];
-        state = seats.includes(stu.seat) ? 'absent' : 'present';
-      }
-      const inner = state === 'absent' ? '<span class="ps-ring"></span>' : (state === 'present' ? '出席' : '');
-      html += `<div class="ps-cell ${state}${p === stripCurrentPeriod ? ' current' : ''}"><span class="ps-no">${p}</span>${inner}</div>`;
-    }
-    html += '</div>';
-    strip.innerHTML = html;
-  }
-
-  function refreshAllPeriodStrips(){
-    document.querySelectorAll('#classContainer .student-chip').forEach(chip => { if(chip._refreshStrip) chip._refreshStrip(); });
-  }
-
-  // 把畫面切換去顯示某個節次：有紀錄就帶入，沒有就顯示全員出席（代表這節還沒點過名）。
-  function loadPeriodForDisplay(period){
-    const records = getRecordsForPeriod(period);
-    if(records) restoreRecords(records);
-    else resetAttendanceToPresent();
+    return out;
   }
 
   // 偵測「跨到新的一天」：只要日期變了（例如老師把瀏覽器分頁一直開著沒關，隔了一天甚至隔週才又點開），
-  // 就把所有跟「今天點名」有關的暫存資料全部清空，並強制把畫面重設為全新、乾淨、預設「出席」的狀態，
-  // 確保絕對不會把之前點名的紀錄誤帶到新的一次點名裡。
+  // 就把今天的點名紀錄清空，畫面回到預設全員出席，確保不會把之前的紀錄誤帶到新的一次點名裡。
   async function checkDayRollover(){
     const today = taipeiDateStr();
     if(lastSeenDate === null){ lastSeenDate = today; return false; }
     if(lastSeenDate === today) return false;
     lastSeenDate = today;
     lastCompletedSessions = null;
-    editingPair = null;
-    manualPeriod = currentCoursePreset ? currentCoursePreset[0] : null; // 固定節次的課程，新的一天從第一個固定節次開始
     if(currentRoster){
-      currentRoster.pendingSession = null;
-      currentRoster.periodDrafts = null;
-      currentRoster.submittedPeriods = null;
-      resetAttendanceToPresent();
+      currentRoster.today = null;
+      ensureToday();
       if(currentCourseId) await setRoster(currentCourseId, currentRoster);
       if($('screen-attend').classList.contains('active')) renderAttendance();
     }
@@ -2324,29 +2240,18 @@ if ('serviceWorker' in navigator) {
     renderResultPeriodPicker();
   }
 
-  // 把兩次點名重新標成新的節次並重新產生訊息；同時搬移節次草稿，
-  // 之後按「返回修改點名」時，每一節帶出來的缺席內容才會跟新的節次對得上。
+  // 把兩節重新標成新的節次並重新產生訊息；同時更新課程設定的節次，
+  // 之後按「返回修改點名」時，表格亮起來的就是新的兩節，已經畫的圈也照順序跟過去。
   async function applyResultPeriods(newFirst, newSecond){
     const s = lastCompletedSessions;
     resultPeriodSelection = null;
     if(s.first.period === newFirst && s.second.period === newSecond) return;
-    const firstRecords = s.first.records, secondRecords = s.second.records;
-    const drafts = ensureDraftsToday();
-    delete drafts.records[draftKey(s.first.period)];
-    delete drafts.records[draftKey(s.second.period)];
-    drafts.records[draftKey(newFirst)] = firstRecords;
-    drafts.records[draftKey(newSecond)] = secondRecords;
-    const submitted = ensureSubmittedToday();
-    delete submitted.records[String(s.first.period)];
-    delete submitted.records[String(s.second.period)];
-    markSubmitted(newFirst, firstRecords);
-    markSubmitted(newSecond, secondRecords);
+    await saveCoursePeriods(currentCourseId, [newFirst, newSecond]);
     lastCompletedSessions = {
       date: s.date,
-      first: { period: newFirst, records: firstRecords },
-      second: { period: newSecond, records: secondRecords }
+      first: { period: newFirst, records: s.first.records },
+      second: { period: newSecond, records: s.second.records }
     };
-    if(currentRoster && currentCourseId) await setRoster(currentCourseId, currentRoster);
     const {skip, msg} = await computeResultForMode(appMode, lastCompletedSessions.first, lastCompletedSessions.second);
     if(skip) applySkippedResult(); else applyNormalResult(msg);
     setResultStampText('已修改 · 待送出');
@@ -2362,51 +2267,8 @@ if ('serviceWorker' in navigator) {
     return { skip, msg };
   }
 
-  // 節次調整器：預設跟隨自動偵測的節次，但老師可以手動往前/往後調整
-  // （例如忘記點名、事後補登，或想連續完成兩次點名時使用）。
-  function currentPickerValue(auto){
-    return manualPeriod !== null ? manualPeriod : (auto || 0);
-  }
-
-  async function refreshPeriodPicker(){
-    const valueEl = $('periodPickerValue');
-    if(!valueEl) return;
-    const auto = await getCurrentPeriod();
-    const val = currentPickerValue(auto);
-    valueEl.textContent = periodLabel(val || null);
-    if(stripCurrentPeriod !== (val || null)){
-      stripCurrentPeriod = val || null;
-      refreshAllPeriodStrips();
-    }
-  }
-
-  // 切換節次調整器時：先把目前畫面上（正在輸入、還沒送出）的狀態存成這個節次的草稿，
-  // 再把新節次「當初輸入過的紀錄」帶進畫面——這樣老師可以自由來回切換節次核對／修改，
-  // 不會因為換了節次，畫面內容跟原本輸入的對不起來。
-  async function switchPickerPeriod(newManualPeriod){
-    if(!currentRoster) { manualPeriod = newManualPeriod; refreshPeriodPicker(); return; }
-    await checkDayRollover();
-    const auto = await getCurrentPeriod();
-    const leavingPeriod = currentPickerValue(auto) || null;
-    saveDraftForPeriod(leavingPeriod);
-    manualPeriod = newManualPeriod;
-    const enteringPeriod = newManualPeriod || null;
-    loadPeriodForDisplay(enteringPeriod);
-    await setRoster(currentCourseId, currentRoster);
-    renderAttendance();
-  }
-
-  $('periodPrevBtn').addEventListener('click', async () => {
-    const auto = await getCurrentPeriod();
-    await switchPickerPeriod(Math.max(0, currentPickerValue(auto) - 1));
-  });
-  $('periodNextBtn').addEventListener('click', async () => {
-    const auto = await getCurrentPeriod();
-    await switchPickerPeriod(Math.min(8, currentPickerValue(auto) + 1));
-  });
-
   // iPhone Safari 的錯誤：底部固定區（sticky）裡的按鈕換文字後，常常只重畫「舊文字」那一小塊，
-  // 例如從「處理中…」換成長文字，畫面只剩中間「次點名並」四個字。換完文字後強制按鈕整個重新排版、重畫一次。
+  // 例如從「處理中…」換成長文字，畫面只剩中間幾個字。換完文字後強制按鈕整個重新排版、重畫一次。
   function setGenBtnText(btn, text){
     if(btn.textContent === text) return;
     btn.textContent = text;
@@ -2415,190 +2277,50 @@ if ('serviceWorker' in navigator) {
     btn.style.display = '';
   }
 
-  // 判斷目前點名進度，更新畫面上的提示文字（僅供提醒，不會鎖住按鈕）。
-  async function refreshSessionUI(){
-    const bar = $('sessionStatusBar');
+  function updateGenBtn(){
     const btn = $('genMsgBtn');
-    if(!bar || !btn || !currentRoster) return;
-    await refreshPeriodPicker();
-    const today = taipeiDateStr();
-    const auto = await getCurrentPeriod();
-
-    if(editingPair){
-      // ---- 修改模式：這兩節原本就都已經有紀錄了，不管現在看的是哪一節、只改了哪一節，
-      // 按下按鈕都會直接用「這節最新內容 + 另一節目前已知的內容」重新產生訊息，不需要分兩次送出。
-      const viewingPeriod = currentPickerValue(auto) || null;
-      bar.hidden = false;
-      bar.className = 'session-status ready';
-      bar.textContent = `📝 修改模式：目前畫面是${periodLabel(viewingPeriod)}的紀錄，改好之後直接送出，會馬上用兩節最新的內容重新產生訊息。`;
-      setGenBtnText(btn, '完成修改並重新產生訊息');
-      btn.disabled = false;
-      return;
-    }
-
-    const pending = currentRoster.pendingSession;
-
-    if(!pending || pending.date !== today){
-      bar.hidden = true;
-      setGenBtnText(btn, '完成本節點名');
-      btn.disabled = false;
-      return;
-    }
-
-    bar.hidden = false;
-    const stillSamePeriod = auto !== null && auto === pending.period;
-    if(stillSamePeriod){
-      bar.className = 'session-status waiting';
-      bar.textContent = `✅ 已完成${periodLabel(pending.period)}的點名。如果現在還是同一節，可以先等一下；如果是要補點其他節，可以在下方調整節次後直接送出。`;
-    }else{
-      bar.className = 'session-status ready';
-      bar.textContent = `🔔 已可以進行第二次點名，請確認下方節次無誤，完成點名後按下方按鈕送出這兩節課的紀錄。`;
-    }
-    setGenBtnText(btn, '完成第二次點名並送出紀錄');
-    btn.disabled = false;
+    if(!btn) return;
+    btn.disabled = !currentCoursePreset;
+    setGenBtnText(btn, currentCoursePreset ? '完成點名，產生訊息' : '請先在上方設定本課程的節次');
   }
 
   async function handleGenMsgClick(){
-    await checkDayRollover();
+    if(await checkDayRollover()){ toast('已經是新的一天，點名表格已重新開始'); return; }
+    if(!currentCoursePreset){ toast('請先設定本課程的節次'); return; }
     const btn = $('genMsgBtn');
-    const today = taipeiDateStr();
-    const auto = await getCurrentPeriod();
-    const period = manualPeriod !== null ? (manualPeriod || null) : auto;
-
-    if(editingPair){
-      // ---- 修改「已完成的兩節紀錄」模式 ----
-      // 老師可能只改了其中一節（不管是第一節還是第二節，順序不限），
-      // 按下送出時：這節用畫面上最新輸入的內容，另一節用目前已知最新的內容（可能是原本沒動過的，
-      // 也可能是老師剛剛已經切過去改過的），兩節湊齊後直接重新產生訊息，不會要求老師再點一次名。
-      btn.disabled = true;
-      setGenBtnText(btn, '處理中…');
-      try{
-        const records = snapshotAbsences();
-        const googleResult = await recordToGoogle(period);
-        saveDraftForPeriod(period);
-        markSubmitted(period, records);
-
-        let firstPeriod, firstRecords, secondPeriod, secondRecords;
-        if(period === editingPair.secondPeriod && period !== editingPair.firstPeriod){
-          secondPeriod = period; secondRecords = records;
-          firstPeriod = editingPair.firstPeriod;
-          firstRecords = getRecordsForPeriod(firstPeriod) || {};
-        }else{
-          firstPeriod = period; firstRecords = records;
-          secondPeriod = editingPair.secondPeriod;
-          secondRecords = getRecordsForPeriod(secondPeriod) || {};
-        }
-
-        const firstArg = {period:firstPeriod, records:firstRecords};
-        const secondArg = {period:secondPeriod, records:secondRecords};
-        const {skip: skipMessage, msg} = await computeResultForMode(appMode, firstArg, secondArg);
-        lastCompletedSessions = {
-          date: today,
-          first: { period: firstPeriod, records: firstRecords },
-          second: { period: secondPeriod, records: secondRecords }
-        };
-        editingPair = null;
-        currentRoster.pendingSession = null;
-        manualPeriod = null;
-        await setRoster(currentCourseId, currentRoster);
-        if(skipMessage) showSkippedResultScreen(); else showNormalResultScreen(msg);
-        if(skipMessage){
-          if(googleResult.configured && googleResult.sent) toast('已更新，全員到齊不需發送訊息，Google 紀錄已送出');
-          else if(googleResult.configured && !googleResult.sent) toast('已更新，全員到齊不需發送訊息，但 Google 紀錄送出失敗');
-          else toast('已更新，全員到齊不需發送訊息');
-        }else{
-          if(googleResult.configured && googleResult.sent) toast('已更新，訊息已重新產生，Google 紀錄已送出');
-          else if(googleResult.configured && !googleResult.sent) toast('已更新，訊息已重新產生，但 Google 紀錄送出失敗');
-          else toast('已更新，訊息已重新產生');
-        }
-      } finally {
-        btn.disabled = false;
-        await refreshSessionUI();
-      }
-      return;
-    }
-
-    const pending = currentRoster.pendingSession;
-    const alreadyStartedToday = pending && pending.date === today;
-
-    // 雙節課的兩次點名一定是連續的兩節（例如第5、6節），不會是同一節、也不會跳節。
-    // 點名順序不限：先點第5節、再回頭補第4節也可以，只要最後兩節相鄰就好。
-    if(alreadyStartedToday && period && pending.period && Math.abs(period - pending.period) !== 1){
-      const options = [pending.period - 1, pending.period + 1].filter(p => p >= 1 && p <= 8).map(periodLabel);
-      window.alert(
-        `第一次點名是${periodLabel(pending.period)}，這次卻是${periodLabel(period)}，兩節不連續，無法送出。\n\n` +
-        `請把下方節次調成${options.join('或')}再送出。\n` +
-        `如果其實是第一次點名的節次記錯了，先照上面送出，到確認畫面再直接勾選正確的兩節即可。`
-      );
-      return;
-    }
-
     btn.disabled = true;
     setGenBtnText(btn, '處理中…');
     try{
-      if(!alreadyStartedToday){
-        // ---- 第一節：先記錄下來，重置畫面準備點第二次 ----
-        const records = snapshotAbsences();
-        const googleResult = await recordToGoogle(period);
-        currentRoster.pendingSession = { date: today, period, records };
-        markSubmitted(period, records);
-        saveDraftForPeriod(period);
-        // 第一次點名送出後，直接把節次調整器往前推一節（接下來幾乎都是點下一節的名），
-        // 如果這個節次之前已經輸入過紀錄（例如老師剛剛自己切換節次核對過），就帶入那份紀錄。
-        const nextPeriodValue = nextPeriodAfter(period);
-        manualPeriod = nextPeriodValue;
-        loadPeriodForDisplay(nextPeriodValue || null);
-        await setRoster(currentCourseId, currentRoster);
-        renderAttendance();
-        if(googleResult.configured && googleResult.sent) toast('已記錄第一次點名，Google 紀錄已送出，可繼續點第二次');
-        else if(googleResult.configured && !googleResult.sent) toast('已記錄第一次點名，但 Google 紀錄送出失敗');
-        else toast('已記錄第一次點名，請於下一節再點一次名');
+      const [a, b] = currentCoursePreset;
+      const first = { period: a, records: slotRecords(0) };
+      const second = { period: b, records: slotRecords(1) };
+      const g1 = await recordToGoogle(a, first.records);
+      const g2 = await recordToGoogle(b, second.records);
+      const googleResult = { configured: g1.configured, sent: !!(g1.sent && g2.sent) };
+      const {skip: skipMessage, msg} = await computeResultForMode(appMode, first, second);
+      lastCompletedSessions = { date: taipeiDateStr(), first, second };
+      await setRoster(currentCourseId, currentRoster);
+      if(skipMessage) showSkippedResultScreen(); else showNormalResultScreen(msg);
+      if(skipMessage){
+        if(googleResult.configured && googleResult.sent) toast('全員到齊，不需發送訊息，Google 點名紀錄已送出');
+        else if(googleResult.configured && !googleResult.sent) toast('全員到齊，不需發送訊息，但 Google 紀錄送出失敗');
+        else toast('全員到齊，不需發送訊息');
       }else{
-        // ---- 第二節：合併兩節紀錄，產生並送出訊息 ----
-        const secondRecords = snapshotAbsences();
-        const googleResult = await recordToGoogle(period);
-        saveDraftForPeriod(period);
-        markSubmitted(period, secondRecords);
-        // 兩節依節次先後排好（例如先點第5節、後補第4節，訊息仍是第4節在前），跟點名的先後順序無關。
-        let earlier = { period: pending.period, records: pending.records };
-        let later = { period, records: secondRecords };
-        if(earlier.period && later.period && later.period < earlier.period) [earlier, later] = [later, earlier];
-        const {skip: skipMessage, msg} = await computeResultForMode(appMode, earlier, later);
-        lastCompletedSessions = { date: today, first: earlier, second: later };
-        currentRoster.pendingSession = null;
-        manualPeriod = null;
-        await setRoster(currentCourseId, currentRoster);
-        if(skipMessage) showSkippedResultScreen(); else showNormalResultScreen(msg);
-        if(skipMessage){
-          if(googleResult.configured && googleResult.sent) toast('全員到齊，不需發送訊息，Google 點名紀錄已送出');
-          else if(googleResult.configured && !googleResult.sent) toast('全員到齊，不需發送訊息，但 Google 紀錄送出失敗');
-          else toast('全員到齊，不需發送訊息');
-        }else{
-          if(googleResult.configured && googleResult.sent) toast('訊息已產生，Google 點名紀錄已送出');
-          else if(googleResult.configured && !googleResult.sent) toast('訊息已產生，但 Google 紀錄送出失敗');
-          else toast('訊息已產生');
-        }
+        if(googleResult.configured && googleResult.sent) toast('訊息已產生，Google 點名紀錄已送出');
+        else if(googleResult.configured && !googleResult.sent) toast('訊息已產生，但 Google 紀錄送出失敗');
+        else toast('訊息已產生');
       }
     } finally {
-      btn.disabled = false;
-      await refreshSessionUI();
+      updateGenBtn();
     }
   }
 
   $('genMsgBtn').addEventListener('click', handleGenMsgClick);
 
+  // 返回修改：今天的兩節紀錄一直都存著，直接回到點名表格繼續改，改好再按一次產生訊息即可。
   $('backToAttendBtn').addEventListener('click', async () => {
     await checkDayRollover();
-    if(lastCompletedSessions && currentRoster){
-      // 回到「第一個節次」開始修改，並記住這兩節原本各自是第幾節；
-      // 不管接下來老師先改哪一節、只改一節，送出時都會直接用兩節最新的內容重新產生訊息。
-      restoreRecords(lastCompletedSessions.first.records);
-      currentRoster.pendingSession = null;
-      manualPeriod = lastCompletedSessions.first.period;
-      editingPair = { firstPeriod: lastCompletedSessions.first.period, secondPeriod: lastCompletedSessions.second.period };
-      await setRoster(currentCourseId, currentRoster);
-      renderAttendance();
-    }
+    if(currentRoster) renderAttendance();
     showScreen('attend');
   });
 
@@ -2621,7 +2343,6 @@ if ('serviceWorker' in navigator) {
 
   // ---------- init ----------
   if($('versionTapTarget')) $('versionTapTarget').textContent = formatVersion(APP_VERSION);
-  buildPeriodSettings();
   buildGoogleGuideCode();
   buildDriveGuideCode();
   (async () => {
@@ -2629,16 +2350,10 @@ if ('serviceWorker' in navigator) {
     await loadSettings();
   })();
   updateGoogleNote();
-  setInterval(updateCurrentPeriod, 30000);
+  setInterval(checkDayRollover, 60000); // 分頁一直開著跨到隔天時，自動清空前一天的點名
   renderHome();
   showScreen('home');
   checkAdConfig();
-  try{
-    if(sessionStorage.getItem('justRefreshedApp')){
-      sessionStorage.removeItem('justRefreshedApp');
-      toast('已更新成最新版本');
-    }
-  }catch(e){}
 })();
 </script>
 </body>
