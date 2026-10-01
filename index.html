@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>跨群／本土語／社團 點名幫手</title>
+<title>跨群／本土語／社團 點名小幫手</title>
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#173B31">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -567,12 +567,9 @@
     padding:5px 13px;font-size:12px;font-weight:800;font-family:inherit;
     cursor:pointer;
   }
-  .prefix-row{
-    display:flex;align-items:center;justify-content:space-between;gap:10px;
-    margin-top:8px;font-size:13px;font-weight:800;color:var(--navy);
-  }
+  .prefix-label{display:block;margin:10px 0 4px;font-size:13px;font-weight:900;color:var(--navy)}
+  .prefix-label + input{margin-top:0}
   .prefix-toggle-btn.off{background:var(--line);color:var(--muted);border-color:var(--line)}
-  #messagePrefixInput:disabled{background:var(--line);color:var(--muted);opacity:.7}
   .settings-divider{height:1px;background:var(--line);margin:14px 0}
   .version-tag{
     text-align:center;font-size:11px;color:var(--muted);opacity:.55;
@@ -629,7 +626,7 @@ if ('serviceWorker' in navigator) {
 <div class="wrap">
 
   <header class="top">
-    <div class="brand app-title"><span class="at-sub">跨群／本土語／社團</span><span class="at-main">點名幫手</span></div>
+    <div class="brand app-title"><span class="at-sub">跨群／本土語／社團</span><span class="at-main">點名小幫手</span></div>
     <div class="header-actions"><button class="icon-btn" id="settingsBtn">設定</button><button class="icon-btn home-btn" id="homeBtn"><svg class="home-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 11.2 12 3.5l9 7.7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 9.6V20h4.6v-5.6h3.8V20h4.6V9.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/></svg>課程列表</button></div>
   </header>
 
@@ -695,10 +692,11 @@ if ('serviceWorker' in navigator) {
 
     <div class="settings-card">
       <div class="settings-title">訊息開頭文字</div>
-      <div class="settings-sub">產生訊息時，會加在整段訊息最前面，可依需要自行修改或清空。跨群／本土語課程、社團課程可以分別決定要不要加。</div>
-      <input type="text" id="messagePrefixInput" placeholder="例如：@程程" />
-      <div class="prefix-row"><span>跨群／本土語課程</span><button type="button" class="prefix-toggle-btn" id="prefixToggleCampus">已開啟</button></div>
-      <div class="prefix-row"><span>社團課程</span><button type="button" class="prefix-toggle-btn" id="prefixToggleClub">已關閉</button></div>
+      <div class="settings-sub">產生訊息時，會加在整段訊息最前面。兩種課程各自填寫；不需要開頭文字就留空。打完會自動儲存。</div>
+      <label class="prefix-label" for="prefixInputCampus">跨群／本土語課程</label>
+      <input type="text" id="prefixInputCampus" placeholder="例如：@程程（留空＝不加）" />
+      <label class="prefix-label" for="prefixInputClub">社團課程</label>
+      <input type="text" id="prefixInputClub" placeholder="例如：社團教室 B203（留空＝不加）" />
     </div>
 
     <div class="settings-card">
@@ -946,7 +944,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '2.2.0';
+  const APP_VERSION = '2.2.1';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -1817,6 +1815,8 @@ if ('serviceWorker' in navigator) {
   const DEFAULT_MESSAGE_PREFIX = '@程程';
   // 「訊息開頭文字」的開關，跨群/本土語跟社團模式分開記憶，互不影響：
   // 跨群/本土語預設開啟（維持原本規則），社團預設關閉。
+  const MESSAGE_PREFIX_TEXT_KEY_CAMPUS = 'message-prefix-text-campus';
+  const MESSAGE_PREFIX_TEXT_KEY_CLUB = 'message-prefix-text-club';
   const MESSAGE_PREFIX_ENABLED_KEY_CAMPUS = 'message-prefix-enabled-campus';
   const MESSAGE_PREFIX_ENABLED_KEY_CLUB = 'message-prefix-enabled-club';
   const APP_MODE_KEY = 'app-mode';
@@ -1894,22 +1894,10 @@ if ('serviceWorker' in navigator) {
     $('googleLogUrlInput').value = await getSetting(GOOGLE_LOG_KEY,'');
     $('driveFolderUrlInput').value = await getSetting(DRIVE_FOLDER_KEY, DEFAULT_DRIVE_FOLDER_URL);
     $('driveLogUrlInput').value = await getSetting(DRIVE_LOG_KEY, DEFAULT_DRIVE_LOG_URL);
-    $('messagePrefixInput').value = await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
-    await refreshPrefixToggleForMode();
+    $('prefixInputCampus').value = await getPrefixForMode('campus');
+    $('prefixInputClub').value = await getPrefixForMode('club');
     if($('adSecretInput')) $('adSecretInput').value = await getSetting(AD_SECRET_KEY, '');
     updateGoogleNote();
-  }
-
-  function applyPrefixToggleUI(btn, enabled){
-    if(!btn) return;
-    btn.textContent = enabled ? '已開啟' : '已關閉';
-    btn.classList.toggle('off', !enabled);
-  }
-
-  // 讀出跨群／本土語、社團各自記住的「訊息開頭文字」開關狀態並套用到畫面。
-  async function refreshPrefixToggleForMode(){
-    applyPrefixToggleUI($('prefixToggleCampus'), (await getPrefixEnabledForMode('campus')) !== false);
-    applyPrefixToggleUI($('prefixToggleClub'), (await getPrefixEnabledForMode('club')) !== false);
   }
 
   async function saveSettings(){
@@ -1917,7 +1905,6 @@ if ('serviceWorker' in navigator) {
     await storageSet(GOOGLE_LOG_KEY, $('googleLogUrlInput').value.trim());
     await storageSet(DRIVE_FOLDER_KEY, $('driveFolderUrlInput').value.trim());
     await storageSet(DRIVE_LOG_KEY, $('driveLogUrlInput').value.trim());
-    await storageSet(MESSAGE_PREFIX_KEY, $('messagePrefixInput').value);
     if($('adSecretInput')) await storageSet(AD_SECRET_KEY, $('adSecretInput').value);
     updateGoogleNote();
     toast('設定已儲存');
@@ -1930,14 +1917,17 @@ if ('serviceWorker' in navigator) {
     showScreen('settings');
   });
 
-  // 「訊息開頭文字」開關：關閉後輸入框會鎖住（但保留原本打的文字，之後重新開啟不用再打一次），
-  // 送出點名訊息時就不會再加這段開頭文字；點一下立刻存檔，不用等按「儲存設定」。
-  [['campus','prefixToggleCampus'], ['club','prefixToggleClub']].forEach(([mode, btnId]) => {
-    $(btnId).addEventListener('click', async () => {
-      const nowEnabled = $(btnId).classList.contains('off');
-      applyPrefixToggleUI($(btnId), nowEnabled);
-      await storageSet(prefixEnabledKeyForMode(mode), nowEnabled);
-      toast(`${courseTypeLabel(mode)}課程：訊息開頭文字已${nowEnabled ? '開啟' : '關閉'}`);
+  // 「訊息開頭文字」：兩種課程各自一個輸入框，打字就自動存檔，不用另外按「儲存設定」。
+  [['campus','prefixInputCampus', MESSAGE_PREFIX_TEXT_KEY_CAMPUS], ['club','prefixInputClub', MESSAGE_PREFIX_TEXT_KEY_CLUB]].forEach(([mode, inputId, key]) => {
+    let timer = null;
+    $(inputId).addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => storageSet(key, $(inputId).value), 400);
+    });
+    $(inputId).addEventListener('change', async () => {
+      clearTimeout(timer);
+      await storageSet(key, $(inputId).value);
+      toast(`${courseTypeLabel(mode)}課程的開頭文字已儲存`);
     });
   });
   // ---------- 備份與還原 ----------
@@ -1947,7 +1937,7 @@ if ('serviceWorker' in navigator) {
     const data = await storageDumpAll();
     delete data[AD_CACHE_KEY]; // 廣告開關快取不需要備份
     const payload = { app: BACKUP_APP_ID, version: APP_VERSION, exportedAt: new Date().toISOString(), data };
-    const filename = `點名幫手備份_${taipeiDateStr().replace(/\//g, '')}.json`;
+    const filename = `點名小幫手備份_${taipeiDateStr().replace(/\//g, '')}.json`;
     const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
     // 手機上優先用「分享」，可以直接存到檔案 App、雲端硬碟或傳到 LINE；電腦上直接下載。
     const touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
@@ -1975,7 +1965,7 @@ if ('serviceWorker' in navigator) {
     let payload;
     try{ payload = JSON.parse(await file.text()); }catch(e){ toast('讀不到備份檔內容，請確認選的是匯出的 .json 檔'); return; }
     if(!payload || payload.app !== BACKUP_APP_ID || !payload.data || typeof payload.data !== 'object'){
-      toast('這不是點名幫手的備份檔');
+      toast('這不是點名小幫手的備份檔');
       return;
     }
     let courses = 0;
@@ -2308,8 +2298,16 @@ if ('serviceWorker' in navigator) {
     return true;
   }
 
-  // 讀出「訊息開頭文字」開關狀態：跨群/本土語沿用舊版原本存的那把 key（相容舊資料，
-  // 行為完全不變），社團模式則用自己獨立的 key、預設關閉。
+  // 讀出某種課程要加的開頭文字（空字串＝不加）。
+  // 還沒用新版設定過的話，沿用舊版：開關是開的就用原本共用的那段文字，關的就是空白。
+  async function getPrefixForMode(mode){
+    const saved = await getSetting(mode === 'club' ? MESSAGE_PREFIX_TEXT_KEY_CLUB : MESSAGE_PREFIX_TEXT_KEY_CAMPUS, null);
+    if(saved !== null) return saved;
+    const enabled = await getPrefixEnabledForMode(mode);
+    return enabled === false ? '' : await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
+  }
+
+  // 舊版的「開頭文字開關」：跨群/本土語預設開啟，社團預設關閉（只用來轉換舊資料）。
   async function getPrefixEnabledForMode(mode){
     if(mode === 'club'){
       return await getSetting(MESSAGE_PREFIX_ENABLED_KEY_CLUB, false);
@@ -2318,8 +2316,7 @@ if ('serviceWorker' in navigator) {
   }
 
   async function buildMessage(first, second){
-    const prefixEnabled = await getPrefixEnabledForMode(appMode);
-    const prefix = (prefixEnabled === false) ? '' : await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
+    const prefix = (await getPrefixForMode(appMode)).trim();
     const classes = Object.keys(currentRoster.classes).sort((a,b) => String(a).localeCompare(String(b),'zh-Hant',{numeric:true}));
     const lines = [];
     classes.forEach(cls => {
@@ -2334,8 +2331,7 @@ if ('serviceWorker' in navigator) {
   // 社團模式專用的訊息組法：只列出「有缺席」的班級與節次，兩節都全員到齊的班級整段省略不寫，
   // 盡量節省傳送訊息的字數；跨群/本土語模式完全不會用到這個函式，維持原本 buildMessage 的格式。
   async function buildClubMessage(first, second){
-    const prefixEnabled = await getPrefixEnabledForMode('club');
-    const prefix = (prefixEnabled === false) ? '' : await getSetting(MESSAGE_PREFIX_KEY, DEFAULT_MESSAGE_PREFIX);
+    const prefix = (await getPrefixForMode('club')).trim();
     const classes = Object.keys(currentRoster.classes).sort((a,b) => String(a).localeCompare(String(b),'zh-Hant',{numeric:true}));
     const lines = [];
     classes.forEach(cls => {
