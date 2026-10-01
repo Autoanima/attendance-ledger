@@ -323,7 +323,8 @@
     display:flex;flex-direction:column;background:var(--white);border:2px solid var(--line);border-radius:12px;
   }
   .rc-row{
-    display:grid;grid-template-columns:28px minmax(0,1fr) var(--rc-cols);gap:2px;align-items:center;
+    /* 姓名欄保留至少 4 個字寬；空間不夠（例如字體調大）時，先縮灰色的非上課節次欄 */
+    display:grid;grid-template-columns:28px minmax(66px,1fr) var(--rc-cols);gap:2px;align-items:center;
     padding:4px 4px;border-top:1px solid var(--line);min-height:46px;
   }
   .rc-row:first-child{border-top:none}
@@ -336,7 +337,7 @@
   .rc-hname{padding-left:6px}
   .rc-tab{
     height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;
-    font-size:11px;font-weight:900;white-space:nowrap;
+    font-size:11px;font-weight:900;white-space:nowrap;overflow:hidden;
   }
   .rc-tab.on{background:var(--navy);color:var(--white);font-size:12px;box-shadow:0 2px 0 rgba(18,58,90,.2)}
   .rc-tab.off{background:#E3E8EC;color:#A3AFB9}
@@ -567,6 +568,12 @@
     padding:5px 13px;font-size:12px;font-weight:800;font-family:inherit;
     cursor:pointer;
   }
+  .font-scale-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+  .fs-btn{
+    height:44px;border-radius:11px;border:2px solid var(--navy);background:var(--white);color:var(--navy);
+    font-family:inherit;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .fs-btn.on{background:var(--navy);color:var(--white)}
   .prefix-label{display:block;margin:10px 0 4px;font-size:13px;font-weight:900;color:var(--navy)}
   .prefix-label + input{margin-top:0}
   .prefix-toggle-btn.off{background:var(--line);color:var(--muted);border-color:var(--line)}
@@ -598,6 +605,7 @@
     .current-class-meta .period{font-size:11px}
   }
   @media(max-width:400px){
+    .class-block{padding:7px}
     header.top{padding:9px 9px;gap:4px}
     header.top .app-title .at-sub{font-size:11px;letter-spacing:.5px}
     header.top .app-title .at-main{font-size:18px;letter-spacing:1px}
@@ -688,6 +696,17 @@ if ('serviceWorker' in navigator) {
     <div class="course-header">
       <div class="title">設定</div>
       <div class="sub">訊息、名單與同步設定，資料會保存在這台裝置。</div>
+    </div>
+
+    <div class="settings-card">
+      <div class="settings-title">字體大小</div>
+      <div class="settings-sub">調整整個 App 的文字與按鈕大小，點一下立刻套用並自動儲存，只影響這台裝置。</div>
+      <div class="font-scale-row" id="fontScaleRow" role="group" aria-label="字體大小">
+        <button type="button" class="fs-btn" data-scale="0.9"><span style="font-size:12px">小</span></button>
+        <button type="button" class="fs-btn" data-scale="1"><span style="font-size:14px">標準</span></button>
+        <button type="button" class="fs-btn" data-scale="1.1"><span style="font-size:16px">大</span></button>
+        <button type="button" class="fs-btn" data-scale="1.2"><span style="font-size:18px">特大</span></button>
+      </div>
     </div>
 
     <div class="settings-card">
@@ -944,7 +963,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '2.2.1';
+  const APP_VERSION = '2.3.0';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -1457,7 +1476,7 @@ if ('serviceWorker' in navigator) {
 
     const preset = currentCoursePreset;
     // 亮起來的兩節是寬欄（方便點），其他節次是窄欄
-    const colTpl = Array.from({length:8}, (_, i) => (preset && preset.includes(i+1)) ? 'var(--rc-on-w)' : 'var(--rc-off-w)').join(' ');
+    const colTpl = Array.from({length:8}, (_, i) => (preset && preset.includes(i+1)) ? 'var(--rc-on-w)' : 'minmax(6px,var(--rc-off-w))').join(' ');
 
     const container = $('classContainer');
     container.innerHTML = '';
@@ -1828,6 +1847,28 @@ if ('serviceWorker' in navigator) {
   }
   const AD_CACHE_KEY = 'ad-enabled-cache';
   const AD_SECRET_KEY = 'ad-toggle-secret';
+  const FONT_SCALE_KEY = 'font-scale';
+  const FONT_SCALES = [0.9, 1, 1.1, 1.2];
+
+  // 字體大小：整個畫面（文字、按鈕、表格）一起等比例縮放，版面不會亂掉。
+  function applyFontScale(scale){
+    const v = FONT_SCALES.includes(scale) ? scale : 1;
+    document.body.style.zoom = v === 1 ? '' : String(v);
+    document.querySelectorAll('#fontScaleRow .fs-btn').forEach(b => {
+      const on = Number(b.dataset.scale) === v;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    // 黏在上方的表格標題列要重新對齊「目前班級」列的高度
+    window.dispatchEvent(new Event('resize'));
+  }
+
+  document.querySelectorAll('#fontScaleRow .fs-btn').forEach(b => b.addEventListener('click', async () => {
+    const v = Number(b.dataset.scale);
+    applyFontScale(v);
+    await storageSet(FONT_SCALE_KEY, v);
+    toast('字體大小已套用');
+  }));
 
   // 首頁廣告開關：向雲端硬碟讀取服務問「現在廣告要開還是關」，
   // 老師用手機按一次連結切換，全部使用者下次打開 App 就會套用最新狀態。
@@ -2480,6 +2521,7 @@ if ('serviceWorker' in navigator) {
   }
 
   // ---------- init ----------
+  getSetting(FONT_SCALE_KEY, 1).then(v => applyFontScale(Number(v)));
   if($('versionTapTarget')) $('versionTapTarget').textContent = formatVersion(APP_VERSION);
   buildGoogleGuideCode();
   buildDriveGuideCode();
