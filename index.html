@@ -512,6 +512,15 @@
   .zy-name{font-size:34px;font-weight:900;color:var(--navy);line-height:1.5;margin:8px 0 10px;word-break:keep-all;overflow-wrap:anywhere;white-space:pre-wrap}
   .zy-hint{font-size:11px;color:var(--muted)}
   .rc-name.has-zy{cursor:pointer;text-decoration:underline dotted #8FB3C6;text-underline-offset:4px}
+  /* 偵測到新版本時，畫面底部跳出的更新提示 */
+  .update-banner{
+    position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:70;
+    width:calc(100% - 24px);max-width:440px;padding:12px 14px;border-radius:14px;
+    border:2px solid var(--navy);background:var(--yellow);color:var(--navy);
+    font-family:inherit;font-size:14px;font-weight:900;cursor:pointer;
+    box-shadow:0 4px 0 rgba(18,58,90,.25);
+  }
+  .update-banner[hidden]{display:none}
   .toast{
     position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
     background:var(--navy);color:var(--yellow);padding:9px 16px;
@@ -1042,6 +1051,7 @@ if ('serviceWorker' in navigator) {
 
 </div>
 <div class="toast" id="toast"></div>
+<button type="button" class="update-banner" id="updateBanner" hidden>🎉 有新版本 <b id="updateBannerVer"></b>，點這裡更新</button>
 <div class="zy-overlay" id="zyOverlay" hidden role="dialog" aria-label="注音版本姓名">
   <div class="zy-box">
     <div class="zy-meta" id="zyMeta"></div>
@@ -1064,7 +1074,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '2.4.1';
+  const APP_VERSION = '2.4.2';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -2669,6 +2679,27 @@ if ('serviceWorker' in navigator) {
   function escapeHtml(str){
     return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
+
+  // ---------- 自動檢查新版本 ----------
+  // 拿掉手動重新整理按鈕後，改成 App 打開、或從背景切回來時，自動去網站抓最新的 index.html 比對版本號；
+  // 有新版本就在畫面底部跳出提示，老師點一下就重新載入成新版（加到主畫面的 App 也適用）。
+  let lastUpdateCheck = 0;
+  async function checkForUpdate(){
+    if(Date.now() - lastUpdateCheck < 60 * 1000) return; // 一分鐘內不重複檢查
+    lastUpdateCheck = Date.now();
+    try{
+      const res = await fetch('./index.html', { cache: 'no-store' });
+      if(!res.ok) return;
+      const m = (await res.text()).match(/const APP_VERSION = '([^']+)'/);
+      if(m && m[1] !== APP_VERSION){
+        $('updateBannerVer').textContent = formatVersion(m[1]);
+        $('updateBanner').hidden = false;
+      }
+    }catch(e){ /* 離線或連不上就算了，下次再檢查 */ }
+  }
+  $('updateBanner').addEventListener('click', () => location.reload());
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') checkForUpdate(); });
+  setTimeout(checkForUpdate, 3000);
 
   // ---------- init ----------
   getSetting(FONT_SCALE_KEY, 1).then(v => applyFontScale(Number(v)));
