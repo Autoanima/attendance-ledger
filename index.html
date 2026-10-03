@@ -113,6 +113,10 @@
   .course-card .cc-tag.warn{border-color:var(--red);color:var(--red);background:var(--red-soft)}
   .course-card .meta{font-size:11px;color:var(--muted);margin-top:3px}
   .course-card .go{color:var(--navy);font-size:22px;font-weight:900}
+  .course-card .cc-del{
+    flex:none;background:var(--red-soft);border:1.5px solid #E5A19B;color:var(--red);
+    border-radius:8px;font-size:12px;font-weight:900;font-family:inherit;padding:6px 9px;cursor:pointer;
+  }
   .course-card .del{
     background:var(--red-soft);border:1px solid #E5A19B;color:var(--red);
     border-radius:8px;font-size:11px;font-weight:800;padding:5px 7px;
@@ -361,6 +365,10 @@
   }
   .rc-cell.on:active{transform:scale(.95)}
   .rc-cell.on.absent{border-color:var(--red);background:var(--red-soft)}
+  /* 字體「特特大」時，手機畫面能用的寬度變很窄，把點名表格收緊一點 */
+  body.fs-xxl .rc-table{--rc-on-w:42px}
+  body.fs-xxl .rc-row{grid-template-columns:26px minmax(58px,1fr) var(--rc-cols)}
+  body.fs-xxl .rc-seat{width:26px;height:26px;font-size:12px}
   .rc-ring{width:22px;height:22px;border-radius:50%;border:3px solid var(--red);box-sizing:border-box}
   @media(min-width:560px){
     .rc-table{--rc-on-w:76px;--rc-off-w:30px}
@@ -390,6 +398,11 @@
   .rm-row:first-child{border-top:none}
   .rm-row .rc-name{padding-left:2px}
   .rm-actions{display:flex;gap:6px}
+  .rm-zy-tag{
+    display:inline-block;margin-left:6px;vertical-align:middle;
+    font-size:10px;font-weight:900;padding:1px 6px;border-radius:999px;
+    background:var(--yellow-soft);border:1px solid var(--navy);color:var(--navy);
+  }
   .rm-btn{
     height:34px;min-width:34px;padding:0 10px;border-radius:9px;
     border:2px solid var(--navy);background:var(--white);color:var(--navy);
@@ -399,6 +412,8 @@
   .rm-btn.primary{background:var(--navy);color:var(--white)}
   .rm-edit{grid-template-columns:1fr;gap:6px}
   .rm-edit .rm-fields{display:grid;grid-template-columns:70px minmax(0,1fr);gap:6px}
+  .rm-edit .rm-fields .rm-zy-in{grid-column:1 / -1}
+  .rm-add-zy{margin-top:6px}
   .rm-edit .rm-actions{justify-content:flex-end}
   .rm-fields input,.rm-add input{margin:0;padding:9px 10px;font-size:15px}
   .rm-add{display:grid;grid-template-columns:minmax(0,1.2fr) 70px minmax(0,1.3fr);gap:6px;margin-top:8px}
@@ -482,6 +497,21 @@
     box-shadow:0 4px 0 rgba(18,58,90,.10)
   }
 
+  /* 點學生姓名時，跳出大字的「注音版本姓名」 */
+  .zy-overlay{
+    position:fixed;inset:0;z-index:60;background:rgba(18,58,90,.45);
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .zy-overlay[hidden]{display:none}
+  .zy-box{
+    background:var(--white);border:2px solid var(--navy);border-radius:18px;
+    padding:18px 22px 14px;max-width:420px;width:100%;text-align:center;
+    box-shadow:0 6px 0 rgba(18,58,90,.2);
+  }
+  .zy-meta{font-size:13px;font-weight:900;color:var(--muted)}
+  .zy-name{font-size:34px;font-weight:900;color:var(--navy);line-height:1.5;margin:8px 0 10px;word-break:keep-all;overflow-wrap:anywhere;white-space:pre-wrap}
+  .zy-hint{font-size:11px;color:var(--muted)}
+  .rc-name.has-zy{cursor:pointer;text-decoration:underline dotted #8FB3C6;text-underline-offset:4px}
   .toast{
     position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
     background:var(--navy);color:var(--yellow);padding:9px 16px;
@@ -584,6 +614,7 @@
     margin:8px 0 0;padding:8px 10px;border-radius:9px;background:var(--blue-panel);
     font-family:inherit;font-size:12px;line-height:1.6;color:var(--ink);white-space:pre-wrap;
   }
+  .tip-list{margin:6px 0 0;padding-left:18px;font-size:12px;line-height:1.7;color:var(--ink)}
   .font-scale-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
   .fs-btn{
     height:44px;border-radius:11px;border:2px solid var(--navy);background:var(--white);color:var(--navy);
@@ -690,7 +721,7 @@ if ('serviceWorker' in navigator) {
       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
     </div>
     <div class="hint">
-      表格需包含欄位：<b>班級</b>、<b>座號</b>（可選填 <b>姓名</b>）。<br>
+      表格需包含欄位：<b>班級</b>、<b>座號</b>（可選填 <b>姓名</b>、<b>注音版本姓名</b>）。<br>
       不同班級可各自有不重複的座號，系統會依班級自動分組。
     </div>
 
@@ -718,10 +749,10 @@ if ('serviceWorker' in navigator) {
       <div class="settings-title">字體大小</div>
       <div class="settings-sub">調整整個 App 的文字與按鈕大小，點一下立刻套用並自動儲存，只影響這台裝置。</div>
       <div class="font-scale-row" id="fontScaleRow" role="group" aria-label="字體大小">
-        <button type="button" class="fs-btn" data-scale="0.9"><span style="font-size:12px">小</span></button>
-        <button type="button" class="fs-btn" data-scale="1"><span style="font-size:14px">標準</span></button>
-        <button type="button" class="fs-btn" data-scale="1.1"><span style="font-size:16px">大</span></button>
-        <button type="button" class="fs-btn" data-scale="1.2"><span style="font-size:18px">特大</span></button>
+        <button type="button" class="fs-btn" data-scale="1"><span style="font-size:13px">標準</span></button>
+        <button type="button" class="fs-btn" data-scale="1.1"><span style="font-size:15px">大</span></button>
+        <button type="button" class="fs-btn" data-scale="1.2"><span style="font-size:17px">特大</span></button>
+        <button type="button" class="fs-btn" data-scale="1.35"><span style="font-size:19px">特特大</span></button>
       </div>
     </div>
 
@@ -771,8 +802,18 @@ if ('serviceWorker' in navigator) {
     </div>
 
     <div class="settings-card">
+      <div class="settings-title">小技巧：點學生姓名看注音</div>
+      <div class="settings-sub">遇到不會念的名字？如果上傳的名單試算表裡有一欄叫做<b>「注音版本姓名」</b>，點名時<b>點一下學生的姓名</b>，就會跳出大字的注音版本姓名；再點一下任意處就關閉。</div>
+      <ul class="tip-list">
+        <li>有注音的學生，姓名下方會有一條<b>虛線</b>，代表可以點。</li>
+        <li>名單沒有這一欄的學生，點姓名不會有任何反應，點名照常使用。</li>
+        <li>已經建立好的課程，可以到「名單管理」逐一補上，或用含有這一欄的試算表重新建立課程。</li>
+      </ul>
+    </div>
+
+    <div class="settings-card">
       <div class="settings-title">名單管理</div>
-      <div class="settings-sub">新增、修改、刪除學生（例如轉入、休學、座號或姓名打錯），也可以修改課程名稱或刪除整門課程。</div>
+      <div class="settings-sub">新增、修改、刪除學生（例如轉入、休學、座號或姓名打錯），也可以補上注音版本姓名、修改課程名稱或刪除整門課程。</div>
       <button type="button" class="primary-btn ghost small-btn" id="openRosterBtn" style="margin-top:10px">前往名單管理 →</button>
     </div>
 
@@ -825,6 +866,7 @@ if ('serviceWorker' in navigator) {
         <input type="text" id="rmAddSeat" inputmode="numeric" placeholder="座號" />
         <input type="text" id="rmAddName" placeholder="姓名（可不填）" />
       </div>
+      <input type="text" id="rmAddZy" class="rm-add-zy" placeholder="注音版本姓名（可不填）" />
       <datalist id="rmClassList"></datalist>
       <button type="button" class="primary-btn rm-add-btn" id="rmAddBtn">＋ 新增學生</button>
     </div>
@@ -1000,6 +1042,13 @@ if ('serviceWorker' in navigator) {
 
 </div>
 <div class="toast" id="toast"></div>
+<div class="zy-overlay" id="zyOverlay" hidden role="dialog" aria-label="注音版本姓名">
+  <div class="zy-box">
+    <div class="zy-meta" id="zyMeta"></div>
+    <div class="zy-name" id="zyName"></div>
+    <div class="zy-hint">點任意處關閉</div>
+  </div>
+</div>
 <div class="loading-overlay" id="loadingOverlay" hidden>
   <div class="loading-box">
     <div class="loading-spinner"></div>
@@ -1015,7 +1064,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '2.3.1';
+  const APP_VERSION = '2.4.1';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -1196,9 +1245,26 @@ if ('serviceWorker' in navigator) {
             ${preset ? `<span class="cc-tag">${periodLabel(preset[0])}、${periodLabel(preset[1])}</span>` : '<span class="cc-tag warn">尚未設定節次</span>'}
           </div>
         </div>
+        <button type="button" class="cc-del" aria-label="刪除課程 ${escapeHtml(item.name)}">刪除</button>
         <div class="go">›</div>
       `;
-      card.addEventListener('click', () => openCourse(item.id));
+      card.addEventListener('click', (e) => {
+        if(e.target.closest('.cc-del')) return;
+        openCourse(item.id);
+      });
+      card.querySelector('.cc-del').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if(!window.confirm(`確定要刪除課程「${item.name}」嗎？\n\n名單和今天的點名紀錄都會一起刪除，刪除後無法在此裝置上復原。`)) return;
+        const deleted = await deleteRoster(item.id);
+        if(deleted === false){ toast('刪除失敗，請再試一次'); return; }
+        const idx = await getIndex();
+        await setIndex(idx.filter(c => c.id !== item.id));
+        if(item.id === currentCourseId){
+          currentCourseId = null; currentRoster = null; currentCoursePreset = null; lastCompletedSessions = null;
+        }
+        await renderHome();
+        toast('課程已刪除');
+      });
       container.appendChild(card);
     });
   }
@@ -1378,7 +1444,14 @@ if ('serviceWorker' in navigator) {
     const header = rows[headerRowIndex];
     const clsCol = findCol(header, ['班級','班別','class']);
     const seatCol = findCol(header, ['座號','學號','seat','no']);
-    const nameCol = findCol(header, ['姓名','名字','name']);
+    // 「注音版本姓名」也含有「姓名」兩個字，找一般姓名欄時要排除有「注音」的欄位，才不會抓錯欄
+    const zhuyinCol = findCol(header, ['注音']);
+    let nameCol = -1;
+    for(let i=0;i<header.length;i++){
+      const cell = String(header[i] ?? '').trim();
+      if(cell.includes('注音')) continue;
+      if(['姓名','名字','name'].some(k => cell.includes(k))){ nameCol = i; break; }
+    }
     const classes = {};
     for(let r=headerRowIndex+1; r<rows.length; r++){
       const row = rows[r];
@@ -1387,8 +1460,11 @@ if ('serviceWorker' in navigator) {
       const seat = String(row[seatCol] ?? '').trim();
       if(!cls || !seat) continue; // 跳過簽名欄等不是學生資料的列
       const name = nameCol !== -1 ? String(row[nameCol] ?? '').trim() : '';
+      const zhuyin = zhuyinCol !== -1 ? String(row[zhuyinCol] ?? '').trim() : '';
       if(!classes[cls]) classes[cls] = [];
-      classes[cls].push({ seat, name, absent:false });
+      const stu = { seat, name };
+      if(zhuyin) stu.zhuyin = zhuyin;
+      classes[cls].push(stu);
     }
     Object.values(classes).forEach(list => list.sort((a,b)=> seatSortKey(a.seat)-seatSortKey(b.seat)));
     if(!Object.keys(classes).length) throw new Error('沒有解析到任何學生資料，請確認內容是否正確。');
@@ -1558,7 +1634,15 @@ if ('serviceWorker' in navigator) {
           const row = document.createElement('div');
           row.className = 'rc-row';
           const name = stu.name || '座號' + stu.seat;
-          row.innerHTML = `<div class="rc-seat">${escapeHtml(stu.seat)}</div><div class="rc-name">${escapeHtml(name)}</div>`;
+          row.innerHTML = `<div class="rc-seat">${escapeHtml(stu.seat)}</div><div class="rc-name${stu.zhuyin ? ' has-zy' : ''}">${escapeHtml(name)}</div>`;
+          // 名單有「注音版本姓名」時，點姓名就跳出注音版本；沒有這個欄位就什麼都不做
+          if(stu.zhuyin){
+            const nameEl = row.querySelector('.rc-name');
+            nameEl.setAttribute('role', 'button');
+            nameEl.setAttribute('tabindex', '0');
+            nameEl.addEventListener('click', () => showZhuyin(cls, stu));
+            nameEl.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); showZhuyin(cls, stu); } });
+          }
 
           {
             const refreshRowMark = () => row.classList.toggle('has-absent', isAbsentIn(0, cls, stu.seat) || isAbsentIn(1, cls, stu.seat));
@@ -1627,6 +1711,14 @@ if ('serviceWorker' in navigator) {
 
     updateSummary();
   }
+
+  function showZhuyin(cls, stu){
+    $('zyMeta').textContent = `${cls}　${stu.seat}號`;
+    $('zyName').textContent = stu.zhuyin;
+    $('zyOverlay').hidden = false;
+  }
+  $('zyOverlay').addEventListener('click', () => { $('zyOverlay').hidden = true; });
+  document.addEventListener('keydown', (e) => { if(e.key === 'Escape') $('zyOverlay').hidden = true; });
 
   // ---------- 點名畫面上的「本課程節次」設定 ----------
   let periodPanelOpen = false;
@@ -1771,6 +1863,7 @@ if ('serviceWorker' in navigator) {
           row.innerHTML = `<div class="rm-fields">
               <input type="text" class="rm-seat-in" inputmode="numeric" value="${escapeHtml(stu.seat)}" aria-label="座號">
               <input type="text" class="rm-name-in" value="${escapeHtml(stu.name || '')}" placeholder="姓名（可不填）" aria-label="姓名">
+              <input type="text" class="rm-zy-in" value="${escapeHtml(stu.zhuyin || '')}" placeholder="注音版本姓名（可不填）" aria-label="注音版本姓名">
             </div>
             <div class="rm-actions">
               <button type="button" class="rm-btn" data-act="cancel">取消</button>
@@ -1780,11 +1873,13 @@ if ('serviceWorker' in navigator) {
           row.querySelector('[data-act=save]').addEventListener('click', async () => {
             const newSeat = row.querySelector('.rm-seat-in').value.trim();
             const newName = row.querySelector('.rm-name-in').value.trim();
+            const newZy = row.querySelector('.rm-zy-in').value.trim();
             if(!newSeat){ toast('座號不能空白'); return; }
             if(newSeat !== stu.seat && rmRoster.classes[cls].some(x => x.seat === newSeat)){ toast(`${cls} 已經有 ${newSeat} 號了`); return; }
             if(newSeat !== stu.seat) updateTodaySeat(rmRoster, cls, stu.seat, newSeat);
             stu.seat = newSeat;
             stu.name = newName;
+            if(newZy) stu.zhuyin = newZy; else delete stu.zhuyin;
             sortBySeat(rmRoster.classes[cls]);
             rmEditing = null;
             await saveRosterManager();
@@ -1794,7 +1889,7 @@ if ('serviceWorker' in navigator) {
         }else{
           row.className = 'rm-row';
           row.innerHTML = `<div class="rc-seat">${escapeHtml(stu.seat)}</div>
-            <div class="rc-name">${escapeHtml(stu.name || '（未填姓名）')}</div>
+            <div class="rc-name">${escapeHtml(stu.name || '（未填姓名）')}${stu.zhuyin ? '<span class="rm-zy-tag">注音</span>' : ''}</div>
             <div class="rm-actions">
               <button type="button" class="rm-btn" data-act="edit" aria-label="修改 ${escapeHtml(stu.name || stu.seat + '號')}">✎ 修改</button>
               <button type="button" class="rm-btn danger" data-act="del" aria-label="刪除 ${escapeHtml(stu.name || stu.seat + '號')}">✕</button>
@@ -1852,14 +1947,16 @@ if ('serviceWorker' in navigator) {
     const cls = $('rmAddClass').value.trim();
     const seat = $('rmAddSeat').value.trim();
     const name = $('rmAddName').value.trim();
+    const zhuyin = $('rmAddZy').value.trim();
     if(!cls || !seat){ toast('請填寫班級和座號'); return; }
     const list = rmRoster.classes[cls] || (rmRoster.classes[cls] = []);
     if(list.some(x => x.seat === seat)){ toast(`${cls} 已經有 ${seat} 號了`); return; }
-    list.push({ seat, name });
+    list.push(zhuyin ? { seat, name, zhuyin } : { seat, name });
     sortBySeat(list);
     await saveRosterManager();
     $('rmAddSeat').value = '';
     $('rmAddName').value = '';
+    $('rmAddZy').value = '';
     renderRosterManager();
     toast(`已新增 ${cls} ${seat}號${name ? ' ' + name : ''}`);
   });
@@ -1900,12 +1997,13 @@ if ('serviceWorker' in navigator) {
   const AD_CACHE_KEY = 'ad-enabled-cache';
   const AD_SECRET_KEY = 'ad-toggle-secret';
   const FONT_SCALE_KEY = 'font-scale';
-  const FONT_SCALES = [0.9, 1, 1.1, 1.2];
+  const FONT_SCALES = [1, 1.1, 1.2, 1.35];
 
   // 字體大小：整個畫面（文字、按鈕、表格）一起等比例縮放，版面不會亂掉。
   function applyFontScale(scale){
     const v = FONT_SCALES.includes(scale) ? scale : 1;
     document.body.style.zoom = v === 1 ? '' : String(v);
+    document.body.classList.toggle('fs-xxl', v >= 1.35); // 特特大：手機上點名表格要再收緊一點才放得下
     document.querySelectorAll('#fontScaleRow .fs-btn').forEach(b => {
       const on = Number(b.dataset.scale) === v;
       b.classList.toggle('on', on);
