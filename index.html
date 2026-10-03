@@ -1074,7 +1074,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '2.4.2';
+  const APP_VERSION = '2.4.3';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -2008,10 +2008,11 @@ if ('serviceWorker' in navigator) {
   const AD_SECRET_KEY = 'ad-toggle-secret';
   const FONT_SCALE_KEY = 'font-scale';
   const FONT_SCALES = [1, 1.1, 1.2, 1.35];
+  const DEFAULT_FONT_SCALE = 1.35; // 預設「特特大」，老師自己在設定裡改過的就照老師選的
 
   // 字體大小：整個畫面（文字、按鈕、表格）一起等比例縮放，版面不會亂掉。
   function applyFontScale(scale){
-    const v = FONT_SCALES.includes(scale) ? scale : 1;
+    const v = FONT_SCALES.includes(scale) ? scale : DEFAULT_FONT_SCALE;
     document.body.style.zoom = v === 1 ? '' : String(v);
     document.body.classList.toggle('fs-xxl', v >= 1.35); // 特特大：手機上點名表格要再收緊一點才放得下
     document.querySelectorAll('#fontScaleRow .fs-btn').forEach(b => {
@@ -2702,7 +2703,7 @@ if ('serviceWorker' in navigator) {
   setTimeout(checkForUpdate, 3000);
 
   // ---------- init ----------
-  getSetting(FONT_SCALE_KEY, 1).then(v => applyFontScale(Number(v)));
+  getSetting(FONT_SCALE_KEY, DEFAULT_FONT_SCALE).then(v => applyFontScale(Number(v)));
   if($('versionTapTarget')) $('versionTapTarget').textContent = formatVersion(APP_VERSION);
   buildGoogleGuideCode();
   buildDriveGuideCode();
