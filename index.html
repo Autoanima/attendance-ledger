@@ -102,8 +102,10 @@
     border-radius:16px;
     padding:12px 14px;margin-bottom:10px;
     cursor:pointer;box-shadow:0 3px 0 rgba(18,58,90,.10);
+    position:relative;
   }
-  .course-card .name{font-size:16px;font-weight:900;color:var(--navy)}
+  /* 課名右邊留位置給右上角的「刪除」，下面的標籤列就能用整張卡片的寬度 */
+  .course-card .name{font-size:16px;font-weight:900;color:var(--navy);padding-right:62px}
   .course-card .cc-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
   .course-card .cc-tag{
     font-size:11px;font-weight:900;padding:3px 9px;border-radius:999px;
@@ -122,7 +124,7 @@
   .lock-btn.unlocked{background:var(--red-soft);color:var(--red);border-color:var(--red)}
   .course-card .cc-del.locked{background:#E3E8EC;border-color:#D3DADF;color:#9AA7B1}
   .course-card .cc-del{
-    flex:none;background:var(--red-soft);border:1.5px solid #E5A19B;color:var(--red);
+    position:absolute;top:10px;right:34px;background:var(--red-soft);border:1.5px solid #E5A19B;color:var(--red);
     border-radius:8px;font-size:12px;font-weight:900;font-family:inherit;padding:6px 9px;cursor:pointer;
   }
   .course-card .del{
@@ -1085,7 +1087,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '2.4.5';
+  const APP_VERSION = '2.4.6';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -1251,7 +1253,8 @@ if ('serviceWorker' in navigator) {
     btn.setAttribute('aria-pressed', deleteUnlocked ? 'true' : 'false');
     document.querySelectorAll('#courseList .cc-del').forEach(b => {
       b.classList.toggle('locked', !deleteUnlocked);
-      b.textContent = deleteUnlocked ? '刪除' : '🔒 刪除';
+      // 鎖定與解鎖都寫「刪除」、按鈕寬度不變，卡片排版才不會跳動；鎖定時用灰色表示
+      b.setAttribute('aria-disabled', deleteUnlocked ? 'false' : 'true');
     });
   }
 
