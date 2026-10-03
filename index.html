@@ -113,6 +113,14 @@
   .course-card .cc-tag.warn{border-color:var(--red);color:var(--red);background:var(--red-soft)}
   .course-card .meta{font-size:11px;color:var(--muted);margin-top:3px}
   .course-card .go{color:var(--navy);font-size:22px;font-weight:900}
+  /* 首頁上方「鎖定刪除功能」：預設鎖住，避免誤按卡片上的刪除 */
+  .home-tools{display:flex;justify-content:flex-end;margin:0 0 8px}
+  .lock-btn{
+    background:var(--white);color:var(--navy);border:2px solid var(--navy);border-radius:999px;
+    padding:6px 14px;font-size:13px;font-weight:900;font-family:inherit;cursor:pointer;
+  }
+  .lock-btn.unlocked{background:var(--red-soft);color:var(--red);border-color:var(--red)}
+  .course-card .cc-del.locked{background:#E3E8EC;border-color:#D3DADF;color:#9AA7B1}
   .course-card .cc-del{
     flex:none;background:var(--red-soft);border:1.5px solid #E5A19B;color:var(--red);
     border-radius:8px;font-size:12px;font-weight:900;font-family:inherit;padding:6px 9px;cursor:pointer;
@@ -696,6 +704,9 @@ if ('serviceWorker' in navigator) {
 
   <!-- HOME -->
   <section class="screen" id="screen-home">
+    <div class="home-tools" id="homeTools" hidden>
+      <button type="button" class="lock-btn" id="deleteLockBtn" aria-pressed="false">🔒 刪除功能：已鎖定</button>
+    </div>
     <div id="courseList"></div>
     <div class="stack">
       <button class="primary-btn" id="newCourseBtn">＋ 新增課程（上傳或下拉選擇名單）</button>
@@ -1074,7 +1085,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '2.4.3';
+  const APP_VERSION = '2.4.4';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
@@ -1229,9 +1240,31 @@ if ('serviceWorker' in navigator) {
   }
 
   // ---------- home screen ----------
+  // 首頁的刪除功能預設鎖住；要先按上方的鎖頭解鎖，課程卡片上的「刪除」才有作用，
+  // 而且離開首頁再回來（或重新打開 App）會自動重新鎖上。
+  let deleteUnlocked = false;
+
+  function applyDeleteLockUI(){
+    const btn = $('deleteLockBtn');
+    btn.textContent = deleteUnlocked ? '🔓 刪除功能：已解鎖（點此鎖定）' : '🔒 刪除功能：已鎖定';
+    btn.classList.toggle('unlocked', deleteUnlocked);
+    btn.setAttribute('aria-pressed', deleteUnlocked ? 'true' : 'false');
+    document.querySelectorAll('#courseList .cc-del').forEach(b => {
+      b.classList.toggle('locked', !deleteUnlocked);
+      b.textContent = deleteUnlocked ? '刪除' : '🔒 刪除';
+    });
+  }
+
+  $('deleteLockBtn').addEventListener('click', () => {
+    deleteUnlocked = !deleteUnlocked;
+    applyDeleteLockUI();
+    toast(deleteUnlocked ? '已解鎖，現在可以刪除課程' : '已鎖定刪除功能');
+  });
+
   async function renderHome(){
     const list = await getIndex();
     const container = $('courseList');
+    $('homeTools').hidden = !list.length;
     if(!list.length){
       container.innerHTML = '<div class="empty-note" id="emptyNoteAdd" role="button" tabindex="0">還沒有任何課程。</div>';
       $('emptyNoteAdd').addEventListener('click', () => { initUploadScreen(); showScreen('upload'); });
@@ -1264,6 +1297,7 @@ if ('serviceWorker' in navigator) {
       });
       card.querySelector('.cc-del').addEventListener('click', async (e) => {
         e.stopPropagation();
+        if(!deleteUnlocked){ toast('刪除功能已鎖定，請先按上方的「🔒 刪除功能」解鎖'); return; }
         if(!window.confirm(`確定要刪除課程「${item.name}」嗎？\n\n名單和今天的點名紀錄都會一起刪除，刪除後無法在此裝置上復原。`)) return;
         const deleted = await deleteRoster(item.id);
         if(deleted === false){ toast('刪除失敗，請再試一次'); return; }
@@ -1277,6 +1311,7 @@ if ('serviceWorker' in navigator) {
       });
       container.appendChild(card);
     });
+    applyDeleteLockUI();
   }
 
   // ---------- 每門課的「上課節次」：老師自己勾選的相鄰兩節（例如第4、5節） ----------
@@ -1322,6 +1357,7 @@ if ('serviceWorker' in navigator) {
     if(!roster){ toast('讀取名單失敗'); return; }
     currentCourseId = id;
     currentRoster = roster;
+    deleteUnlocked = false; // 離開首頁就重新鎖上刪除功能
     const entry = (await getIndex()).find(c => c.id === id);
     currentCoursePreset = getCoursePreset(entry);
     appMode = getCourseType(entry); // 這門課是跨群／本土語還是社團，決定訊息格式
@@ -1339,7 +1375,7 @@ if ('serviceWorker' in navigator) {
     showScreen('attend');
   }
 
-  $('homeBtn').addEventListener('click', () => { renderHome(); showScreen('home'); });
+  $('homeBtn').addEventListener('click', () => { deleteUnlocked = false; renderHome(); showScreen('home'); });
   $('newCourseBtn').addEventListener('click', () => { initUploadScreen(); showScreen('upload'); });
 
   // ---------- 課程種類：跨群／本土語 或 社團（每門課各自記住） ----------
