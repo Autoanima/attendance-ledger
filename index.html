@@ -114,7 +114,7 @@
   .course-card .meta{font-size:11px;color:var(--muted);margin-top:3px}
   .course-card .go{color:var(--navy);font-size:22px;font-weight:900}
   /* 首頁上方「鎖定刪除功能」：預設鎖住，避免誤按卡片上的刪除 */
-  .home-tools{display:flex;justify-content:flex-end;margin:0 0 8px}
+  .home-tools{display:flex;justify-content:center;margin:14px 0 0}
   .lock-btn{
     background:var(--white);color:var(--navy);border:2px solid var(--navy);border-radius:999px;
     padding:6px 14px;font-size:13px;font-weight:900;font-family:inherit;cursor:pointer;
@@ -704,12 +704,12 @@ if ('serviceWorker' in navigator) {
 
   <!-- HOME -->
   <section class="screen" id="screen-home">
-    <div class="home-tools" id="homeTools" hidden>
-      <button type="button" class="lock-btn" id="deleteLockBtn" aria-pressed="false">🔒 刪除功能：已鎖定</button>
-    </div>
     <div id="courseList"></div>
     <div class="stack">
       <button class="primary-btn" id="newCourseBtn">＋ 新增課程（上傳或下拉選擇名單）</button>
+    </div>
+    <div class="home-tools" id="homeTools" hidden>
+      <button type="button" class="lock-btn" id="deleteLockBtn" aria-pressed="false">🔒 刪除功能：已鎖定</button>
     </div>
 
     <div class="ad-note" id="adNote" hidden>
@@ -1085,7 +1085,7 @@ if ('serviceWorker' in navigator) {
   //   - 新增功能（但沒有動到既有功能、資料格式）→ 加中間那碼、最後一碼歸零（Minor），例如 1.0.5 → 1.1.0
   //   - 大改版／可能影響既有資料或用法的重大變更 → 加第一碼、其餘歸零（Major），例如 1.4.2 → 2.0.0
   // 只要在這裡改這一個常數，設定頁最下面連點 20 下版本號的地方就會自動顯示新版號。
-  const APP_VERSION = '2.4.4';
+  const APP_VERSION = '2.4.5';
   function formatVersion(v){
     const parts = String(v).split('.');
     while(parts.length > 2 && parts[parts.length-1] === '0') parts.pop();
